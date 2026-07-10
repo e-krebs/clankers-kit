@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          { "type": "command", "command": "bash \"$HOME/.claude/hooks/play-sound.sh\" notify" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash \"$HOME/.claude/hooks/play-sound.sh\" stop" }
+        ]
+      }
+    ]
+  }
+}

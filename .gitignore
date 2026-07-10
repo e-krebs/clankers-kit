@@ -1,0 +1,29 @@
+# --- repo ---
+.DS_Store
+
+# --- .claude: ignore runtime data, keep config + skill catalog + memories ---
+.claude/*
+!.claude/CLAUDE.md
+!.claude/CLAUDE.example.md
+!.claude/CLAUDE.template.md
+!.claude/settings.json
+!.claude/settings/
+!.claude/settings/**
+!.claude/hooks/
+!.claude/hooks/**
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/README.md
+!.claude/skills/*/
+!.claude/skills/*/**
+!.claude/projects/
+.claude/projects/*
+!.claude/projects/*/
+!.claude/projects/README.md
+.claude/projects/*/*
+!.claude/projects/*/memory/
+!.claude/projects/*/memory/**
+.claude/projects/*/memory/**/*.jsonl   # never track session transcripts, even inside memory/
+
+# Runtime data from the symlinked ~/.claude/projects tree (session transcripts, caches) may
+# land under .claude/projects/*/ on disk — the rules above keep only memory/ tracked.
