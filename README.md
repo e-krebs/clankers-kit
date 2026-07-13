@@ -57,7 +57,7 @@ other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 | `.claude/settings/` | Opt-in setting **presets** (safe-command allowlist, enforcement, notification) composed into your `settings.json`. |
 | `.claude/hooks/` | The enforcement + notification scripts — *"enforce, don't just ask."* |
 | `.claude/projects/` | Where per-project **memory** is tracked — *"my agent's brain."* |
-| `.claude/skills/` | A catalog for small, composable skills — a few curated examples, plus bring your own. |
+| `.claude/skills/` | A catalog for small, composable skills — TypeScript tips + a git/PR/ticket workflow family, plus bring your own. See the [catalog](.claude/skills/README.md). |
 
 ## Requirements
 
@@ -106,7 +106,9 @@ any agent, no fork — install it with [`npx skills`](https://github.com/vercel-
 npx skills add e-krebs/clankers-kit --skill typescript-tips
 ```
 
-That's skill *distribution*, not a framework to depend on — the kit itself is still yours to own.
+Swap `typescript-tips` for any skill in the [catalog](.claude/skills/README.md) — e.g.
+`ticket-kickoff`, `rebase-branch`, `changes-to-pr`, `pr-followup`. That's skill *distribution*,
+not a framework to depend on — the kit itself is still yours to own.
 
 ## Privacy
 

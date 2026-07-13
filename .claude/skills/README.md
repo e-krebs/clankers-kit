@@ -14,6 +14,10 @@ adding more are welcome (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 | Skill | What it does |
 | --- | --- |
 | [`typescript-tips`](typescript-tips/) | Fifteen TypeScript best-practice conventions to apply to the `.ts`/`.tsx` you write or edit, for type-safety and maintainability. |
+| [`ticket-kickoff`](ticket-kickoff/) | Kick off work from a tracker item — read the issue and any linked spec, plan in plan-mode, then move it to In Progress on approval (every mutation deferred until you accept the plan). |
+| [`rebase-branch`](rebase-branch/) | Rebase the current branch onto its freshly-fetched base with a no-work-lost guarantee — auto-skips already-integrated commits and escalates only genuinely complex conflicts. |
+| [`changes-to-pr`](changes-to-pr/) | Turn uncommitted changes into a branch, atomic conventional commits, and a draft PR (optional agent review + linked-issue move) behind a two-gate approval flow. |
+| [`pr-followup`](pr-followup/) | After a push or PR, watch CI and advance it — on green mark a draft ready / re-request a stale review / move the linked issue forward; on red analyse and report. Never merges or auto-fixes. |
 
 ## Add a skill
 

@@ -1,0 +1,66 @@
+{
+  "skill_name": "pr-followup",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I just ran git push on my feature branch. Can you keep an eye on CI and open the PR for review once it's green?",
+      "expected_output": "Resolves the PR for the current branch read-only, makes one gated offer, watches CI in the background, and on green marks the draft PR ready for review.",
+      "assertions": [
+        "Resolves the PR for the current branch before watching or mutating anything",
+        "Makes a single gated offer (via AskUserQuestion) before any side effects",
+        "On green CI, marks the draft PR ready for review",
+        "Does not merge or auto-fix"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Watch the checks on PR #482 and re-request my reviewers once it passes.",
+      "expected_output": "Derives the previously-submitted human reviewers (excluding the author and bots), offers, watches CI, and on green re-requests them with gh pr edit --add-reviewer.",
+      "assertions": [
+        "Identifies previously-submitted human reviewers, excluding bots and the PR author",
+        "Re-requests reviewers with gh pr edit --add-reviewer on green",
+        "Waits for CI to pass before re-requesting"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "CI just went red on my branch — what happened?",
+      "expected_output": "Reports which checks failed, fetches and summarizes the failing logs, gives a short root-cause read, then stops and asks before doing anything.",
+      "assertions": [
+        "Fetches and summarizes the failing check logs (gh run view --log-failed)",
+        "Gives a root-cause read and stops to ask before investigating",
+        "Does not auto-fix or re-push"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I pushed to the default branch just to sync it, follow up on the PR.",
+      "expected_output": "Resolves the PR first, finds none, and exits silently with no offer and no output.",
+      "assertions": [
+        "Resolves the PR for the branch first and finds none",
+        "Exits silently with no offer or output when there is no associated PR"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "The watch just exited 0 but I only saw one check run — are we actually green?",
+      "expected_output": "Explains the watch exit code is unreliable on staged pipelines, re-gathers statusCheckRollup, and re-watches if checks are still pending or the set looks thin.",
+      "assertions": [
+        "Does not trust the watch exit code alone",
+        "Re-gathers statusCheckRollup and re-watches if checks are pending or the set is thin",
+        "Only treats all-terminal checks as settled"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Once CI is green on my PR, mark it ready and move my linked issue to In Review — and if there's no tracker just skip that part.",
+      "expected_output": "Resolves the PR and the linked issue read-only, offers the PR advance with a separately-declinable move, and on green marks the draft ready then transitions the linked issue to In Review via the resolved transition; when no tracker or linked issue is present, the move is skipped silently and the PR still advances.",
+      "assertions": [
+        "Resolves the linked issue read-only and matches the transition whose target status is In Review (not by display name)",
+        "Offers the issue move as a separately-declinable choice so the PR can still advance while the move is skipped",
+        "On green, transitions the linked issue to In Review after the GitHub action, best-effort",
+        "When no tracker or linked issue is available, skips the move silently without blocking the PR advance"
+      ]
+    }
+  ]
+}

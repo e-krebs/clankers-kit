@@ -1,0 +1,60 @@
+{
+  "skill_name": "rebase-branch",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Rebase my current branch onto the latest main.",
+      "expected_output": "Fetches origin, syncs the local base to origin/main, snapshots a backup ref, rebases onto origin/main skipping any already-integrated commits, and verifies with range-diff before offering to push with --force-with-lease.",
+      "assertions": [
+        "Runs git fetch before rewriting history",
+        "Targets origin/main (the freshly-fetched remote tip), not a stale local main",
+        "Creates a backup ref before the rebase and runs a range-diff loss check after",
+        "Only ever proposes git push --force-with-lease, never --force"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Bring my feature branch up to date with develop.",
+      "expected_output": "Determines develop as the base, checks whether the branch is already on top of it, and if not rebases onto origin/develop, auto-skipping commits already integrated via cherry/--onto.",
+      "assertions": [
+        "Uses git merge-base / git cherry to detect commits already on the base",
+        "If the branch is already an ancestor of origin/develop, reports 'already up to date' and stops without rewriting",
+        "Preserves all genuinely-new commits from the feature branch",
+        "Does not blindly drop commits it cannot prove are already integrated"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I hit a conflict in package-lock.json while rebasing — can you just resolve it and continue?",
+      "expected_output": "Recognizes a lockfile as dangerous to auto-merge, declines to blindly pick a side, and escalates with a both-sides summary rather than using -X ours/-X theirs.",
+      "assertions": [
+        "Does not resolve the conflict with blanket -X ours / -X theirs or checkout --ours/--theirs",
+        "Treats the lockfile as a case to escalate (generated/dangerous file) rather than auto-resolve",
+        "Explains both sides / asks the user how to proceed or regenerates the lockfile properly",
+        "Keeps earlier resolutions and the backup ref intact while paused"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Rebase this branch onto main. There are some uncommitted changes in my working tree right now.",
+      "expected_output": "Detects the dirty tree in pre-flight and asks how to handle it (stash & restore, or commit & push first) before touching history, then proceeds with the rebase.",
+      "assertions": [
+        "Runs git status --porcelain and notices the working tree is dirty before rebasing",
+        "Asks the user how to handle uncommitted work (e.g. autostash vs commit & push) instead of silently discarding or blindly rewriting",
+        "Does not start the rebase while uncommitted changes are unhandled",
+        "After resolving the dirty tree, proceeds with fetch + backup ref + rebase"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "After the rebase, one of my commits looks like it disappeared from the range-diff output. Did I lose work?",
+      "expected_output": "Explains that an unpaired drop can be a pairing artifact (default creation-factor) or an intentionally-dropped patch-equal commit, and verifies against HEAD with --creation-factor=999 before concluding real loss.",
+      "assertions": [
+        "Notes the default range-diff --creation-factor (60) can print a spurious drop+add for a shifted commit",
+        "Recommends re-running with --creation-factor=999",
+        "Distinguishes an intentionally-dropped already-integrated commit from genuine loss",
+        "Confirms whether the commit's changes are actually present in HEAD before declaring loss, and restores from the backup ref if truly lost"
+      ]
+    }
+  ]
+}

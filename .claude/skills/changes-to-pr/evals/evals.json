@@ -1,0 +1,60 @@
+{
+  "skill_name": "changes-to-pr",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I've got a bunch of uncommitted changes on my current branch. Open a PR for them.",
+      "expected_output": "Inspects the working tree, proposes a branch + atomic commit split + a drafted PR description, and only creates a draft PR after the user approves the consolidated plan.",
+      "assertions": [
+        "Inspects working tree first (git status / git diff against the base branch) before asking anything",
+        "Presents a consolidated Gate-2 plan (branch name + commit split + PR description) for approval before running any command",
+        "Does not commit, push, or open the PR until the user approves the plan",
+        "Creates the PR as a draft (gh pr create --draft), not a ready-for-review PR"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Cut a PR for my changes — but the diff has both a bug fix and an unrelated refactor mixed together.",
+      "expected_output": "Detects the two distinct concerns and offers to split them into one branch + commits + draft PR per concern, rather than bundling everything into one PR.",
+      "assertions": [
+        "Flags that the change spans more than one distinct concern",
+        "Offers a choice between one PR and splitting into per-concern branches/PRs",
+        "If splitting, each concern gets its own atomic commits and its own draft PR",
+        "Commit messages are conventional-commit style with a scope (e.g. fix(...) / refactor(...))"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Ship these changes as a PR, and run a review over them first.",
+      "expected_output": "Runs an independent agent review in a subagent, applies only high-confidence fixes to the working tree, summarizes the rest in an 'Agent review' section of the PR, then proceeds to the branch/commit/draft-PR flow.",
+      "assertions": [
+        "Runs the review in a separate subagent, not as self-review by the implementing agent",
+        "Auto-applies only high-confidence fixes; uncertain findings are reported, not applied",
+        "Re-reads the diff after the review before computing the commit split and PR description",
+        "Adds an 'Agent review' section (coverage + findings + verdict) to the PR description"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Commit and PR this. Please reuse the repo's pull request template for the description.",
+      "expected_output": "Reads the repo's PR template and drafts the description using its sections, filling conditional sections only when relevant and leaving no placeholder text.",
+      "assertions": [
+        "Reads the repo PR template (e.g. .github/pull_request_template.md) and uses its sections as the structure",
+        "Fills conditional sections (env vars, dependencies) only when the diff actually contains them",
+        "Verifies no leftover template placeholder text remains before showing the plan",
+        "Keeps the description concise rather than a line-by-line code walkthrough"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Package my working-tree changes into a draft PR against main.",
+      "expected_output": "Creates a branch, atomic commits, and a draft PR based on main; conventional commit messages carry no issue reference while any linked-issue reference goes only in the PR body's motivation section.",
+      "assertions": [
+        "Creates a draft PR with the base branch set to main",
+        "Branch name and commit messages contain no issue reference / ticket ID",
+        "Any linked-issue reference appears only in the PR description's 'why'/motivation section",
+        "Aborts gracefully if the working tree is clean or HEAD is detached"
+      ]
+    }
+  ]
+}
