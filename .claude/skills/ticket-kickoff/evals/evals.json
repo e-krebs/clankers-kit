@@ -1,0 +1,55 @@
+{
+  "skill_name": "ticket-kickoff",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Let's pick up PROJ-142 and start working on it.",
+      "expected_output": "Reads the tracker item (and any directly-linked spec) read-only, digests goal + acceptance-criteria checklist, plans in plan-mode, and defers the move to In Progress until plan approval.",
+      "assertions": [
+        "Reads the item before planning without mutating it",
+        "Produces an acceptance-criteria checklist from the item",
+        "Does not transition the item until the plan is approved via ExitPlanMode"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Kick off this ticket for me.",
+      "expected_output": "Auto-detects the issue key from the branch name or recent commits when no ID is given, then reads and plans.",
+      "assertions": [
+        "Attempts to identify the issue key from the branch name or <base>..HEAD commits when none is supplied",
+        "Falls back to a 'mine, not started' picker or the no-item path when none is found",
+        "Defers any In Progress move until after plan approval"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I want to start some work but there's no ticket for it yet — can you get me going?",
+      "expected_output": "Offers to create a tracker item, drafts a title+description from the scoped intent for confirmation, gathers parent/sprint/assignee, and defers creation until plan approval.",
+      "assertions": [
+        "Offers to create an item and drafts a title + description for confirmation",
+        "Treats item creation as a deferred mutation, not something done while planning",
+        "If creation is declined, drafts the item into the plan file instead"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Start work on ISSUE-8; the ticket links a PRD I want you to read first.",
+      "expected_output": "Pulls the directly-linked spec doc read-only as planning context alongside the item digest, then plans.",
+      "assertions": [
+        "Reads the directly-linked spec document as read-only planning context",
+        "Incorporates the spec into the plan rather than inventing item content",
+        "Discovers the In Progress transition by matching target status, not transition display name"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Pick up my next unstarted ticket and get it moving.",
+      "expected_output": "Queries the tracker for the user's not-started items, offers a picker, reads the chosen item, plans, and moves it to In Progress only after approval.",
+      "assertions": [
+        "Queries for items assigned to the user with a not-started status",
+        "Reads the selected item read-only and plans in plan-mode",
+        "Moves the item to In Progress best-effort only after ExitPlanMode, skipping silently when none applies"
+      ]
+    }
+  ]
+}
