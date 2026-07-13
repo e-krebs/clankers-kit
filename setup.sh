@@ -172,6 +172,12 @@ multiselect() {
   cols="${COLUMNS:-}"; [[ -z "$cols" ]] && cols="$(tput cols 2>/dev/null || echo 80)"
   [[ "$cols" -lt 40 ]] && cols=80
   local wrapw=$((cols - 4))
+  local dh                                                 # size the detail pane to the tallest entry
+  for ((i = 0; i < n; i++)); do
+    dh="$(printf '%s\n' "${MS_DESC[i]}" | fold -s -w "$wrapw" | grep -c '')"
+    [[ "$dh" -gt "$detail_h" ]] && detail_h="$dh"
+  done
+  [[ "$detail_h" -gt 8 ]] && detail_h=8
   sepw=$(( cols < 56 ? cols : 56 ))
   bar="$(printf '%*s' "$sepw" '')"; bar="${bar// /─}"
   printf '\033[?25l'                                        # hide cursor
@@ -380,6 +386,14 @@ for spec in "${LINK_SPECS[@]}"; do
 done
 
 # --- skills ------------------------------------------------------------------
+skill_description() {               # the SKILL.md frontmatter `description:` value, or a safe fallback
+  local f="${CLAUDE_SRC}/skills/${1}/SKILL.md" line
+  line="$(grep -m1 '^description:' "$f" 2>/dev/null || true)"
+  line="${line#description:}"                       # drop the key
+  line="${line#"${line%%[![:space:]]*}"}"           # trim leading whitespace
+  if [[ -n "$line" ]]; then printf '%s' "$line"; else printf "the '%s' skill" "$1"; fi
+}
+
 AVAILABLE=()
 while IFS= read -r d; do
   [[ -f "${d}/SKILL.md" ]] && AVAILABLE+=("$(basename "$d")")
@@ -392,7 +406,7 @@ if [[ ${#AVAILABLE[@]} -gt 0 ]]; then
     for s in "${want[@]:-}"; do s="$(printf '%s' "$s" | tr -d '[:space:]')"; [[ -n "$s" ]] && SKILLS_WANT+=("$s"); done
   elif $INTERACTIVE; then
     MS_OPT=(); MS_DESC=(); MS_ON=()
-    for s in "${AVAILABLE[@]}"; do MS_OPT+=("$s"); MS_DESC+=("Activate the '${s}' skill (symlinked into ~/.claude/skills)."); MS_ON+=(""); done
+    for s in "${AVAILABLE[@]}"; do MS_OPT+=("$s"); MS_DESC+=("$(skill_description "$s")"); MS_ON+=(""); done
     say ""
     multiselect "Skills — pick which to activate" || true
     for ((i = 0; i < ${#MS_OPT[@]}; i++)); do [[ ${MS_ON[i]:-} == 1 ]] && SKILLS_WANT+=("${MS_OPT[i]}"); done
@@ -446,8 +460,14 @@ else
   rc "linking" "settings.json, CLAUDE.md, hooks/, projects/ → ~/.claude"
 fi
 
-if [[ ${#AVAILABLE[@]} -eq 0 ]]; then rc "skills" "none in the catalog yet"
-else rc "skills" "${SKILLS_WANT[*]:-none}"; fi
+if [[ ${#AVAILABLE[@]} -eq 0 ]]; then
+  rc "skills" "none in the catalog yet"
+elif [[ ${#SKILLS_WANT[@]} -eq 0 ]]; then
+  rc "skills" "none selected"
+else
+  rc "skills" "${#SKILLS_WANT[@]} to activate:"
+  for s in "${SKILLS_WANT[@]}"; do printf '            %s• %s%s\n' "$C_DIM" "$s" "$C_RESET"; done
+fi
 
 case "$PRIV_STATE" in
   public)  rc "privacy" "repo is PUBLIC — will offer to make it private" ;;

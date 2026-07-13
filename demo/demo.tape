@@ -11,7 +11,7 @@ Require bash
 Set Shell "bash"
 Set FontSize 18
 Set Width 1200
-Set Height 860
+Set Height 940
 Set Padding 24
 Set Theme "Dracula"
 
@@ -63,6 +63,25 @@ Sleep 700ms
 Enter
 Sleep 1500ms
 
-# The recap prints, then "Proceed? [Y/n]" — accept the default.
+# Skills — the same arrow-key checklist, now showing each skill's real description in the
+# detail pane. Arrow through a few so the descriptions are visible, then select a couple.
+Sleep 1000ms
+Down
+Sleep 1600ms
+Down
+Sleep 1600ms
+Space
+Sleep 1000ms
+Down
+Sleep 1600ms
+Down
+Sleep 1600ms
+Space
+Sleep 1200ms
 Enter
-Sleep 4s
+Sleep 1500ms
+
+# The recap prints — now listing the chosen skills with a count. Pause to read it, then Proceed.
+Sleep 2500ms
+Enter
+Sleep 5s
