@@ -5,11 +5,15 @@ plus any files it needs). `setup.sh` lets you pick which ones to *activate*: it 
 ones you choose into `~/.claude/skills/`, so you opt in per skill rather than getting all of
 them at once.
 
-## v1: bring your own
+## Bring your own — plus a few curated examples
 
-clankers-kit ships **no skills yet** — the whole point of the talk is *build your own*. Refined,
-broadly-useful examples will land here over time, and PRs are welcome (see
-[CONTRIBUTING.md](../../CONTRIBUTING.md)).
+The whole point of the talk is *build your own*, so clankers-kit stays deliberately thin: it
+ships only a small set of refined, broadly-useful examples and leaves the rest to you. PRs
+adding more are welcome (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
+
+| Skill | What it does |
+| --- | --- |
+| [`typescript-tips`](typescript-tips/) | Fifteen TypeScript best-practice conventions to apply to the `.ts`/`.tsx` you write or edit, for type-safety and maintainability. |
 
 ## Add a skill
 
@@ -18,3 +22,15 @@ broadly-useful examples will land here over time, and PRs are welcome (see
 
 That symlinks `~/.claude/skills/<name>` → this repo, so Claude Code auto-discovers it and it's
 version-controlled in your fork.
+
+## Grab a single skill into any agent
+
+Owning the whole kit (above) is the intended path. But if you just want one skill dropped into
+any agent — without cloning — use [`npx skills`](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add e-krebs/clankers-kit --skill typescript-tips
+```
+
+It copies the whole skill directory (including its `references/`), so nothing is left behind.
+This is skill *distribution*, not a dependency to install — the kit itself is still yours to own.

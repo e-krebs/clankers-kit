@@ -57,7 +57,7 @@ other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 | `.claude/settings/` | Opt-in setting **presets** (safe-command allowlist, enforcement, notification) composed into your `settings.json`. |
 | `.claude/hooks/` | The enforcement + notification scripts — *"enforce, don't just ask."* |
 | `.claude/projects/` | Where per-project **memory** is tracked — *"my agent's brain."* |
-| `.claude/skills/` | A catalog for small, composable skills. Empty for now — bring your own. |
+| `.claude/skills/` | A catalog for small, composable skills — a few curated examples, plus bring your own. |
 
 ## Requirements
 
@@ -96,6 +96,17 @@ other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 3. Open `.claude/CLAUDE.md` and flesh out how you actually work. Restart Claude Code.
 
 Re-run `./setup.sh` any time — linked paths are left alone, and you can activate more skills.
+
+### Grab a single skill (without cloning)
+
+Owning the whole kit (above) is the intended path. But if you only want one skill — dropped into
+any agent, no fork — install it with [`npx skills`](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add e-krebs/clankers-kit --skill typescript-tips
+```
+
+That's skill *distribution*, not a framework to depend on — the kit itself is still yours to own.
 
 ## Privacy
 

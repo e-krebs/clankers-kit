@@ -1,0 +1,60 @@
+{
+  "skill_name": "typescript-tips",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I just wrote this — is it type-safe? `const config = cache.get(key) as Config; return config.retries;`",
+      "expected_output": "Flags the `as Config` assertion as unsafe because cache.get can return undefined, and recommends handling the missing case instead of asserting it away.",
+      "assertions": [
+        "Identifies the `as Config` cast as unsafe / a lie the compiler won't verify (tip #14)",
+        "Points out cache.get(key) can be undefined at runtime",
+        "Recommends a runtime guard (e.g. `if (!config) throw ...`) rather than the cast",
+        "Does NOT suggest leaving the `as` assertion in place"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Clean this up: `const roles = ['admin', 'user', 'guest']; type Role = 'admin' | 'user' | 'guest';`",
+      "expected_output": "Recommends deriving the type from the value with `as const` + indexed access instead of maintaining a parallel union.",
+      "assertions": [
+        "Recommends adding `as const` to the roles array",
+        "Derives the type via `(typeof roles)[number]` instead of the hand-written union (tip #4)",
+        "Explains that maintaining a value and a parallel type by hand causes drift",
+        "Final Role type is not a duplicated string-literal union"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Should I use a TypeScript enum to represent user roles?",
+      "expected_output": "Advises against enum in most cases and recommends a const array + literal union, citing enum's runtime/erasure drawbacks.",
+      "assertions": [
+        "Recommends against using `enum` for this case (tip #11)",
+        "Proposes a `const` array + literal union as the alternative",
+        "Mentions at least one concrete enum drawback (runtime cost, erasure quirks, or serialization)",
+        "Does not present enum as the preferred option"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Make this API call type-safe: `const user = (await res.json()) as User;`",
+      "expected_output": "Explains that type safety ends at the I/O boundary and recommends parsing the response with a runtime schema rather than casting.",
+      "assertions": [
+        "States that the `as User` cast is unverified at the runtime boundary (tips #10, #14)",
+        "Recommends runtime validation with a schema (e.g. zod `.parse`)",
+        "Explains TypeScript does not check API response shapes at runtime",
+        "Does not accept the raw `as User` cast as sufficient"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "I'm editing this state type — make invalid combinations unrepresentable: `type State = { status: string; data?: User; error?: Error };`",
+      "expected_output": "Replaces the loose shape with a discriminated union keyed on status, making states like success-without-data unrepresentable.",
+      "assertions": [
+        "Converts to a discriminated union with a literal `status` discriminant (tip #5)",
+        "Ensures data only exists on success and error only on the error case",
+        "Uses literal statuses (e.g. \"loading\" | \"success\" | \"error\"), not `string`",
+        "May recommend an exhaustive `never` check when the union is consumed (tip #6)"
+      ]
+    }
+  ]
+}
