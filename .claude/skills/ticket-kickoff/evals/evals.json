@@ -50,6 +50,17 @@
         "Reads the selected item read-only and plans in plan-mode",
         "Moves the item to In Progress best-effort only after ExitPlanMode, skipping silently when none applies"
       ]
+    },
+    {
+      "id": 6,
+      "prompt": "Pickup next ticket.",
+      "expected_output": "Reads 'next' as the mine-not-started picker: with no explicit ID and none detectable in the branch or commits, queries the tracker for the user's not-started items, presents candidates for selection (read-only), then plans on the chosen one.",
+      "assertions": [
+        "Queries the tracker for items assigned to the user with a not-started status",
+        "Presents the candidates for the user to choose rather than auto-picking",
+        "Performs only read-only calls during selection",
+        "Defers any In Progress move until after plan approval (ExitPlanMode)"
+      ]
     }
   ]
 }
