@@ -1,6 +1,6 @@
 ---
 name: ticket-kickoff
-description: Kick off work from a tracker item — read the issue and any linked spec (PRD/RFC), plan in plan-mode, and on approval move the item to In Progress. Use when picking up a ticket to start work ("pick up PROJ-42", "kick off this ticket"). Don't use to query status or bulk-edit issues.
+description: Kick off work from a tracker item — read the issue and any linked spec (PRD/RFC), plan in plan-mode, then on approval move it to In Progress. Use when picking up or kicking off a ticket — a specific one (PROJ-42) or your next To Do ("pick up the next ticket"). Don't use to query status or bulk-edit issues.
 ---
 
 # ticket-kickoff
