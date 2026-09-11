@@ -1,0 +1,1 @@
+{"agent_id":"sub-1","tool_name":"MultiEdit","tool_input":{"file_path":"/nonexistent/fresh.ts","edits":[{"old_string":"const a = 1;","new_string":"/**\n * Would deny, but a subagent call is always silent.\n */\nconst a = 1;"}]}}

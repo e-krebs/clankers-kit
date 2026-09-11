@@ -1,0 +1,9 @@
+{
+  "description": "Enforcement hooks: forbid-bash-patterns denies cd, git -C, sed/cat/awk, secret-leaking echo, loops, xargs, destructive find/sort and ad-hoc python in Bash; forbid-verbose-comments denies JSDoc and multi-line block comments added to TS/JS files (Claude only, per its header). Composed by compose-hooks.sh; every command is a ${CLAUDE_PLUGIN_ROOT}/ path.",
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/forbid-bash-patterns.sh", "timeout": 5 } ] },
+      { "matcher": "Write|Edit|MultiEdit", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/forbid-verbose-comments.sh", "timeout": 5 } ] }
+    ]
+  }
+}

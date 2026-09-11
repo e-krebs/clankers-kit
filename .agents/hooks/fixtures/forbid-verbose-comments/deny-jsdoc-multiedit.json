@@ -1,0 +1,1 @@
+{"tool_name":"MultiEdit","tool_input":{"file_path":"/nonexistent/fresh.ts","edits":[{"old_string":"const a = 1;","new_string":"const a = 1; // terse"},{"old_string":"const b = 2;","new_string":"/**\n * Big JSDoc block smuggled in as the second edit.\n */\nconst b = 2;"}]}}

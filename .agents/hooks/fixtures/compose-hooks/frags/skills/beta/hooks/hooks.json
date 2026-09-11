@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "ExitPlanMode", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/beta/hooks/beta-gate.sh", "timeout": 10 } ] }
+    ],
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/beta/hooks/beta-start.sh", "timeout": 5 } ] }
+    ]
+  }
+}

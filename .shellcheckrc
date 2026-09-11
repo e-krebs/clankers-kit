@@ -1,0 +1,5 @@
+# Follow `source` lines into lib/ (each hook names its library with a `# shellcheck source=`
+# directive, resolved from the script's own dir), so a variable a hook sets for a sourced library
+# (HOOK_SESSION) is seen as used and the library is checked in context.
+external-sources=true
+source-path=SCRIPTDIR

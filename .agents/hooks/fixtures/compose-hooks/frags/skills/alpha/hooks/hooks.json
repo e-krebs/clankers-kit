@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/alpha/hooks/alpha-nudge.sh", "timeout": 5 } ] }
+    ]
+  }
+}

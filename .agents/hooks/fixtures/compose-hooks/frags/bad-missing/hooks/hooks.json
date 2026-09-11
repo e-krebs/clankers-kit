@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bad-missing/hooks/absent.sh", "timeout": 5 } ] }
+    ]
+  }
+}

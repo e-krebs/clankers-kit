@@ -1,0 +1,23 @@
+{
+  "description": "synthetic shared fragment for the compose-hooks fixture",
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/shared-a.sh", "timeout": 5 } ] }
+    ],
+    "SessionEnd": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/shared-a.sh", "timeout": 15 } ] }
+    ],
+    "Notification": [
+      { "matcher": "permission_prompt", "hooks": [ { "type": "command", "command": "afplay /S/x.aiff >/dev/null 2>&1 &", "timeout": 5 } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/shared-b.sh", "timeout": 5 } ] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/shared-c.sh", "timeout": 5 } ] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "echo inline", "timeout": 5 } ] }
+    ]
+  }
+}

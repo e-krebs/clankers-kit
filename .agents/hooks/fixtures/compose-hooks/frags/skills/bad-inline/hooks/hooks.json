@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "echo inline in a skill", "timeout": 5 } ] }
+    ]
+  }
+}
