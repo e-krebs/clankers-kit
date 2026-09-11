@@ -54,8 +54,10 @@ profile row rather than a skill.
 
 ## Add a skill
 
-1. Drop a skill directory here: `skills/<name>/SKILL.md` (plus any scripts it needs).
-2. Add a `skill` row to `kit.json` and run `bash .agents/lint-manifest.sh`.
+1. Drop a skill directory here: `skills/<name>/SKILL.md` (plus any scripts it needs, and an
+   optional `hooks/` dir with its fragment and fixtures).
+2. Add a `skill` row to `kit.json` with its `requires` and `soft` edges, run
+   `bash .agents/lint-manifest.sh`, and add the row to the tables above.
 3. Re-run `./setup.sh` and pick it when prompted — or `./setup.sh --skills <name>`.
 
 That symlinks `~/.claude/skills/<name>` and `~/.agents/skills/<name>` → this repo, so your
@@ -71,8 +73,9 @@ npx skills add e-krebs/clankers-kit --skill typescript-tips
 ```
 
 It copies the whole skill directory (including its `references/` and `hooks/`), so nothing is
-left behind; the hooks stay unwired, because only `setup.sh` runs the composer. The workflow and
-review skills expect their siblings and the workflow profile: `ticket-kickoff` hands off to
-`write-plan`, `pr-merge` restacks through `rebase-branch`, and `hooks-review`, `memory-review`
-and `clankers-review` build on `skill-review`, so grab those as a set. This is skill
-*distribution*, not a dependency to install — the kit itself is still yours to own.
+left behind; the hooks stay unwired, because only `setup.sh` runs the composer. The workflow
+skills expect the workflow profile and `ticket-kickoff` hands off to `write-plan`, so grab
+those as a set; `pr-merge` restacks through `rebase-branch` and the review skills read
+`skill-review` when present, and each says so when the sibling is absent (the `soft` edges in
+`kit.json`). This is skill *distribution*, not a dependency to install — the kit itself is
+still yours to own.

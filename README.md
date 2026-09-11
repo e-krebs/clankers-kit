@@ -1,8 +1,9 @@
 # clankers-kit
 
-**Take control of your coding agent.** A turnkey, opt-in `~/.claude` setup — the config,
-hooks, and conventions behind the talk *"Take Control of Your Coding Agent: Stop Prompting,
-Start Engineering"*, cleaned up so you can clone it, run one script, and make it yours.
+**Take control of your coding agent.** A turnkey, opt-in setup for Claude Code and Codex — one
+repo that composes `~/.claude`, `~/.agents` and `~/.codex`: the instructions, skills, hooks, and
+conventions behind the talk *"Take Control of Your Coding Agent: Stop Prompting, Start
+Engineering"*, cleaned up so you can clone it, run one script, and make it yours.
 
 > **Clanker?** A [deliberately mechanical word for the machine](https://lucumr.pocoo.org/2026/5/26/clankers/) —
 > a reminder that a coding agent is a tool you *engineer*, not a person you cajole. This kit is
@@ -23,39 +24,42 @@ preferences every session. That doesn't scale.
 The shift is to stop treating the agent as something you *persuade* and start treating it as a
 **system you configure** — once — so your preferences stick:
 
-- **Write who you are.** A `CLAUDE.md` the agent reads every turn: your role, your conventions,
-  how you want work presented. Say it once.
+- **Write who you are.** An `AGENTS.md` the agent reads every turn (Claude Code reads it as
+  `CLAUDE.md`): your role, your conventions, how you want work presented. Say it once.
 - **Encode your workflows** as small, reusable **skills** instead of re-typing multi-step tasks.
 - **Enforce, don't just ask.** **Hooks** are guardrails that *block* the mistakes you keep
   correcting; they run deterministically, so the agent can't forget them.
 - **Give it memory.** Per-project notes the agent writes and re-reads, so context compounds
   instead of resetting every session.
 - **Then build your own.** Notice where you keep correcting the agent and turn that into the
-  next line of `CLAUDE.md`, the next hook, the next skill. Prune what turns out to be noise.
+  next line of `AGENTS.md`, the next hook, the next skill. Prune what turns out to be noise.
 
 clankers-kit is that setup, ready to clone. The rest of this README is how to use it.
 
 ## Not another framework
 
 This is a **starter you own**, not a dependency you install. The talk's whole thesis is *build
-your own*. So clankers-kit hands you the scaffolding — a `CLAUDE.md` that says who you are,
-enforcement hooks, notifications, a memory setup, a place for skills — and gets out of the way.
-Everything is **opt-in**: `setup.sh` asks before turning anything on.
+your own*. So clankers-kit hands you the scaffolding — an `AGENTS.md` that says who you are,
+enforcement hooks, notifications, a memory setup, a catalog of skills, and a manifest that says
+what depends on what — and gets out of the way. Everything is **opt-in**: `setup.sh` asks
+before turning anything on.
 
 ### Works with any agent
 
-The examples are written for **Claude Code**, but the *ideas* — an identity file, guardrail
-hooks, per-project memory, small composable skills — carry over to any coding agent. Ports to
-other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+The kit wires **Claude Code** and **Codex** today. The skills and the workflow profiles land in
+`~/.agents`, which other agents read too; the instructions file and the hook wiring are linked
+per agent, into `~/.claude` and `~/.codex`. The *ideas* — an identity file, guardrail hooks,
+per-project memory, small composable skills — carry over to any coding agent. Ports to other
+tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What's inside
 
 | Piece | What it is |
 | --- | --- |
-| `kit.json` | The manifest: every row `setup.sh` offers, its group, its defaults, and what it requires. |
+| `kit.json` | The manifest: every row `setup.sh` offers, its group, its defaults, which agents it applies to, and what it requires. |
 | `.agents/AGENTS.example.md` | A worked example of a personal instructions file — *"I write who I am."* |
 | `.agents/AGENTS.template.md` | A blank version `setup.sh` fills in for you. |
-| `.claude/settings/` | Opt-in setting **presets** — the safe-command allowlist and `base.json` — composed into your `settings.json`. |
+| `.claude/settings/` | Opt-in setting **presets** — the safe-command allowlist, the Plain-by-default style, `base.json` — merged additively into your `settings.json`. |
 | `.claude/output-styles/` | The Plain output style: Simplified Technical English for the agent's replies, five units, no bold, one baton emoji. |
 | `.agents/hooks/` | The shared hook scripts, their `hooks.json` fragments, the composer, and the fixture suites — *"enforce, don't just ask."* |
 | `.claude/projects/` | Where per-project **memory** is tracked — *"my agent's brain."* |
@@ -67,11 +71,15 @@ other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 The kit composes three homes from one repo:
 
 - `~/.claude` — Claude-only config: `settings.json`, project memories.
-- `~/.agents` — shared across agents: instructions, skills, hooks, workflow profiles.
+- `~/.agents` — shared across agents: skills and workflow profiles.
 - `~/.codex` — Codex-only: the hook wiring and its `AGENTS.md` link.
 
+The instructions file is linked per agent (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`), from
+one source, `.agents/AGENTS.md` in the repo.
+
 A codex-only run still wires `~/.claude` — every composed hook path resolves through
-`~/.claude/hooks`.
+`~/.claude/hooks`. Which rows go where is the manifest's business: a row with `agents` applies
+only when you run that agent, and a link row names the agent each link belongs to.
 
 ## Hooks
 
@@ -92,8 +100,8 @@ Codex, the composer also renames `Notification` to `PermissionRequest` (dropping
 and caps `SessionEnd` timeouts at 3.
 
 The picker's `Hooks` group has one row per shared fragment (enforcement, notification sounds,
-session cleanup, canonical memory) plus a `skill trigger hooks` toggle, **off by default**: turn
-it on to also compose the `hooks.json` of every active skill.
+commit subject gate, session cleanup, canonical memory) plus a `skill trigger hooks` toggle,
+**off by default**: turn it on to also compose the `hooks.json` of every active skill.
 
 > [!WARNING]
 > **Codex hooks need a one-time trust step.** Codex hashes each hook definition and only runs a
@@ -114,9 +122,10 @@ The review skills — `review-changes`, `skill-review`, `hooks-review`, `memory-
 `clankers-review` runs the others together behind one gate.
 
 One row is upstream: `writing-for-agents`, Matt Pocock's guide to writing documents for agents.
-`setup.sh` installs it with `npx skills add mattpocock/skills --skill writing-for-agents -g` into
-`~/.agents/skills`; it isn't tracked in this repo. See the full
-[catalog](.agents/skills/README.md) for what each skill does.
+`setup.sh` installs it with `npx skills add mattpocock/skills --skill writing-for-agents -g`
+into `~/.agents/skills`, linked for each agent you run; it isn't tracked in this repo, and
+`setup.sh` removes it only when you uncheck its row by hand or name it in `--without`. See the
+full [catalog](.agents/skills/README.md) for what each skill does.
 
 ## Requirements
 
@@ -126,9 +135,13 @@ One row is upstream: `writing-for-agents`, Matt Pocock's guide to writing docume
 - **Recommended** (each unlocks a feature; `setup.sh` offers to install missing ones via your
   package manager — `brew` / `apt` / `dnf` / `pacman` — or links you to the download):
   - [`claude`](https://docs.anthropic.com/en/docs/claude-code) — the Claude Code CLI you're configuring.
-  - [`codex`](https://github.com/openai/codex) — the Codex CLI, when you run it; setup wires it too.
   - [`gh`](https://cli.github.com/) — lets setup offer to keep your fork private.
-  - [Node.js](https://nodejs.org/) (`npx`) — used by the optional chrome-devtools MCP preset.
+  - [Node.js](https://nodejs.org/) (`npx`) — the chrome-devtools MCP preset and the upstream
+    skill row install through it.
+- **Optional:** [`codex`](https://github.com/openai/codex) — the Codex CLI. When it is on your
+  `PATH` (or you pass `--agents codex`), setup wires `~/.codex` too; a first run without it
+  writes nothing for Codex, and a fork that once wired Codex keeps that wiring in sync on every
+  re-run.
 
 ## Quick start
 
@@ -142,25 +155,32 @@ One row is upstream: `writing-for-agents`, Matt Pocock's guide to writing docume
    `HOME` + a copy of the repo, so your real `~/.claude` is never touched — it prints exactly
    where to inspect the result (and how to delete it) when it's done. (The Claude interview is
    skipped in `--sandbox`: a throwaway `HOME` isn't logged in — run setup for real to use it.)
-2. `setup.sh` asks which agents you run (Claude Code, Codex — defaults to whatever it finds on
-   your `PATH`), then shows **one grouped picker**: layout, instructions, output style, settings
-   presets, workflow skills, review skills, other skills, and hooks (the skill trigger hooks stay
-   off by default). Every row is on by default, so uncheck what you don't want. Unchecking a row
-   another checked row depends on re-checks it with a note naming the dependant; checking a row
-   checks everything it needs. Then it shows a **recap of exactly what it will do** — including any
-   existing `~/.claude` content it will merge — and waits for one confirmation before it touches
-   anything. It will:
-   - seed your `AGENTS.md` — a few short questions (name, role, and how you work), or, if the
-     `claude` CLI is installed, let Claude **interview you** and draft the whole file (the
-     interview runs at the very end, once everything else is wired);
+2. `setup.sh` detects the agents on your `PATH` (Claude Code, Codex) and asks only when it
+   finds none. It then shows **one grouped picker**: layout, instructions, output style,
+   settings presets, workflow skills, review skills, other skills, and hooks (the skill trigger
+   hooks stay off by default). Every row is on by default, so uncheck what you don't want. The
+   detail pane describes the row under the cursor and names the rows it works better with.
+   Unchecking a row another checked row depends on re-checks it with a note naming the
+   dependant; checking a row checks everything it needs. Next come a few short `AGENTS.md`
+   questions (name, role, and how you work), or, if the `claude` CLI is installed, the offer to
+   let Claude **interview you** and draft the whole file at the very end. Then it shows a
+   **recap of exactly what it will do** — including any existing `~/.claude` content it will
+   merge — and waits for one confirmation before it touches anything. It will:
+   - write your `AGENTS.md` from the template, or adopt the `CLAUDE.md` / `AGENTS.md` you
+     already have;
    - symlink settings, `AGENTS.md`, hooks, memories, and workflow profiles into `~/.claude`,
      `~/.agents`, and `~/.codex` as each row needs (an existing file is **adopted, never
      overwritten** — your current setup is preserved);
-   - symlink each activated skill into both `~/.claude/skills/` and `~/.agents/skills/`;
+   - symlink each activated skill into both `~/.claude/skills/` and `~/.agents/skills/`, and
+     compose the hook wiring for each agent you run;
    - offer to make your repo private.
-3. Open `.agents/AGENTS.md` and flesh out how you actually work. Restart Claude Code.
+3. Open `.agents/AGENTS.md` and flesh out how you actually work. Restart Claude Code. With
+   Codex, open `codex` and run `/hooks` once to trust the new wiring.
 
-Re-run `./setup.sh` any time — linked paths are left alone, and you can activate more skills.
+Re-run `./setup.sh` any time — linked paths are left alone, the picker seeds from what is on
+disk, and you can activate more rows. `./setup.sh --help` lists the flags for a scripted run:
+`--agents`, `--without <rows>`, `--components <rows>`, `--skills`, `--presets`, `--name`,
+`--role`, `--no-private`, `--yes`, `--sandbox`.
 
 ### Grab a single skill (without cloning)
 
@@ -176,9 +196,10 @@ Swap `typescript-tips` for any skill in the [catalog](.agents/skills/README.md) 
 not a framework to depend on — the kit itself is still yours to own. It copies the skill's
 `hooks/` directory too, but nothing wires those hooks; only `setup.sh`'s composer does that.
 
-The workflow and review skills expect their siblings and the profile — `ticket-kickoff` needs
-`write-plan`, `pr-merge` needs `rebase-branch`, and `hooks-review`, `memory-review`, and
-`clankers-review` need `skill-review` — so grab those as a set.
+The workflow skills expect the profile that `workflow-profile` writes, and `ticket-kickoff`
+hands off to `write-plan`, so grab those as a set. The review skills read `skill-review` and
+each other when present and say so when not, and `pr-merge` restacks through `rebase-branch`
+when it is there; `kit.json` lists those as `soft` edges, and the picker shows them.
 
 ## Privacy
 
@@ -192,16 +213,24 @@ The workflow and review skills expect their siblings and the profile — `ticket
 ## Build your own
 
 Read `.agents/AGENTS.example.md`, then rewrite it as *you*. Add a hook when you catch the agent
-doing something you keep correcting. Drop a skill into `.agents/skills/` when you find yourself
-repeating the same multi-step task. The kit is a starting point — the point is to make it yours.
+doing something you keep correcting: a script and its `hooks.json` fragment under
+`.agents/hooks/`, a fixture case, and a `hooks` row in `kit.json`. Drop a skill into
+`.agents/skills/<name>/` when you find yourself repeating the same multi-step task, with a
+`skill` row; a hook that triggers or guards that skill lives in its own `hooks/` dir and rides
+the `skill trigger hooks` toggle. Run `bash .agents/lint-manifest.sh` after a manifest edit, then
+`./setup.sh` to wire the new rows. The kit is a starting point — the point is to make it yours.
+[CONTRIBUTING.md](CONTRIBUTING.md) has the details.
 
 ## Keeping it yours
 
-Your fork is a normal git repo: commit your `AGENTS.md`, settings, hooks, and memories as they
-evolve. Pull updates from upstream when you want new scaffolding, but your personal files are
-yours — `setup.sh` never overwrites an existing `AGENTS.md` or `settings.json`. Pulling upstream
-then re-running `./setup.sh` also migrates an older fork's `.claude/` layout in place,
-idempotently, backing up any colliding file as `<name>.clankers-bak`.
+Your fork is a normal git repo: commit `.agents/AGENTS.md`, `.claude/settings.json`, your
+hooks, your workflow profiles, and your memories as they evolve. Pull updates from upstream when
+you want new scaffolding, but your personal files are yours — `setup.sh` never overwrites an
+existing `AGENTS.md` or `settings.json`, and the presets only add to them. Pulling upstream then
+re-running `./setup.sh` also migrates an older fork's `.claude/` layout (a `CLAUDE.md`, `hooks/`,
+`skills/`) into `.agents/` in place, idempotently: a colliding `hooks/` or `skills/` file is
+backed up as `<name>.clankers-bak`, and a `CLAUDE.md` that differs from an existing `AGENTS.md`
+is left for you to merge by hand.
 
 ## Uninstall
 

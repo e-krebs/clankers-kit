@@ -8,7 +8,7 @@ assignees: ''
 
 **The idea**
 
-<!-- What would you add or change? A skill? A hook? A setting preset? A port to another agent? -->
+<!-- What would you add or change? A skill under .agents/skills? A hook under .agents/hooks? A setting preset? A port to another agent? -->
 
 **Why it's broadly useful**
 
