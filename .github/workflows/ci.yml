@@ -13,7 +13,10 @@ jobs:
       - name: Install shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Lint scripts
-        run: shellcheck setup.sh uninstall.sh .claude/hooks/*.sh
+        # every tracked .sh, so a new hooks/lib or skills/*/hooks script is covered without a glob edit
+        run: shellcheck $(git ls-files '*.sh')
+      - name: Lint the manifest
+        run: bash .agents/lint-manifest.sh
 
   smoke:
     strategy:
@@ -25,23 +28,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check jq is available
         run: jq --version
-      - name: Run setup.sh non-interactively in a sandbox HOME
-        run: |
-          SANDBOX="$(mktemp -d)"
-          HOME="$SANDBOX" bash setup.sh --yes --no-private \
-            --name CI --role Tester \
-            --presets allowlist,enforcement,notification
-          test -L "$SANDBOX/.claude/settings.json"
-          test -L "$SANDBOX/.claude/CLAUDE.md"
-          test -L "$SANDBOX/.claude/hooks"
-          test -L "$SANDBOX/.claude/projects"
-          jq -e . "$SANDBOX/.claude/settings.json" > /dev/null
-          echo "setup smoke test passed on ${{ matrix.os }}"
-
-          # uninstall should replace the symlinks with real files/dirs (content preserved)
-          HOME="$SANDBOX" bash uninstall.sh --yes
-          test ! -L "$SANDBOX/.claude/settings.json" && test -f "$SANDBOX/.claude/settings.json"
-          test ! -L "$SANDBOX/.claude/hooks"         && test -d "$SANDBOX/.claude/hooks"
-          test ! -L "$SANDBOX/.claude/projects"      && test -d "$SANDBOX/.claude/projects"
-          jq -e . "$SANDBOX/.claude/settings.json" > /dev/null
-          echo "uninstall restored real files on ${{ matrix.os }}"
+      - name: Run setup.sh and uninstall.sh against throwaway HOMEs
+        run: bash .github/smoke.sh
