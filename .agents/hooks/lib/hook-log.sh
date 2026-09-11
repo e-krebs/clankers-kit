@@ -36,8 +36,11 @@ _hook_log_write() {  # $1=hook $2=outcome $3=rule
     [ "$tries" -lt 3 ] && sleep 0.05 2>/dev/null
   done
   if [ "$locked" -eq 0 ]; then
-    lock_mtime=$(stat -f %m "$lock" 2>/dev/null || stat -c %Y "$lock" 2>/dev/null || printf '0')
-    age=$(( $(date +%s) - ${lock_mtime:-0} ))
+    # GNU stat first: on Linux `stat -f %m` succeeds too, but prints the mount point, which
+    # would abort the arithmetic below; BSD stat rejects -c, so macOS falls through to -f
+    lock_mtime=$(stat -c %Y "$lock" 2>/dev/null || stat -f %m "$lock" 2>/dev/null || printf '0')
+    case "$lock_mtime" in *[!0-9]*|'') lock_mtime=0 ;; esac
+    age=$(( $(date +%s) - lock_mtime ))
     if [ "$age" -gt 5 ]; then
       rmdir "$lock" 2>/dev/null || true
       mkdir "$lock" 2>/dev/null && locked=1
