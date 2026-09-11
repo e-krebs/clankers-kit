@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # clankers-kit setup — wire ~/.claude, ~/.agents and ~/.codex to this repo via symlinks, apply the
-# settings presets you keep, generate your AGENTS.md, and (re-runnably) activate skills.
+# settings presets you keep, compose the hook wiring from the fragments you keep, generate your
+# AGENTS.md, and (re-runnably) activate skills.
 #
 # How it works: it GATHERS every choice (asking nothing destructive), shows a RECAP of exactly
 # what it will do — including any existing ~/.claude content it will merge — asks for one final
@@ -419,17 +420,17 @@ fi
 # joined on the unit separator (0x1f): a tab is IFS whitespace, so empty tab-separated fields collapse.
 US=$'\037'
 C_ID=(); C_GROUP=(); C_KIND=(); C_LABEL=(); C_DESC=(); C_DEFAULT=(); C_LOCKED=(); C_REQ=(); C_SOFT=()
-C_AGENTS=(); C_NEEDS=(); C_SETTINGS=(); C_SKILL=(); C_LINKS=(); C_INSTALLED=(); C_INSTALL=(); C_REMOVE=()
-while IFS="$US" read -r id group kind label desc def locked req soft agents needs settings skill links installed install remove; do
+C_AGENTS=(); C_NEEDS=(); C_SETTINGS=(); C_HOOKS=(); C_SKILL=(); C_LINKS=(); C_INSTALLED=(); C_INSTALL=(); C_REMOVE=()
+while IFS="$US" read -r id group kind label desc def locked req soft agents needs settings hooks skill links installed install remove; do
   C_ID+=("$id"); C_GROUP+=("$group"); C_KIND+=("$kind"); C_LABEL+=("$label"); C_DESC+=("$desc")
   C_DEFAULT+=("$def"); C_LOCKED+=("$locked"); C_REQ+=("$req"); C_SOFT+=("$soft"); C_AGENTS+=("$agents")
-  C_NEEDS+=("$needs"); C_SETTINGS+=("$settings"); C_SKILL+=("$skill"); C_LINKS+=("$links")
+  C_NEEDS+=("$needs"); C_SETTINGS+=("$settings"); C_HOOKS+=("$hooks"); C_SKILL+=("$skill"); C_LINKS+=("$links")
   C_INSTALLED+=("$installed"); C_INSTALL+=("$install"); C_REMOVE+=("$remove")
 done < <(jq -r '.components[] | [
     .id, .group, .kind, .label, (.description // ""),
     (if .default == false then "" else "1" end), (if .locked == true then "1" else "" end),
     ((.requires // []) | join(",")), ((.soft // []) | join(",")), ((.agents // []) | join(",")),
-    ((.needs // []) | join(",")), (.settings // ""), (.skill // ""),
+    ((.needs // []) | join(",")), (.settings // ""), (.hooks // ""), (.skill // ""),
     ((.links // []) | map([.home, .repo, .type, (.agent // "")] | join("|")) | join(";")),
     ((.installed // []) | @json), ((.install // []) | @json), ((.remove // []) | @json)
   ] | join("")' "$MANIFEST")
@@ -498,6 +499,25 @@ skill_active() {                    # $1 = skill dir name -> 0 when either skill
   ours_link "${CLAUDE_HOME}/skills/${1}" || ours_link "${HOME}/.agents/skills/${1}"
 }
 
+# The composer writes each fragment's scripts as bash "$HOME/.claude/<rel>" into settings.json, so
+# a fragment is on disk when any script it declares is wired there (a pre-port preset that wired
+# only part of today's fragment, or with an argument, still counts as the user's choice).
+hooks_composed() {                  # $1 = fragment path
+  [[ -f "${CLAUDE_SRC}/settings.json" ]] || return 1
+  local rel
+  # shellcheck disable=SC2016  # the literal placeholder is the fragment contract, $HOME the composer's output
+  while IFS= read -r rel; do
+    jq -e --arg c "bash \"\$HOME/.claude/${rel}\"" '[.hooks[][]?.hooks[]?.command // ""] | any(. == $c or startswith($c + " "))' \
+      "${CLAUDE_SRC}/settings.json" >/dev/null 2>&1 && return 0
+  done < <(jq -r '.hooks[][]?.hooks[]?.command // empty | select(startswith("${CLAUDE_PLUGIN_ROOT}/")) | ltrimstr("${CLAUDE_PLUGIN_ROOT}/")' "$1" 2>/dev/null)
+  return 1
+}
+skill_hooks_composed() {            # the toggle is on disk when any skill hook is wired
+  [[ -f "${CLAUDE_SRC}/settings.json" ]] || return 1
+  # shellcheck disable=SC2016  # the literal $HOME is what the composer writes
+  jq -e '[.hooks[][]?.hooks[]?.command // ""] | any(contains("$HOME/.claude/skills/"))' "${CLAUDE_SRC}/settings.json" >/dev/null 2>&1
+}
+
 run_argv() {                        # $1 = JSON argv -> runs it; return 1 on an empty list
   local -a argv=()
   while IFS= read -r a; do argv+=("$a"); done < <(jq -r '.[]' <<< "$1")
@@ -512,6 +532,8 @@ on_disk() {                         # $1 = index -> 0 when the row is already in
       while each_link "$1"; do any=true; symlink_ok "${HOME}/${home_rel}" "${REPO_ROOT}/${repo_rel}" || ours_link "${HOME}/${home_rel}" || { LINK_CUR=""; return 1; }; done
       $any ;;
     settings) preset_applied "${REPO_ROOT}/${C_SETTINGS[$1]}" ;;
+    hooks)    hooks_composed "${REPO_ROOT}/${C_HOOKS[$1]}" ;;
+    toggle)   skill_hooks_composed ;;
     skill)    skill_active "${C_SKILL[$1]}" ;;
     command)  [[ "${C_INSTALLED[$1]}" != "[]" ]] && run_argv "${C_INSTALLED[$1]}" >/dev/null 2>&1 ;;
     *) return 1 ;;
@@ -692,6 +714,18 @@ for ((i = 0; i < N; i++)); do
   elif [[ -n "${APPL[i]}" ]] && skill_active "${C_SKILL[i]}"; then SKILLS_DROP+=("${C_SKILL[i]}"); fi
 done
 
+# --- hooks — the fragments to compose, plus each active skill's own when the toggle is on -----
+HOOK_FRAGS=(); HOOK_NAMES=()
+for ((i = 0; i < N; i++)); do
+  [[ "${C_KIND[i]}" == hooks ]] && selected "$i" && { HOOK_FRAGS+=("${REPO_ROOT}/${C_HOOKS[i]}"); HOOK_NAMES+=("${C_ID[i]}"); }
+done
+SKILL_HOOKS=false; sel_id skill-hooks && SKILL_HOOKS=true
+if $SKILL_HOOKS; then
+  for s in "${SKILLS_WANT[@]:-}"; do
+    [[ -n "$s" && -f "${AGENTS_SRC}/skills/${s}/hooks/hooks.json" ]] && HOOK_FRAGS+=("${AGENTS_SRC}/skills/${s}/hooks/hooks.json")
+  done
+fi
+
 # --- commands (the chrome-devtools MCP) --------------------------------------
 CMDS=()
 for ((i = 0; i < N; i++)); do [[ "${C_KIND[i]}" == command ]] && selected "$i" && CMDS+=("$i"); done
@@ -746,6 +780,10 @@ for ((i = 0; i < N; i++)); do
     && info "             (${C_ID[i]} was applied earlier — opting out is a manual edit of .claude/settings.json)"
 done
 for ci in "${CMDS[@]:-}"; do [[ -n "$ci" ]] && rc "${C_ID[ci]}" "install ${C_LABEL[ci]}"; done
+
+hlist="none"; [[ ${#HOOK_NAMES[@]} -gt 0 ]] && hlist="$(IFS=,; printf '%s' "${HOOK_NAMES[*]}")"
+if $SKILL_HOOKS; then rc "hooks" "compose: ${hlist} + the hooks of every active skill"
+else rc "hooks" "compose: ${hlist} (skill hooks off)"; fi
 
 if [[ ${#PLAN_LINKS[@]} -eq 0 ]]; then
   rc "linking" "nothing selected"
@@ -1021,6 +1059,26 @@ deactivate_skill() {
 for s in "${SKILLS_WANT[@]:-}"; do [[ -n "$s" ]] && activate_skill "$s"; done
 for s in "${SKILLS_DROP[@]:-}"; do [[ -n "$s" ]] && deactivate_skill "$s"; done
 
+# --- 4b. hooks — compose both wiring files from the selected fragments ------------------------
+#     --own root: the composer replaces the entries it wrote (any script under ~/.claude/ that a
+#     fragment in this repo declares, or a stale one whose script is gone) and keeps yours.
+# shellcheck disable=SC2016  # the root is written literally so each shell expands $HOME at hook time
+compose_args=(--root '$HOME/.claude' --local "$AGENTS_SRC" --own root --claude "${CLAUDE_SRC}/settings.json")
+has_agent codex && compose_args+=(--codex "${REPO_ROOT}/.codex/user-hooks.json")
+if compose_out="$(bash "${AGENTS_SRC}/hooks/compose-hooks.sh" "${compose_args[@]}" ${HOOK_FRAGS[@]+"${HOOK_FRAGS[@]}"} 2>&1)"; then
+  ok "  hooks       composed ${#HOOK_FRAGS[@]} fragment(s) into settings.json$(has_agent codex && printf ' and .codex/user-hooks.json')"
+  while IFS= read -r l; do
+    case "$l" in
+      *"kept an entry"*)  info "  note: ${l#compose-hooks: }" ;;
+      *"dropped a stale"*) info "  note: ${l#compose-hooks: }" ;;
+    esac
+  done <<< "$compose_out"
+else
+  warn "  failed to compose the hook wiring:"
+  warn "$compose_out"
+  exit 1
+fi
+
 # --- 5. commands (the chrome-devtools MCP), only if opted in -----------------
 for ci in "${CMDS[@]:-}"; do
   [[ -n "$ci" ]] || continue
@@ -1049,6 +1107,9 @@ step "Done"
 ok "  ~/.claude, ~/.agents$(has_agent codex && printf ', ~/.codex') → repo (memories tracked — keep the repo private)"
 say "  active skills: $(printf '%s\n' "${ACTIVE[@]:-none}" | sort -u | tr '\n' ' ')"
 info "  edit .agents/AGENTS.md, then restart your agent · re-run ./setup.sh to change the selection · undo any time with ./uninstall.sh"
+if has_agent codex; then
+  warn "  codex runs a hook only once you trusted its definition: open codex and run /hooks once (again after any re-run that changes the wiring)."
+fi
 
 # --- 8. Claude interview — deferred to the very end, once all wiring is done -------------------
 # Runs in your real shell/HOME (where you're logged in) and hands off to Claude, which drafts your

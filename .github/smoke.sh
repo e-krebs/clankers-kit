@@ -47,7 +47,12 @@ grep -q 'About CI' "$K/.agents/AGENTS.md" || fail "AGENTS.md does not carry the 
 jq -e . "$H/.claude/settings.json" >/dev/null || fail "settings.json is not valid JSON"
 jq -e . "$H/.codex/hooks.json" >/dev/null || fail ".codex/hooks.json is not valid JSON"
 jq -e '.permissions.allow | index("Bash(git status:*)")' "$H/.claude/settings.json" >/dev/null || fail "allowlist preset not applied"
-jq -e '[.hooks.PreToolUse[].hooks[].command] | any(contains("forbid-bash-patterns"))' "$H/.claude/settings.json" >/dev/null || fail "enforcement preset not applied"
+jq -e '[.hooks.PreToolUse[].hooks[].command] | index("bash \"$HOME/.claude/hooks/forbid-bash-patterns.sh\"")' "$H/.claude/settings.json" >/dev/null || fail "enforcement hooks not composed into settings.json"
+jq -e '[.hooks.PreToolUse[].hooks[].command] | index("bash \"$HOME/.claude/hooks/forbid-bash-patterns.sh\" codex")' "$H/.codex/hooks.json" >/dev/null || fail "the Codex wiring lacks forbid-bash-patterns with its codex arg"
+jq -e '[.hooks[][].hooks[].command] | any(contains("forbid-verbose-comments"))' "$H/.codex/hooks.json" >/dev/null && fail "a Claude-only hook leaked into the Codex wiring"
+jq -e '.hooks.Notification[0].matcher == "permission_prompt"' "$H/.claude/settings.json" >/dev/null || fail "Notification group missing from settings.json"
+jq -e '.hooks.PermissionRequest[0] | has("matcher") | not' "$H/.codex/hooks.json" >/dev/null || fail "Codex PermissionRequest group missing or still carries a matcher"
+jq -e '[.hooks[][].hooks[].command] | any(contains("skills/"))' "$H/.claude/settings.json" >/dev/null && fail "a skill hook was wired with the toggle off"
 pass "default install for claude,codex"
 
 # --- 2. an identical re-run changes nothing --------------------------------------------------
@@ -67,15 +72,30 @@ HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without 
 pass "--without deactivates a skill"
 
 # --- 3b. --without on a link row restores a real copy ----------------------------------------
-HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without memories > /dev/null
+# canonical-memory requires memories, so dropping memories alone re-checks it: both go
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without memories > "$tmp/without-mem.log" 2>&1
+grep -q 'kept on.*memories (required by canonical-memory)' "$tmp/without-mem.log" || fail "--without memories alone should be re-checked by canonical-memory"
+[ -L "$H/.claude/projects" ] || fail "--without memories alone unlinked a required row"
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without memories,canonical-memory > /dev/null 2>&1
+jq -e '[.hooks[][].hooks[].command] | any(contains("canonical-memory"))' "$H/.claude/settings.json" >/dev/null && fail "--without canonical-memory left its hook wired"
 { [ ! -L "$H/.claude/projects" ] && [ -d "$H/.claude/projects" ]; } || fail "--without memories left the link"
 [ -f "$H/.claude/projects/README.md" ] || fail "--without memories lost the content"
 [ -L "$H/.claude/hooks" ] || fail "--without memories touched the core links"
 # a re-run seeds from disk, so the unlinked row stays off until named again
 HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex \
-  --components memories,workflow-profiles,instructions,allowlist,enforcement,notification,changes-to-pr,pr-followup,rebase-branch,ticket-kickoff,typescript-tips > /dev/null
+  --components memories,workflow-profiles,instructions,allowlist,enforcement,notification,session-cleanup,canonical-memory,changes-to-pr,pr-followup,rebase-branch,ticket-kickoff,typescript-tips > /dev/null
 [ -L "$H/.claude/projects" ] || fail "re-selecting memories did not relink (a real dir now merges into the repo first)"
 pass "--without unlinks a link row"
+
+# --- 3c. --without on a hooks row drops its entries from both wiring files ---------------------
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without notification > /dev/null
+jq -e '[.hooks[][].hooks[].command] | any(contains("play-sound"))' "$H/.claude/settings.json" >/dev/null && fail "--without notification left play-sound in settings.json"
+jq -e '[.hooks[][].hooks[].command] | any(contains("play-sound"))' "$H/.codex/hooks.json" >/dev/null && fail "--without notification left play-sound in the Codex wiring"
+jq -e '[.hooks[][].hooks[].command] | any(contains("forbid-bash-patterns"))' "$H/.claude/settings.json" >/dev/null || fail "--without notification dropped an unrelated hook"
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex \
+  --components memories,workflow-profiles,instructions,allowlist,enforcement,notification,session-cleanup,canonical-memory,changes-to-pr,pr-followup,rebase-branch,ticket-kickoff,typescript-tips > /dev/null
+jq -e '[.hooks[][].hooks[].command | select(contains("play-sound"))] | length == 2' "$H/.claude/settings.json" >/dev/null || fail "re-selecting notification did not wire play-sound twice (Notification + Stop)"
+pass "--without drops a hooks row"
 
 # --- 4. uninstall: no link resolves into the repo, real files remain ---------------------------
 HOME="$H" bash "$K/uninstall.sh" --yes
@@ -89,6 +109,8 @@ done < <(find "$H" -type l)
 { [ ! -L "$H/.codex/AGENTS.md" ] && [ -f "$H/.codex/AGENTS.md" ]; } || fail ".codex/AGENTS.md not restored as a file"
 [ ! -e "$H/.claude/skills/rebase-branch" ] || fail "a kit skill link survived uninstall"
 jq -e . "$H/.claude/settings.json" >/dev/null || fail "restored settings.json is not valid JSON"
+jq -e '[.hooks[][].hooks[].command] | any(contains("skills/"))' "$H/.claude/settings.json" >/dev/null && fail "uninstall left a per-skill hook entry"
+jq -e '[.hooks[][].hooks[].command] | any(contains("forbid-bash-patterns"))' "$H/.claude/settings.json" >/dev/null || fail "uninstall dropped the shared hooks from the restored settings.json"
 pass "uninstall"
 
 # --- 5. migration from the pre-.agents layout ------------------------------------------------------
@@ -106,6 +128,7 @@ cat > "$M/.claude/settings.json" <<EOF
   "hooks": {
     "PreToolUse": [
       { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash \"\$HOME/.claude/hooks/forbid-bash-patterns.sh\"" } ] },
+      { "matcher": "Write|Edit", "hooks": [ { "type": "command", "command": "bash \"\$HOME/.claude/hooks/forbid-verbose-comments.sh\"" } ] },
       { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash \"\$HOME/my-extras/foo.sh\"" } ] }
     ],
     "Notification": [
@@ -141,6 +164,11 @@ jq -e '.model == "opus"' "$M/.claude/settings.json" >/dev/null || fail "migratio
 jq -e '[.hooks.PreToolUse[].hooks[].command] | any(contains("my-extras/foo.sh"))' "$M/.claude/settings.json" >/dev/null || fail "migration: a foreign hook entry was dropped"
 n="$(jq '[.hooks[][].hooks[].command | select(contains("forbid-bash-patterns"))] | length' "$M/.claude/settings.json")"
 [ "$n" = 1 ] || fail "migration: forbid-bash-patterns is wired $n times"
+jq -e '[.hooks[][].hooks[].command] | any(endswith("play-sound.sh\" notify") or endswith("play-sound.sh\" stop"))' "$M/.claude/settings.json" >/dev/null && fail "migration: a pre-port play-sound entry with an argument survived"
+n="$(jq '[.hooks[][].hooks[].command | select(contains("play-sound"))] | length' "$M/.claude/settings.json")"
+[ "$n" = 2 ] || fail "migration: play-sound is wired $n times, expected 2"
+jq -e '.hooks.PreToolUse[] | select(any(.hooks[]; .command | contains("forbid-verbose-comments"))) | .matcher == "Write|Edit|MultiEdit"' "$M/.claude/settings.json" >/dev/null || fail "migration: the pre-port Write|Edit entry was not replaced by the fragment's"
+grep -q 'compose: enforcement,notification' "$tmp/mig.log" || fail "migration: the pre-port presets did not seed their hooks rows on"
 HOME="$MH" bash "$M/setup.sh" --yes --no-private --agents claude > "$tmp/mig2.log"
 grep -q 'migrat' "$tmp/mig2.log" && fail "migration: a second run migrated again"
 pass "migration from the pre-.agents layout"
@@ -155,6 +183,14 @@ HOME="$CH" bash "$C/setup.sh" --yes --no-private --name CI --role Tester --agent
 [ ! -e "$CH/.claude/CLAUDE.md" ] || fail "codex-only: ~/.claude/CLAUDE.md was linked"
 [ ! -e "$CH/.claude/projects" ] || fail "codex-only: memories were linked"
 [ -L "$CH/.agents/skills/typescript-tips" ] || fail "codex-only: skills missing from ~/.agents/skills"
+# every script the Codex wiring names resolves through ~/.claude/hooks into the repo
+n=0
+while IFS= read -r p; do
+  [ -n "$p" ] || continue
+  [ -f "${p/#\$HOME/$CH}" ] || fail "codex-only: $p does not resolve to a file"
+  n=$((n + 1))
+done < <(jq -r '.hooks[][].hooks[].command | select(startswith("bash \"")) | split("\"")[1]' "$CH/.codex/hooks.json")
+[ "$n" -gt 0 ] || fail "codex-only: the Codex wiring names no script"
 pass "codex-only run"
 
 echo "smoke: all cases passed"

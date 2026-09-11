@@ -130,6 +130,21 @@ for d in "${HOME}/.claude/skills" "${HOME}/.agents/skills"; do
 done
 $found || say "  none linked from this repo"
 
+# The restored settings.json still wires the shared hooks through ~/.claude/hooks, now a real copy;
+# the per-skill entries would dangle (their links are gone), so the composer strips them.
+composer="${REPO_ROOT}/.agents/hooks/compose-hooks.sh"
+if [[ -f "$composer" && -f "${HOME}/.claude/settings.json" ]]; then
+  step "Hook wiring"
+  # shellcheck disable=SC2016  # the root is the literal $HOME the composer wrote
+  compose_args=(--root '$HOME/.claude' --local "${REPO_ROOT}/.agents" --own skills --claude "${HOME}/.claude/settings.json")
+  [[ -f "${HOME}/.codex/hooks.json" ]] && compose_args+=(--codex "${HOME}/.codex/hooks.json")
+  if bash "$composer" "${compose_args[@]}" >/dev/null 2>&1; then
+    say "  dropped the per-skill hook entries; the shared hooks keep running from the ~/.claude/hooks copy"
+  else
+    warn "  could not rewrite the hook wiring — check ~/.claude/settings.json for entries under ~/.claude/skills/"
+  fi
+fi
+
 # `command` rows: offer to undo what setup installed (the chrome-devtools MCP). Fields joined on
 # the unit separator: @tsv would escape the backslashes inside the JSON argv strings.
 while IFS=$'\037' read -r id label installed remove; do
