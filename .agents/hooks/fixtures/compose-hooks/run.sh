@@ -128,6 +128,19 @@ if compose "$work/root0.json" "" root >/dev/null 2>"$work/err"; then
 else
   fail_case own-root-zero-fragments "$(cat "$work/err")"
 fi
+# a stale-shaped entry whose script is live at the root itself (a skill another tool installed there,
+# unknown to --local) is kept, with and without a $HOME-relative root
+mkdir -p "$work/rootfs/skills/mine/hooks"
+printf '#!/usr/bin/env bash\n# codex: yes\n' > "$work/rootfs/skills/mine/hooks/live.sh"
+printf '{"hooks":{"UserPromptSubmit":[{"hooks":[{"type":"command","command":"bash \\"%s/skills/mine/hooks/live.sh\\""}]}]}}\n' "$work/rootfs" > "$work/live.json"
+if bash "$composer" --local "$frags" --root "$work/rootfs" --own root --claude "$work/live.json" >/dev/null 2>"$work/err" \
+  && grep -q 'live.sh' "$work/live.json" && grep -q 'kept an entry' "$work/err" && ! grep -q 'dropped a stale' "$work/err"; then pass own-root-keeps-live-foreign-skill
+else fail_case own-root-keeps-live-foreign-skill "$(cat "$work/err")"; fi
+# shellcheck disable=SC2016  # the literal $HOME is the install root the wiring spells
+printf '{"hooks":{"UserPromptSubmit":[{"hooks":[{"type":"command","command":"bash \\"$HOME/rootfs/skills/mine/hooks/live.sh\\""}]}]}}\n' > "$work/live-home.json"
+if HOME="$work" bash "$composer" --local "$frags" --root '$HOME/rootfs' --own root --claude "$work/live-home.json" >/dev/null 2>"$work/err" \
+  && grep -q 'live.sh' "$work/live-home.json" && ! grep -q 'dropped a stale' "$work/err"; then pass own-root-keeps-live-foreign-skill-home-root
+else fail_case own-root-keeps-live-foreign-skill-home-root "$(cat "$work/err")"; fi
 # an inline entry would re-append on every run, from a skill fragment or a shared one alike
 if compose "$work/root.json" "" root "$frags/skills/bad-inline/hooks/hooks.json" >/dev/null 2>"$work/err"; then fail_case own-root-rejects-inline "exit 0"
 elif grep -q 'script hooks only' "$work/err"; then pass own-root-rejects-inline

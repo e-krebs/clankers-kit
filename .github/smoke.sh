@@ -87,6 +87,24 @@ HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex \
 [ -L "$H/.claude/projects" ] || fail "re-selecting memories did not relink (a real dir now merges into the repo first)"
 pass "--without unlinks a link row"
 
+# --- 3e. a hand-wired hook for a skill another tool installed survives the composer -------------
+mkdir -p "$H/.claude/skills/foo/hooks"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$H/.claude/skills/foo/hooks/bar.sh"
+jq '.hooks.UserPromptSubmit += [{"hooks":[{"type":"command","command":"bash \"$HOME/.claude/skills/foo/hooks/bar.sh\""}]}]' "$K/.claude/settings.json" > "$tmp/s.json" && mv "$tmp/s.json" "$K/.claude/settings.json"
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex > "$tmp/foreign.log" 2>&1
+jq -e '[.hooks[][].hooks[].command] | any(contains("skills/foo/hooks/bar.sh"))' "$H/.claude/settings.json" >/dev/null || fail "the composer dropped a live hook of a skill it does not manage"
+grep -q 'dropped a stale' "$tmp/foreign.log" && fail "the composer reported a live foreign skill hook as stale"
+pass "foreign skill hook survives"
+
+# --- 3f. a row unchecked while codex is off the agent list still leaves the Codex wiring ---------
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude --without notification > /dev/null 2>&1
+jq -e '[.hooks[][].hooks[].command] | any(contains("play-sound"))' "$H/.codex/hooks.json" >/dev/null && fail "the Codex wiring kept a row unchecked on a claude-only run"
+# a plain re-run seeds from disk (notification stays off), so name the row to re-check it
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex \
+  --components memories,workflow-profiles,instructions,allowlist,enforcement,notification,session-cleanup,canonical-memory,changes-to-pr,pr-followup,rebase-branch,ticket-kickoff,typescript-tips > /dev/null 2>&1
+jq -e '[.hooks[][].hooks[].command] | any(contains("play-sound"))' "$H/.codex/hooks.json" >/dev/null || fail "re-checking notification did not restore the Codex wiring"
+pass "codex wiring recomposed on a claude-only run"
+
 # --- 3c. --without on a hooks row drops its entries from both wiring files ---------------------
 HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without notification > /dev/null
 jq -e '[.hooks[][].hooks[].command] | any(contains("play-sound"))' "$H/.claude/settings.json" >/dev/null && fail "--without notification left play-sound in settings.json"
@@ -109,7 +127,8 @@ done < <(find "$H" -type l)
 { [ ! -L "$H/.codex/AGENTS.md" ] && [ -f "$H/.codex/AGENTS.md" ]; } || fail ".codex/AGENTS.md not restored as a file"
 [ ! -e "$H/.claude/skills/rebase-branch" ] || fail "a kit skill link survived uninstall"
 jq -e . "$H/.claude/settings.json" >/dev/null || fail "restored settings.json is not valid JSON"
-jq -e '[.hooks[][].hooks[].command] | any(contains("skills/"))' "$H/.claude/settings.json" >/dev/null && fail "uninstall left a per-skill hook entry"
+jq -e '[.hooks[][].hooks[].command] | any(test("skills/(changes-to-pr|pr-followup|rebase-branch|ticket-kickoff|typescript-tips)/"))' "$H/.claude/settings.json" >/dev/null && fail "uninstall left a kit skill's hook entry"
+jq -e '[.hooks[][].hooks[].command] | any(contains("skills/foo/hooks/bar.sh"))' "$H/.claude/settings.json" >/dev/null || fail "uninstall dropped the hook of a skill it never managed"
 jq -e '[.hooks[][].hooks[].command] | any(contains("forbid-bash-patterns"))' "$H/.claude/settings.json" >/dev/null || fail "uninstall dropped the shared hooks from the restored settings.json"
 pass "uninstall"
 

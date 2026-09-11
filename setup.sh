@@ -1064,9 +1064,12 @@ for s in "${SKILLS_DROP[@]:-}"; do [[ -n "$s" ]] && deactivate_skill "$s"; done
 #     fragment in this repo declares, or a stale one whose script is gone) and keeps yours.
 # shellcheck disable=SC2016  # the root is written literally so each shell expands $HOME at hook time
 compose_args=(--root '$HOME/.claude' --local "$AGENTS_SRC" --own root --claude "${CLAUDE_SRC}/settings.json")
-has_agent codex && compose_args+=(--codex "${REPO_ROOT}/.codex/user-hooks.json")
+# the Codex file is recomposed whenever it exists, so a row unchecked on a run where codex left the
+# agent list (it is detected from PATH) still drops out of a wiring Codex may keep reading
+COMPOSE_CODEX=false
+if has_agent codex || [[ -e "${REPO_ROOT}/.codex/user-hooks.json" ]]; then COMPOSE_CODEX=true; compose_args+=(--codex "${REPO_ROOT}/.codex/user-hooks.json"); fi
 if compose_out="$(bash "${AGENTS_SRC}/hooks/compose-hooks.sh" "${compose_args[@]}" ${HOOK_FRAGS[@]+"${HOOK_FRAGS[@]}"} 2>&1)"; then
-  ok "  hooks       composed ${#HOOK_FRAGS[@]} fragment(s) into settings.json$(has_agent codex && printf ' and .codex/user-hooks.json')"
+  ok "  hooks       composed ${#HOOK_FRAGS[@]} fragment(s) into settings.json$($COMPOSE_CODEX && printf ' and .codex/user-hooks.json')"
   while IFS= read -r l; do
     case "$l" in
       *"kept an entry"*)  info "  note: ${l#compose-hooks: }" ;;

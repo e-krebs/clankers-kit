@@ -16,12 +16,12 @@
 #   --own root    replace the entries this composer wrote: a quoted script path under <root>/
 #                 that any fragment under --local declares (hooks/*.json, skills/*/hooks/
 #                 hooks.json, passed or not) or that is shaped hooks/*.sh or skills/*/hooks/*.sh
-#                 with no script under --local; keep every other entry, and list both the kept
+#                 with no script under --local nor at <root> itself (a leading $HOME in <root>
+#                 is expanded for that test); keep every other entry, and list both the kept
 #                 entries under <root>/ and the dropped stale ones on stderr. Script hooks only.
-#                 No fragment strips the owned set. The stale test is sound only when <root>
-#                 and --local reach the same tree (an installer links <root>/hooks and
-#                 <root>/skills/<n> into the checkout), so a user's own script under <root>
-#                 is also under --local and stays.
+#                 No fragment strips the owned set. A skill another tool installed under
+#                 <root>/skills/ is live at <root>, so its entry stays even though --local
+#                 knows nothing of it.
 #   --local       the checkout dir that --root stands for; default: this script's parent dir
 # Fragments compose in the order given; events follow a fixed order, entries the fragment order.
 # Both outputs are built and validated before either is written; a write is atomic and skipped
@@ -149,11 +149,13 @@ fi
 root_qpath='def qpath: ((.command // "") | split("\"") | (.[1] // ""));'
 root_shape='^(hooks/[^/]+\.sh|skills/[^/]+/hooks/[^/]+\.sh)$'
 
-root_missing() {  # $1 = existing doc -> JSON list of stale-shaped paths under <root>/ with no script under --local
-  local out='[]' rel
+root_missing() {  # $1 = existing doc -> JSON list of stale-shaped paths under <root>/ with no script under --local nor at <root>
+  # a leading $HOME in <root> is expanded for the on-disk test, so a skill another tool installed
+  # under <root>/skills/ (live there, absent under --local) is never called stale
+  local out='[]' rel root_fs="${root/#\$HOME/$HOME}"
   while IFS= read -r rel; do
     [ -n "$rel" ] || continue
-    [ -f "$local_root/$rel" ] || out=$(jq -c --arg r "$rel" '. + [$r]' <<< "$out")
+    [ -f "$local_root/$rel" ] || [ -f "$root_fs/$rel" ] || out=$(jq -c --arg r "$rel" '. + [$r]' <<< "$out")
   done < <(jq -r --arg root "$root" --arg shape "$root_shape" "$root_qpath"'
     [.hooks[]?[]?.hooks[]? | qpath | select(startswith($root + "/")) | ltrimstr($root + "/") | select(test($shape))] | unique | .[]' <<< "$1")
   printf '%s' "$out"
