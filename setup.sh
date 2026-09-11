@@ -460,11 +460,27 @@ applicable() {                      # $1 = index -> 0 when the row concerns a wi
 }
 
 skill_description() {               # the SKILL.md frontmatter `description:` value, or a safe fallback
-  local f="${AGENTS_SRC}/skills/${1}/SKILL.md" line
-  line="$(grep -m1 '^description:' "$f" 2>/dev/null || true)"
-  line="${line#description:}"                       # drop the key
-  line="${line#"${line%%[![:space:]]*}"}"           # trim leading whitespace
-  if [[ -n "$line" ]]; then printf '%s' "$line"; else printf "the '%s' skill" "$1"; fi
+  local f="${AGENTS_SRC}/skills/${1}/SKILL.md" line val="" in_fm=false folded=false
+  [[ -f "$f" ]] || { printf "the '%s' skill" "$1"; return 0; }
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" == "---" ]]; then $in_fm && break; in_fm=true; continue; fi
+    $in_fm || continue
+    if $folded; then                                  # a `>-` / `|` block: the indented lines that follow
+      [[ "$line" == [[:space:]]* ]] || break
+      line="${line#"${line%%[![:space:]]*}"}"
+      val="${val:+$val }$line"
+      continue
+    fi
+    [[ "$line" == description:* ]] || continue
+    val="${line#description:}"; val="${val#"${val%%[![:space:]]*}"}"
+    case "$val" in '>'*|'|'*) val=""; folded=true ;; *) break ;; esac
+  done < "$f"
+  val="${val%"${val##*[![:space:]]}"}"
+  case "$val" in                                      # one layer of YAML quotes
+    \"*\") val="${val#\"}"; val="${val%\"}" ;;
+    \'*\') val="${val#\'}"; val="${val%\'}" ;;
+  esac
+  if [[ -n "$val" ]]; then printf '%s' "$val"; else printf "the '%s' skill" "$1"; fi
 }
 
 row_desc() {                        # $1 = index -> the detail-pane text, plus the advisory edges
