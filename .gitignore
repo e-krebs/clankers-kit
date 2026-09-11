@@ -1,21 +1,35 @@
 # --- repo ---
 .DS_Store
 
-# --- .claude: ignore runtime data, keep config + skill catalog + memories ---
+# --- .agents (shared: ignore all, allow instructions + skills + hooks + profiles) ---
+.agents/*
+!.agents/AGENTS.md
+!.agents/AGENTS.example.md
+!.agents/AGENTS.template.md
+!.agents/lint-manifest.sh
+!.agents/hooks/
+!.agents/hooks/**
+!.agents/workflow-profiles/
+!.agents/workflow-profiles/**
+# per-machine nudge markers
+.agents/workflow-profiles/.asked/*
+!.agents/workflow-profiles/.asked/.gitkeep
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/README.md
+!.agents/skills/*/
+!.agents/skills/*/**
+# skills a CLI installer copies into the shared dir; must stay after the skills allow rules
+.agents/skills/.system/
+.agents/skills/.system/**
+
+# --- .claude (Claude-only: ignore all, allow config + memories) ---
 .claude/*
-!.claude/CLAUDE.md
-!.claude/CLAUDE.example.md
-!.claude/CLAUDE.template.md
 !.claude/settings.json
 !.claude/settings/
 !.claude/settings/**
-!.claude/hooks/
-!.claude/hooks/**
-!.claude/skills/
-.claude/skills/*
-!.claude/skills/README.md
-!.claude/skills/*/
-!.claude/skills/*/**
+!.claude/output-styles/
+!.claude/output-styles/**
 !.claude/projects/
 .claude/projects/*
 !.claude/projects/*/
@@ -27,3 +41,7 @@
 
 # Runtime data from the symlinked ~/.claude/projects tree (session transcripts, caches) may
 # land under .claude/projects/*/ on disk — the rules above keep only memory/ tracked.
+
+# --- .codex (Codex-only: ignore all, allow the hook wiring) ---
+.codex/*
+!.codex/user-hooks.json

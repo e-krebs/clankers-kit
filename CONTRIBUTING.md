@@ -24,9 +24,9 @@ and genuinely useful, not tuned to one company's stack.
 
 ## Presets and hooks
 
-- Setting presets live in `.claude/settings/<preset>.json` and are deep-merged by
-  `.claude/settings/merge.jq` (arrays concatenate). Add a fragment + a line in `setup.sh`'s
-  preset list.
+- Setting presets live in `.claude/settings/<preset>.json` and are applied additively by
+  `.claude/settings/merge.jq` (arrays union, a scalar is set only when absent, nothing removed).
+  Add a fragment + a `settings` row in `kit.json`.
 - Hooks live in `.agents/hooks/`. Keep them **fail-open** (a hook error must never block the
   user) and cross-platform where practical (see `play-sound.sh` for the pattern).
 
