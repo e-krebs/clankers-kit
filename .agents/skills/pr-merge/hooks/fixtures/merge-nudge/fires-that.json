@@ -1,0 +1,5 @@
+{
+  "session_id": "case-fires-that",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "ok, merge that pull request please"
+}

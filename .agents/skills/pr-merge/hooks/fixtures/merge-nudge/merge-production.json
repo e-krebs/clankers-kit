@@ -1,0 +1,5 @@
+{
+  "session_id": "case-merge-production",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "merge production into main and rebuild"
+}

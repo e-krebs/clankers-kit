@@ -1,0 +1,5 @@
+{
+  "session_id": "case-upper-negation",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "DO NOT merge the PR until I say so"
+}

@@ -3,63 +3,75 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "I just ran git push on my feature branch. Can you keep an eye on CI and open the PR for review once it's green?",
-      "expected_output": "Resolves the PR for the current branch read-only, makes one gated offer, watches CI in the background, and on green marks the draft PR ready for review.",
+      "prompt": "Profile: Ticket system Jira (ACME), Git source GitHub (acme), Default branch develop, CI watcher CircleCI, PR shape draft-first squash CODEOWNERS review, Remote yes. I just ran git push on feature/ACME-1234-facet-sort — watch CI and follow up on the PR.",
+      "expected_output": "The widgets-like path: resolve the PR read-only, derive ACME-1234 and the in-review move through the profile's Tracker rules, make one batched offer with the move as a separate question, then watch and re-gather after the watch exits.",
       "assertions": [
-        "Resolves the PR for the current branch before watching or mutating anything",
-        "Makes a single gated offer (via AskUserQuestion) before any side effects",
-        "On green CI, marks the draft PR ready for review",
-        "Does not merge or auto-fix"
+        "Reads the workflow profile rows from context and sees a CI watcher, so the watch path applies",
+        "Runs gh pr view to resolve the PR before anything else",
+        "Derives ACME-1234 through the detection order in the profile's Tracker rules, preferring the PR body",
+        "Resolves the move to the in-review state per those rules rather than restating the transition mechanics",
+        "Makes exactly one offer that gates the whole chain, with the tracker move as a separately declinable question",
+        "Watches nothing and mutates nothing until the user picks Proceed",
+        "Re-gathers statusCheckRollup after the watch exits and re-watches when checks are still pending or newly appeared"
       ]
     },
     {
       "id": 2,
-      "prompt": "Watch the checks on PR #482 and re-request my reviewers once it passes.",
-      "expected_output": "Derives the previously-submitted human reviewers (excluding the author and bots), offers, watches CI, and on green re-requests them with gh pr edit --add-reviewer.",
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, CI watcher none, PR shape n/a, Remote yes. I just pushed to main — follow up.",
+      "expected_output": "With CI watcher none there is nothing to watch: it confirms the push landed in one line and stops, with no offer, no watch and no tracker move.",
       "assertions": [
-        "Identifies previously-submitted human reviewers, excluding bots and the PR author",
-        "Re-requests reviewers with gh pr edit --add-reviewer on green",
-        "Waits for CI to pass before re-requesting"
+        "Confirms the push landed — branch, commits, and a PR link only if one exists",
+        "Stops there because the CI watcher row is none: no watch, no offer, no re-request",
+        "Makes no tracker call, because Ticket system is none",
+        "Does not invent a CI provider or poll gh pr checks anyway"
       ]
     },
     {
       "id": 3,
-      "prompt": "CI just went red on my branch — what happened?",
-      "expected_output": "Reports which checks failed, fetches and summarizes the failing logs, gives a short root-cause read, then stops and asks before doing anything.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, CI watcher CircleCI, PR shape draft-first squash CODEOWNERS review, Remote yes. CI just went green on PR #451 — it's a draft with ACME-2201 linked and I already approved the follow-up. Advance it.",
+      "expected_output": "Marks the draft ready, reports the reviewers the forge auto-assigned without adding any by hand, moves ACME-2201 to the in-review state best-effort, then names the merge capability as the next step.",
       "assertions": [
-        "Fetches and summarizes the failing check logs (gh run view --log-failed)",
-        "Gives a root-cause read and stops to ask before investigating",
-        "Does not auto-fix or re-push"
+        "Marks the draft ready with gh pr ready",
+        "Reports the auto-assigned reviewers, both team .slug and user .login, without adding reviewers manually",
+        "Performs the move of ACME-2201 to the in-review state after the forge action, per the profile's Tracker rules and best-effort",
+        "Does not merge the PR",
+        "Ends by naming the merge capability as the next step, leaving the invocation to the user"
       ]
     },
     {
       "id": 4,
-      "prompt": "I pushed to the default branch just to sync it, follow up on the PR.",
-      "expected_output": "Resolves the PR first, finds none, and exits silently with no offer and no output.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, CI watcher CircleCI, Remote yes. CI failed on my PR after the push. What now?",
+      "expected_output": "Reports the failing checks, summarizes the failing logs, gives a short root-cause read, then stops and asks whether to investigate — with no tracker move on red.",
       "assertions": [
-        "Resolves the PR for the branch first and finds none",
-        "Exits silently with no offer or output when there is no associated PR"
+        "Reports which checks failed and summarizes the failing logs via gh run view --log-failed",
+        "Gives a short root-cause read",
+        "Stops and asks before doing anything — no auto-fix and no re-push",
+        "Performs no tracker move on red",
+        "Does not name the merge capability, since the PR is not green"
       ]
     },
     {
       "id": 5,
-      "prompt": "The watch just exited 0 but I only saw one check run — are we actually green?",
-      "expected_output": "Explains the watch exit code is unreliable on staged pipelines, re-gathers statusCheckRollup, and re-watches if checks are still pending or the set looks thin.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, CI watcher CircleCI, Remote yes. I ran a git push but this branch has no PR open. Follow up.",
+      "expected_output": "Runs the read-only resolve, finds no associated PR, and exits silently with no output.",
       "assertions": [
-        "Does not trust the watch exit code alone",
-        "Re-gathers statusCheckRollup and re-watches if checks are pending or the set is thin",
-        "Only treats all-terminal checks as settled"
+        "Attempts to resolve the PR with a single gh pr view",
+        "Exits silently with no output when no PR exists",
+        "Makes no tracker call and no offer",
+        "Exits the same way on a merged or closed PR"
       ]
     },
     {
       "id": 6,
-      "prompt": "Once CI is green on my PR, mark it ready and move my linked issue to In Review — and if there's no tracker just skip that part.",
-      "expected_output": "Resolves the PR and the linked issue read-only, offers the PR advance with a separately-declinable move, and on green marks the draft ready then transitions the linked issue to In Review via the resolved transition; when no tracker or linked issue is present, the move is skipped silently and the PR still advances.",
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, CI watcher GitHub Actions, PR shape squash, Remote yes. Green CI on open PR #77, which already has reviews from @alice and @bob (bob's re-review is already pending). Follow up.",
+      "expected_output": "The watch path runs because a CI watcher is named, only @alice is re-requested, and no ticket question or move appears at all since Ticket system is none.",
       "assertions": [
-        "Resolves the linked issue read-only and matches the transition whose target status is In Review (not by display name)",
-        "Offers the issue move as a separately-declinable choice so the PR can still advance while the move is skipped",
-        "On green, transitions the linked issue to In Review after the GitHub action, best-effort",
-        "When no tracker or linked issue is available, skips the move silently without blocking the PR advance"
+        "Runs the watch path because the CI watcher row names GitHub Actions, using gh pr checks as for any other CI",
+        "Re-requests @alice via gh pr edit --add-reviewer",
+        "Excludes @bob, whose re-review request is already pending, along with bots and the PR author",
+        "Asks no ticket question and performs no tracker move, because Ticket system is none",
+        "Does not mark ready — the PR is already open, not a draft",
+        "Ends by naming the merge capability as the next step"
       ]
     }
   ]

@@ -1,0 +1,8 @@
+{
+  "description": "Commit subject gate: blocks a `git commit` whose subject is not `type(scope): text`, or that carries a ticket key, in a repo whose workflow profile says the commit convention is conventional. Silent everywhere else, so it needs the workflow-profile skill and a profile row to do anything.",
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/commit-subject-gate.sh", "timeout": 5 } ] }
+    ]
+  }
+}

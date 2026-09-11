@@ -1,0 +1,1 @@
+{"session_id":"01a08f90-29fb-7562-90fc-bd4253adee1a","turn_id":"01a08f90-2a89-76e1-ac5e-2cb21e044e81","cwd":"/tmp/probe-repo","hook_event_name":"PreToolUse","model":"gpt-6-astra","permission_mode":"bypassPermissions","tool_name":"Bash","tool_input":{"command":"git status"},"tool_use_id":"exec-dd801554-e4ee-448f-8698-ba296b24648c"}

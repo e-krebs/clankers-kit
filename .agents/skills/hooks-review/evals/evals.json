@@ -1,0 +1,57 @@
+{
+  "skill_name": "hooks-review",
+  "evals": [
+    {
+      "name": "rules-pass-includes-itself",
+      "prompt": "Review my hooks.",
+      "expected_output": "Launches the three inventory packets as read-only workers in one message, assigns every hook and inline entry its prune flags including the ones in this skill's own files and the parity suite, and routes each verdict through AskUserQuestion before changing anything.",
+      "assertions": [
+        "Three read-only workers launched in parallel",
+        "Does not exempt its own SKILL.md or the parity suite from the pass",
+        "Flags use the lenses: dead, redundant owner, overlap, over-reach, untested deny, silent rule",
+        "No change applied without a user decision"
+      ]
+    },
+    {
+      "name": "filters-synthetic-user-turns",
+      "prompt": "Suggest new hooks from my recent transcripts.",
+      "expected_output": "Extracts user turns with the jq recipe, drops turns holding task-notification, SYSTEM NOTIFICATION, command-name, local-command, ide_selection, 'Stop hook feedback' or 'Base directory for this skill' markers, and counts only the remaining correction-shaped turns as evidence.",
+      "assertions": [
+        "Applies the seven-marker filter before the correction regex",
+        "Does not count the style-report hook's own text as a user correction",
+        "Reports the sampled turn count and the filtered count"
+      ]
+    },
+    {
+      "name": "writes-a-brief-per-approved-candidate",
+      "prompt": "Two candidates were approved: deny gh pr merge --admin, and deny eslint --fix.",
+      "expected_output": "Writes one brief per approved candidate at ~/.claude/plans/hook-<slug>.md following the six-heading template, with the evidence, the event and matcher, the fixture cases and the commit shape, and builds no hook in this run.",
+      "assertions": [
+        "One brief file per approved candidate",
+        "Each brief carries the six headings of the template",
+        "No hook script or wiring entry is written in this run",
+        "The closing report lists each brief path next to its candidate"
+      ]
+    },
+    {
+      "name": "gather-returns-both-tables-and-asks-nothing",
+      "prompt": "Run hooks-review with the argument gather.",
+      "expected_output": "Runs the inventory, assigns flags and recommended verdicts, builds the candidate table, returns both tables and makes no AskUserQuestion call, no brief and no file change.",
+      "assertions": [
+        "No AskUserQuestion call",
+        "No hook, wiring file, fixture or brief is written",
+        "Both tables carry a recommended verdict per row"
+      ]
+    },
+    {
+      "name": "apply-reads-verdicts-and-skips-the-chain",
+      "prompt": "Run hooks-review with the argument apply /tmp/verdicts.md, where the file holds one verdict per hook and per candidate.",
+      "expected_output": "Skips both interviews, applies the prune verdicts with their fixture cases, writes one brief per approved candidate, commits per concern, prints the closing report and stops: no codex adversarial review, no /doctor recommendation.",
+      "assertions": [
+        "No AskUserQuestion call",
+        "Verdicts come from the file, not from a new interview",
+        "The closing report is produced and the chain is not run"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "evals": [
+    {
+      "name": "small-plan-one-reviewer",
+      "prompt": "/write-plan add a --quiet flag to the changelog script. The profile is acme (no tracker, direct commits to main, Reviewers: claude, codex).",
+      "expected_output": "Recognises a small plan (two files, one commit, no hook, skill or config), asks only what the codebase could not settle with a recommended answer per question, and writes all ten headings in order. The Closing steps review line names one reviewer, and Plan review records that reviewer's findings before ExitPlanMode.",
+      "assertions": [
+        "Questions carry a recommended answer and none asks a fact the repo holds",
+        "All ten headings present, in the contract order, Decisions after Context",
+        "Review line names one reviewer, not two",
+        "Plan review names the agent that reviewed and what changed",
+        "ExitPlanMode is called only after Plan review is filled"
+      ]
+    },
+    {
+      "name": "medium-plan-two-reviewer-line",
+      "prompt": "/write-plan restructure the hooks directory: four hooks, a shared lib, settings.json wiring, three commits. The profile is acme with Reviewers: claude, codex.",
+      "expected_output": "Classifies the plan as medium — over the small limits (files, commits, a hook and a config among them) yet routine — so the review line reads judgment tier x 2 and names both agents from the profile's Reviewers row, each with its target and the skill that runs it.",
+      "assertions": [
+        "Size is medium: over the small limits but routine, so the review line reads judgment tier x 2",
+        "Review line names both claude and codex with the judgment tier and the review skill by name",
+        "Reviewer count comes from the profile's Reviewers row, not from a fixed number",
+        "Writers and gate-runners in Steps + delegation are tagged with worktree isolation",
+        "Every interview decision appears as a line under Decisions"
+      ]
+    },
+    {
+      "name": "no-tracker-ticket-is-na",
+      "prompt": "/write-plan add a dark-mode toggle to my personal site. The profile's Ticket system is none.",
+      "expected_output": "Writes 'n/a' under Ticket rather than drafting a ticket or inventing a key, keeps the other required sections filled, and leaves Deferred kickoff actions without a tracker move.",
+      "assertions": [
+        "Ticket reads n/a and no ticket is drafted",
+        "No tracker move appears in Deferred kickoff actions",
+        "The seven required sections carry content",
+        "No question asks the user for a ticket key"
+      ]
+    },
+    {
+      "name": "html-becomes-the-plan-for-a-team-audience",
+      "prompt": "/write-plan the Q4 migration of the search index; I need to share this plan with the platform team before we start.",
+      "expected_output": "Notes that the plan has readers beyond the author and the agent, offers the HTML rendering in one line, and on acceptance renders <plan>.html from the scaffold with the ten <h2> headings, Context as the lede and Plan review as the colophon, then shrinks the markdown file to the stub with a Source: line and ten pointer sections.",
+      "assertions": [
+        "The offer cites the readers-beyond-the-author criterion",
+        "The offer is one line and declinable, made before ExitPlanMode",
+        "The HTML holds the ten contract headings as <h2> texts, spelled exactly",
+        "The markdown file becomes a stub with a Source: line, not a second copy of the plan"
+      ]
+    },
+    {
+      "name": "waits-for-the-model-switch",
+      "prompt": "/write-plan the auth refactor. It is judgment-heavy, and after approval I will run the build in this session.",
+      "expected_output": "Model pick names the judgment tier, the model for the running provider and the switch command. After the plan is approved, the agent states that command on one line and stops, starting no step until the user confirms they ran it.",
+      "assertions": [
+        "Model pick names a model from the tiers table plus the exact switch command",
+        "No placeholder such as TBD or <model> survives in Model pick",
+        "After approval the command is stated in one line",
+        "No step of the plan runs before the user confirms the switch"
+      ]
+    },
+    {
+      "name": "edited-plan-is-re-reviewed",
+      "prompt": "The plan is written and reviewed. I just changed the approach in Approach + Files to reuse the existing worker pool. Continue.",
+      "expected_output": "Treats the edit as a change to a reviewed plan: re-runs the plan review for consistency across sections, folds the findings, and appends a line to Plan review naming the re-review before calling ExitPlanMode.",
+      "assertions": [
+        "The plan review runs again after the edit",
+        "Plan review gains a line for the re-review",
+        "ExitPlanMode waits for the re-review"
+      ]
+    }
+  ]
+}

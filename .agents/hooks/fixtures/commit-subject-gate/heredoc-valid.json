@@ -1,0 +1,1 @@
+{"session_id":"case-heredoc-valid","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git commit -m \"$(cat <<'EOF'\nfeat(hooks): add heredoc support\n\nLonger explanation of the change.\nEOF\n)\""}}

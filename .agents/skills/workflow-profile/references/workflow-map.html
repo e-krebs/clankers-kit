@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The workflow skill set</title>
+<style>
+:root { --bg:#14161a; --fg:#e6e4de; --muted:#9aa0a8; --line:#454c55; --accent:#7f95ff; --box:#1f232a;
+  --mono: ui-monospace, "JetBrains Mono", Menlo, monospace; --sans: ui-sans-serif, "Inter", system-ui, sans-serif; }
+@media (prefers-color-scheme: light) {
+  :root { --bg:#e8e3d9; --fg:#1b1d21; --muted:#565c64; --line:#8f897c; --accent:#3849b8; --box:#f0ece3; }
+}
+body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 var(--sans); }
+.page { max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 3rem; }
+h1, h2, th, .k { font-family:var(--mono); }
+h1 { font-size:1.3rem; border-bottom:1px solid var(--line); padding-bottom:.5rem; }
+h2 { font-size:.9rem; text-transform:uppercase; letter-spacing:.12em; margin-top:2rem; }
+p { max-width:72ch; }
+svg { width:100%; height:auto; display:block; margin:1rem 0; }
+svg text { font-family:var(--mono); fill:var(--fg); font-size:11px; }
+svg .lbl { fill:var(--muted); font-size:9.5px; }
+svg .box { fill:var(--box); stroke:var(--line); }
+svg .skill { stroke:var(--accent); }
+svg .edge { stroke:var(--fg); fill:none; stroke-width:1.2; }
+svg .hook { stroke:var(--accent); fill:none; stroke-width:1.2; stroke-dasharray:4 3; }
+svg .band { fill:none; stroke:var(--accent); stroke-dasharray:6 4; }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th, td { text-align:left; padding:.35rem .6rem; border-bottom:1px solid var(--line); vertical-align:top; }
+th { color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.1em; }
+code { font-family:var(--mono); font-size:12px; }
+</style>
+</head>
+<body>
+<div class="page">
+<h1>The workflow skill set</h1>
+<p>A composable set: every skill reads the same workflow profile and runs on its own, hooks are
+optional glue that route from one stage to the next, and any stage can be entered by hand or
+replaced by another skill that reads the same rows. The profile is the only shared contract.</p>
+
+<svg viewBox="0 0 1000 420" role="img" aria-label="Stages of the workflow skill set and the hooks between them">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--fg)"/>
+    </marker>
+    <marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/>
+    </marker>
+  </defs>
+
+  <!-- profile and the SessionStart hook -->
+  <rect class="box" x="20" y="30" width="170" height="44" rx="2"/>
+  <text x="105" y="48" text-anchor="middle">workflow profile</text>
+  <text x="105" y="63" text-anchor="middle" class="lbl">&lt;owner&gt;.md + repos/&lt;repo&gt;.md</text>
+  <path class="edge" d="M190 52 H250" marker-end="url(#a)"/>
+  <rect class="box" x="252" y="30" width="260" height="44" rx="2"/>
+  <text x="382" y="48" text-anchor="middle">SessionStart hook</text>
+  <text x="382" y="63" text-anchor="middle" class="lbl">puts the resolved rows in context</text>
+  <path class="hook" d="M382 74 V128" marker-end="url(#h)"/>
+
+  <!-- the band every skill reads from -->
+  <rect class="band" x="10" y="130" width="980" height="150" rx="3"/>
+  <text x="22" y="147" class="lbl">profile rows in context — every stage below reads them, and any stage runs alone as /name</text>
+
+  <!-- stages -->
+  <g>
+    <rect class="box skill" x="20" y="176" width="100" height="44" rx="2"/><text x="70" y="202" text-anchor="middle">ticket-kickoff</text>
+    <rect class="box skill" x="140" y="176" width="100" height="44" rx="2"/><text x="190" y="202" text-anchor="middle">write-plan</text>
+    <rect class="box" x="260" y="176" width="100" height="44" rx="2"/><text x="310" y="197" text-anchor="middle">implement</text><text x="310" y="210" text-anchor="middle" class="lbl">per the plan</text>
+    <rect class="box skill" x="380" y="176" width="100" height="44" rx="2"/><text x="430" y="202" text-anchor="middle">verify</text>
+    <rect class="box skill" x="500" y="176" width="100" height="44" rx="2"/><text x="550" y="202" text-anchor="middle">review-changes</text>
+    <rect class="box skill" x="620" y="176" width="100" height="44" rx="2"/><text x="670" y="202" text-anchor="middle">changes-to-pr</text>
+    <rect class="box skill" x="740" y="176" width="100" height="44" rx="2"/><text x="790" y="202" text-anchor="middle">pr-followup</text>
+    <rect class="box skill" x="860" y="176" width="100" height="44" rx="2"/><text x="910" y="202" text-anchor="middle">pr-merge</text>
+  </g>
+  <path class="edge" d="M120 198 H138" marker-end="url(#a)"/>
+  <path class="edge" d="M240 198 H258" marker-end="url(#a)"/>
+  <path class="edge" d="M360 198 H378" marker-end="url(#a)"/>
+  <path class="edge" d="M480 198 H498" marker-end="url(#a)"/>
+  <path class="edge" d="M600 198 H618" marker-end="url(#a)"/>
+  <path class="edge" d="M720 198 H738" marker-end="url(#a)"/>
+  <path class="edge" d="M840 198 H858" marker-end="url(#a)"/>
+
+  <!-- hooks that route one stage into the next -->
+  <text x="130" y="238" text-anchor="middle" class="lbl">kickoff-plan-chain</text>
+  <text x="250" y="254" text-anchor="middle" class="lbl">plan-gate → plan-followthrough</text>
+  <text x="670" y="238" text-anchor="middle" class="lbl">commit-subject-gate</text>
+  <text x="730" y="254" text-anchor="middle" class="lbl">push hook</text>
+  <text x="850" y="270" text-anchor="middle" class="lbl">merge-nudge</text>
+
+  <!-- user prompts -->
+  <ellipse cx="430" cy="360" rx="80" ry="22" class="box"/>
+  <text x="430" y="364" text-anchor="middle">user prompt</text>
+  <path class="hook" d="M372 348 C 250 340, 120 320, 70 222" marker-end="url(#h)"/>
+  <text x="20" y="262" class="lbl">pick up the next ticket</text>
+  <path class="hook" d="M395 340 C 320 320, 220 300, 190 222" marker-end="url(#h)"/>
+  <text x="330" y="300" class="lbl">plan this</text>
+  <path class="hook" d="M500 350 C 700 340, 860 320, 910 222" marker-end="url(#h)"/>
+  <text x="985" y="262" text-anchor="end" class="lbl">merge the PR</text>
+</svg>
+
+<p class="k" style="color:var(--muted);font-size:11px">Solid arrows: the usual order. Dashed accent arrows: hooks that
+fire on a phrase or an event. Labels under the row: the hooks that route or gate that transition.</p>
+
+<h2>Stages</h2>
+<table>
+<thead><tr><th>Stage</th><th>Skill</th><th>Enters through</th><th>Profile rows it reads</th><th>Hands off to</th></tr></thead>
+<tbody>
+<tr><td>Set up</td><td>workflow-profile</td><td>typed only</td><td>writes them all</td><td>a new session</td></tr>
+<tr><td>Kick off</td><td>ticket-kickoff</td><td>"pick up the next ticket", <code>/ticket-kickoff</code></td><td>Ticket system, Tracker rules</td><td>the planning stage</td></tr>
+<tr><td>Plan</td><td>write-plan</td><td>"plan this", the kickoff chain, <code>/write-plan</code></td><td>all, plus Reviewers for the plan review</td><td>the plan file's Steps</td></tr>
+<tr><td>Verify</td><td>verify</td><td>the plan's Closing steps, <code>/verify</code></td><td>Install command, Verify commands, Browser check</td><td>the review stage</td></tr>
+<tr><td>Review</td><td>review-changes</td><td>the plan's Closing steps, <code>/review-changes</code></td><td>Reviewers</td><td>the PR stage</td></tr>
+<tr><td>Land</td><td>changes-to-pr</td><td>"commit and PR this", <code>/changes-to-pr</code></td><td>Commit policy, Commit convention, PR shape, Remote, Ticket system</td><td>the push hook</td></tr>
+<tr><td>Watch</td><td>pr-followup</td><td>the push hook</td><td>CI watcher, Ticket system</td><td>the merge stage</td></tr>
+<tr><td>Merge</td><td>pr-merge</td><td>"merge the PR", <code>/pr-merge</code></td><td>PR shape, Commit policy, Ticket system</td><td>done</td></tr>
+</tbody>
+</table>
+
+<h2>Hooks, the glue</h2>
+<table>
+<thead><tr><th>Hook</th><th>Lives in</th><th>Event</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>workflow-profile-nudge</td><td>workflow-profile</td><td>SessionStart</td><td>injects the resolved rows, or nudges once to run the setup</td></tr>
+<tr><td>pick-up-next-ticket</td><td>ticket-kickoff</td><td>UserPromptSubmit</td><td>routes "pick up the next ticket" to the kickoff, then planning</td></tr>
+<tr><td>plan-nudge</td><td>write-plan</td><td>UserPromptSubmit</td><td>routes a planning phrase, or a task-shaped first prompt in plan mode</td></tr>
+<tr><td>merge-nudge</td><td>pr-merge</td><td>UserPromptSubmit</td><td>routes "merge the PR"</td></tr>
+<tr><td>kickoff-plan-chain</td><td>ticket-kickoff</td><td>PostToolUse Skill</td><td>chains the kickoff into planning</td></tr>
+<tr><td>plan-gate, plan-followthrough</td><td>write-plan</td><td>ExitPlanMode, pre and post</td><td>hold the plan to the ten-heading contract, then order the post-approval steps</td></tr>
+<tr><td>push-nudge</td><td>pr-followup</td><td>PostToolUse Bash</td><td>routes a git push or PR creation to the CI watch</td></tr>
+<tr><td>commit-subject-gate</td><td>shared hooks</td><td>PreToolUse Bash</td><td>blocks a subject off the Commit convention row</td></tr>
+</tbody>
+</table>
+
+<h2>Composing it differently</h2>
+<ul>
+<li>A repo with <code>direct commits to main</code> stops at changes-to-pr's commit: pr-followup and pr-merge never fire, and nothing else changes.</li>
+<li>A repo with no tracker skips every ticket step; the same skills run.</li>
+<li>A repo that ships its own review skill gets it named in the plan next to review-changes.</li>
+<li>Adding a stage means one new skill that reads the rows it needs, and, when a phrase or an event should trigger it, one hook that routes to it.</li>
+</ul>
+</div>
+</body>
+</html>

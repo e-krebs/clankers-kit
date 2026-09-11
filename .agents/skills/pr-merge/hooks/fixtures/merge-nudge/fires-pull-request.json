@@ -1,0 +1,6 @@
+{
+  "session_id": "case-fires-pull-request",
+  "hook_event_name": "UserPromptSubmit",
+  "cwd": "/tmp/repo",
+  "prompt": "please merge this pull request"
+}

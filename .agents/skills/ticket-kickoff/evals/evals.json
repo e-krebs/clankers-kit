@@ -3,63 +3,73 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Let's pick up PROJ-142 and start working on it.",
-      "expected_output": "Reads the tracker item (and any directly-linked spec) read-only, digests goal + acceptance-criteria checklist, plans in plan-mode, and defers the move to In Progress until plan approval.",
+      "prompt": "Profile: Ticket system Jira (ACME), Git source GitHub (acme), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, Remote yes. Kick off ACME-1234 for me.",
+      "expected_output": "Reads the injected profile rows, sees a tracker, follows the profile's Tracker rules section for the id/transition mechanics, reads ACME-1234 into a digest with an acceptance-criteria checklist plus any directly linked spec page, resolves the work-started move without performing it, and hands off to the planning capability.",
       "assertions": [
-        "Reads the item before planning without mutating it",
-        "Produces an acceptance-criteria checklist from the item",
-        "Does not transition the item until the plan is approved via ExitPlanMode"
+        "Reads the workflow profile rows from context before touching the tracker",
+        "Points at the profile's Tracker rules section for cloudId, transition-by-target-status and best-effort handling instead of restating those mechanics",
+        "Produces a digest of ACME-1234 including an acceptance-criteria checklist",
+        "Pulls a directly linked PRD/RFC spec page when one is linked, and skips it silently when the doc space is unreachable",
+        "Performs no tracker mutation during the kickoff — the work-started move is deferred",
+        "Ends by handing off to the planning capability, which writes the plan file and carries the deferred lines in its section 6",
+        "Names no other skill anywhere in the run"
       ]
     },
     {
       "id": 2,
-      "prompt": "Kick off this ticket for me.",
-      "expected_output": "Auto-detects the issue key from the branch name or recent commits when no ID is given, then reads and plans.",
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy direct commits to main, Commit convention conventional w/ scope, CI watcher none, Remote yes. Kick off the work to add a retry to the sync script.",
+      "expected_output": "With Ticket system none the whole ticket step is skipped in one line and the run goes straight to planning, with no tracker call and no create-a-ticket question.",
       "assertions": [
-        "Attempts to identify the issue key from the branch name or <base>..HEAD commits when none is supplied",
-        "Falls back to a 'mine, not started' picker or the no-item path when none is found",
-        "Defers any In Progress move until after plan approval"
+        "States in one line that the repo has no ticket system, then goes straight to planning",
+        "Makes no tracker call and asks no ticket question, including no offer to create one",
+        "Queues no tracker move in the plan's deferred actions",
+        "Hands the work to the planning capability rather than starting to edit files"
       ]
     },
     {
       "id": 3,
-      "prompt": "I want to start some work but there's no ticket for it yet — can you get me going?",
-      "expected_output": "Offers to create a tracker item, drafts a title+description from the scoped intent for confirmation, gathers parent/sprint/assignee, and defers creation until plan approval.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, Remote yes. There's no ticket for this yet — I need a rate-limit guard on the rules API. Kick it off.",
+      "expected_output": "Takes the no-ticket branch: offers to create one, drafts a title and description for confirmation, gathers epic / sprint / assignee, prefers an available ticket-creation capability with an inline best-effort fallback, and defers the create to plan approval.",
       "assertions": [
-        "Offers to create an item and drafts a title + description for confirmation",
-        "Treats item creation as a deferred mutation, not something done while planning",
-        "If creation is declined, drafts the item into the plan file instead"
+        "Asks whether to create a ticket and drafts a title + description for confirm/edit",
+        "Gathers the parent/epic, current-sprint and assignee fields before the create",
+        "Prefers an available ticket-creation capability, with an inline best-effort create as the fallback",
+        "Names no specific skill for the creation — describes it as an available capability",
+        "Defers the create to plan approval rather than creating during the kickoff",
+        "On a declined create, keeps the drafted ticket in the plan file and queues no tracker move"
       ]
     },
     {
       "id": 4,
-      "prompt": "Start work on ISSUE-8; the ticket links a PRD I want you to read first.",
-      "expected_output": "Pulls the directly-linked spec doc read-only as planning context alongside the item digest, then plans.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, Remote yes. I want to pick up a ticket but I don't have one in mind. Pickup next ticket.",
+      "expected_output": "With no id in the prompt, the branch or the commits, it uses the picker the profile's Tracker rules prescribe over the user's not-started tickets, presents the candidates read-only, and only then plans.",
       "assertions": [
-        "Reads the directly-linked spec document as read-only planning context",
-        "Incorporates the spec into the plan rather than inventing item content",
-        "Discovers the In Progress transition by matching target status, not transition display name"
+        "Applies the ticket-ID detection order from the profile's Tracker rules before offering a picker",
+        "Offers the not-started picker and lets the user choose rather than auto-picking",
+        "Stays read-only during selection — no create, no transition",
+        "Falls back to the offer-to-create branch only when the picker returns nothing"
       ]
     },
     {
       "id": 5,
-      "prompt": "Pick up my next unstarted ticket and get it moving.",
-      "expected_output": "Queries the tracker for the user's not-started items, offers a picker, reads the chosen item, plans, and moves it to In Progress only after approval.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, Remote yes. Kick off ACME-1500 — my board has no transition to In Progress from its current status, and ACME-2201 is already In Progress.",
+      "expected_output": "Neither case blocks: with no transition to the work-started state it offers the picker the Tracker rules prescribe plus Skip, and an already-started ticket is a silent skip; both outcomes ride into the plan's deferred actions.",
       "assertions": [
-        "Queries for items assigned to the user with a not-started status",
-        "Reads the selected item read-only and plans in plan-mode",
-        "Moves the item to In Progress best-effort only after ExitPlanMode, skipping silently when none applies"
+        "Determines that no transition targets the work-started state and offers a picker plus Skip instead of erroring",
+        "Treats an already-started ticket as a silent skip with no transition attempted",
+        "Carries the picker candidates or the skip into the plan's deferred kickoff actions",
+        "Treats any tracker error as best-effort — reports and continues, never blocking the work"
       ]
     },
     {
       "id": 6,
-      "prompt": "Pickup next ticket.",
-      "expected_output": "Reads 'next' as the mine-not-started picker: with no explicit ID and none detectable in the branch or commits, queries the tracker for the user's not-started items, presents candidates for selection (read-only), then plans on the chosen one.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, Remote yes. Kick off ACME-3010. My local develop is probably behind origin.",
+      "expected_output": "Reads the ticket, then hands off: the base-refresh question belongs to the planning capability, and the refresh appears as a deferred-actions line in the plan rather than a question asked during the kickoff.",
       "assertions": [
-        "Queries the tracker for items assigned to the user with a not-started status",
-        "Presents the candidates for the user to choose rather than auto-picking",
-        "Performs only read-only calls during selection",
-        "Defers any In Progress move until after plan approval (ExitPlanMode)"
+        "Does not ask the refresh-the-base question itself — the planning capability owns it",
+        "Runs no git fetch or base refresh during the kickoff",
+        "Expects the base refresh as a line in the plan's section 6 deferred kickoff actions, targeting the profile's Default branch develop",
+        "States that the deferred actions run on plan approval in the order the plan lists them, best-effort on the tracker move"
       ]
     }
   ]

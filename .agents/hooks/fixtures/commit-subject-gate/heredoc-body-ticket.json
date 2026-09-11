@@ -1,0 +1,1 @@
+{"session_id":"case-heredoc-body-ticket","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"git commit -m \"$(cat <<'EOF'\nfeat(hooks): add heredoc support\n\nSee ACME-999 for context.\nEOF\n)\""}}

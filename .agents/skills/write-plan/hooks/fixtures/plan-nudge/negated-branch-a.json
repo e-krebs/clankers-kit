@@ -1,0 +1,6 @@
+{
+  "session_id": "case-negated-branch-a",
+  "hook_event_name": "UserPromptSubmit",
+  "permission_mode": "plan",
+  "prompt": "Do not make a plan for this, just explain how the existing implementation handles errors in the checkout flow today"
+}

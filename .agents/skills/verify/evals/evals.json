@@ -1,0 +1,71 @@
+{
+  "evals": [
+    {
+      "name": "three-checks-run-in-parallel-with-verdicts",
+      "prompt": "Verify before I open the PR. The profile in context resolves org acme plus repo override widgets, with Verify commands '_client: yarn test, yarn lint --quiet, yarn type-check' and Browser check '_client: yarn dev:beta → http://localhost:3000'. The session cwd is the _client/ directory.",
+      "expected_output": "Reads the three commands and the _client prefix straight from the injected profile rows without re-reading the files, then launches yarn test, yarn lint --quiet and yarn type-check in one message as three background Bash calls, each with a 10-minute timeout and output redirected to its own verify-<n>.log in the scratchpad. Waits for all three, then reports one line per check: two passed, and for the failing lint run the first offending rule with its file:line quoted from the log. Closes by naming the review capability over the working tree, then the PR capability.",
+      "assertions": [
+        "All three commands launch in a single message as background Bash calls",
+        "Each call carries a 10-minute timeout and redirects to its own scratchpad log file",
+        "It waits for every task before reporting, and greps the logs instead of re-running a check",
+        "Every check gets its own verdict line, and the failing one quotes the first rule or file:line from its log",
+        "The closing lines name the review capability and then the PR capability, with no skill named"
+      ]
+    },
+    {
+      "name": "wrong-cwd-stops-with-the-reopen-remedy",
+      "prompt": "Run the checks. The profile's Verify commands row is '_client: yarn test, yarn lint --quiet, yarn type-check' and the session cwd is the repository root, not _client/.",
+      "expected_output": "Reports that the profile's commands belong to _client/ while the session cwd is the repo root, and stops without launching anything. States that cd and yarn --cwd are hook-denied, so the remedy is reopening the session with _client/ as the workspace root.",
+      "assertions": [
+        "No verify command is launched",
+        "The mismatch between the prefix directory and the session cwd is stated explicitly",
+        "It explains that cd and yarn --cwd are hook-denied",
+        "It names reopening the session with that directory as the workspace root as the remedy"
+      ]
+    },
+    {
+      "name": "profile-without-verify-commands-stops",
+      "prompt": "Confirm everything is green. The resolved profile is the acme org template with no repo override, so the Verify commands row reads —.",
+      "expected_output": "Reports that this repo's profile lists no verify commands, points at the profile setup capability as the place to add them, and stops. Invents no yarn or npm script and reads no package.json to guess one.",
+      "assertions": [
+        "It states that the profile lists no checks",
+        "It points at the generic profile setup capability without naming a skill",
+        "No command is guessed from package.json or run speculatively",
+        "The run stops rather than falling back to a default test command"
+      ]
+    },
+    {
+      "name": "behavioral-change-triggers-network-and-console-pass",
+      "prompt": "The checks passed. The plan's Verification section says the change rewires the facet request handler and adds a new search endpoint, on the page /products. The profile's Browser check is '_client: yarn dev:beta → http://localhost:3000'.",
+      "expected_output": "Classifies the change as behavioral, starts yarn dev:beta from the Browser check row, drives http://localhost:3000/products with the browser tooling available in the session, and reads both the network requests and the console rather than only taking a screenshot. Reports the browser pass as its own verdict beside the command checks.",
+      "assertions": [
+        "The dev server command and base URL come from the Browser check row, and the page path from the plan",
+        "Both network requests and console messages are inspected because the change is behavioral",
+        "A screenshot alone is not accepted as the verdict for this change",
+        "The browser pass carries its own verdict in the report"
+      ]
+    },
+    {
+      "name": "timed-out-check-is-not-reported-as-failed",
+      "prompt": "Verify. The profile gives '_client: yarn test, yarn lint --quiet, yarn type-check', the cwd is _client/, and yarn test is still running when its 10-minute timeout expires.",
+      "expected_output": "Reports yarn test as timed-out rather than failed, notes that its log is partial, and still gives the other two checks their own verdicts from their complete logs. Does not relaunch yarn test to get a cleaner log inside the same run.",
+      "assertions": [
+        "The timed-out check is labelled timed-out, never failed",
+        "The report says that check's log is partial",
+        "The other checks keep independent verdicts",
+        "No check is re-run to replace a partial log"
+      ]
+    },
+    {
+      "name": "visual-change-needs-only-a-screenshot",
+      "prompt": "Checks are green. The plan's Verification section describes a copy and className tweak on the /pricing header, and the profile's Browser check is '_client: yarn dev:beta → http://localhost:3000'.",
+      "expected_output": "Classifies the change as pure-visual, starts the dev server from the Browser check row, loads http://localhost:3000/pricing and takes a screenshot as the browser verdict, without a network or console sweep.",
+      "assertions": [
+        "The change is classified as pure-visual from the plan's Verification section",
+        "A screenshot is the browser verdict",
+        "No network or console inspection is demanded for this change",
+        "The base URL comes from the profile and the page path from the plan"
+      ]
+    }
+  ]
+}

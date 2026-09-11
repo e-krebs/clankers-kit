@@ -32,6 +32,7 @@ while IFS= read -r line; do [ -n "$line" ] && finding "$line"; done < <(jq -r '
       (.components[] | select(.kind == "hooks" and (.hooks // "") == "") | "\(.id): kind hooks without a hooks fragment path"),
       (.components[] | select(.kind == "skill" and (.skill // "") == "") | "\(.id): kind skill without a skill dir"),
       (.components[] | select(.kind == "command" and ((.install // []) | length) == 0) | "\(.id): kind command without an install argv"),
+      (.components[] | select(.kind == "upstream" and ((.upstream.source // "") == "" or (.upstream.skill // "") == "")) | "\(.id): kind upstream needs upstream.source and upstream.skill"),
       (.components[] | .id as $id | (.links // [])[] | select((.type | IN("file","dir")) | not) | "\($id): link type must be file or dir: \(.home)"),
       (.components[] | .id as $id | (.links // [])[] | select(.agent != null and ((.agent | IN("claude","codex")) | not)) | "\($id): link agent must be claude or codex: \(.home)")
     ] | .[]' "$manifest")

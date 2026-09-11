@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/workflow-profile/hooks/workflow-profile-nudge.sh", "timeout": 5 } ] }
+    ]
+  }
+}

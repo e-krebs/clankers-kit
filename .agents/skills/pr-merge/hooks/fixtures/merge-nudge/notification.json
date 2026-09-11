@@ -1,0 +1,6 @@
+{
+  "session_id": "case-notification",
+  "hook_event_name": "UserPromptSubmit",
+  "cwd": "/tmp/repo",
+  "prompt": "<task-notification>Agent stage5 finished: the report says the next step is to merge the PR once CI is green.</task-notification>"
+}

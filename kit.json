@@ -78,10 +78,64 @@
       "remove": ["claude", "mcp", "remove", "chrome-devtools"]
     },
     {
+      "id": "plain-style",
+      "group": "style",
+      "kind": "links",
+      "label": "Plain output style",
+      "description": "Simplified Technical English for Claude Code's replies: five units, no bold, one baton emoji per reply. Linked as ~/.claude/output-styles; pick it with /output-style or the row below.",
+      "agents": ["claude"],
+      "links": [
+        { "home": ".claude/output-styles", "repo": ".claude/output-styles", "type": "dir" }
+      ]
+    },
+    {
+      "id": "output-style",
+      "group": "style",
+      "kind": "settings",
+      "label": "use Plain by default",
+      "description": "Sets outputStyle to Plain in settings.json (only when the key is absent, so a style you picked later stays).",
+      "agents": ["claude"],
+      "requires": ["plain-style"],
+      "settings": ".claude/settings/style-plain.json"
+    },
+    {
+      "id": "workflow-profile",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "workflow-profile",
+      "requires": ["workflow-profiles"],
+      "skill": "workflow-profile"
+    },
+    {
+      "id": "write-plan",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "write-plan",
+      "requires": ["workflow-profile"],
+      "skill": "write-plan"
+    },
+    {
+      "id": "ticket-kickoff",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "ticket-kickoff",
+      "requires": ["workflow-profile", "write-plan"],
+      "skill": "ticket-kickoff"
+    },
+    {
+      "id": "verify",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "verify",
+      "requires": ["workflow-profile"],
+      "skill": "verify"
+    },
+    {
       "id": "changes-to-pr",
       "group": "workflow",
       "kind": "skill",
       "label": "changes-to-pr",
+      "requires": ["workflow-profile"],
       "skill": "changes-to-pr"
     },
     {
@@ -89,21 +143,68 @@
       "group": "workflow",
       "kind": "skill",
       "label": "pr-followup",
+      "requires": ["workflow-profile"],
       "skill": "pr-followup"
+    },
+    {
+      "id": "pr-merge",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "pr-merge",
+      "requires": ["workflow-profile"],
+      "soft": ["rebase-branch"],
+      "skill": "pr-merge"
     },
     {
       "id": "rebase-branch",
       "group": "workflow",
       "kind": "skill",
       "label": "rebase-branch",
+      "requires": ["workflow-profile"],
       "skill": "rebase-branch"
     },
     {
-      "id": "ticket-kickoff",
-      "group": "workflow",
+      "id": "review-changes",
+      "group": "review",
       "kind": "skill",
-      "label": "ticket-kickoff",
-      "skill": "ticket-kickoff"
+      "label": "review-changes",
+      "requires": ["workflow-profile"],
+      "skill": "review-changes"
+    },
+    {
+      "id": "skill-review",
+      "group": "review",
+      "kind": "skill",
+      "label": "skill-review",
+      "soft": ["writing-for-agents"],
+      "skill": "skill-review"
+    },
+    {
+      "id": "hooks-review",
+      "group": "review",
+      "kind": "skill",
+      "label": "hooks-review",
+      "requires": ["skill-review"],
+      "soft": ["skill-hooks"],
+      "skill": "hooks-review"
+    },
+    {
+      "id": "memory-review",
+      "group": "review",
+      "kind": "skill",
+      "label": "memory-review",
+      "agents": ["claude"],
+      "requires": ["skill-review", "memories"],
+      "skill": "memory-review"
+    },
+    {
+      "id": "clankers-review",
+      "group": "review",
+      "kind": "skill",
+      "label": "clankers-review",
+      "agents": ["claude"],
+      "requires": ["skill-review", "hooks-review", "memory-review"],
+      "skill": "clankers-review"
     },
     {
       "id": "typescript-tips",
@@ -111,6 +212,15 @@
       "kind": "skill",
       "label": "typescript-tips",
       "skill": "typescript-tips"
+    },
+    {
+      "id": "writing-for-agents",
+      "group": "other",
+      "kind": "upstream",
+      "label": "writing-for-agents",
+      "description": "Matt Pocock's guide to writing documents for agents (skills, AGENTS.md); skill-review reads it when present. Installed with the skills CLI (npx skills add mattpocock/skills) into ~/.agents/skills, not tracked in this repo. It was named writing-great-skills before its v1.1.",
+      "needs": ["npx"],
+      "upstream": { "source": "mattpocock/skills", "skill": "writing-for-agents" }
     },
     {
       "id": "enforcement",
@@ -127,6 +237,15 @@
       "label": "notification sounds",
       "description": "One sound when a permission prompt is waiting, one when the agent finishes a turn. Works for Claude Code and Codex.",
       "hooks": ".agents/hooks/notification.json"
+    },
+    {
+      "id": "commit-subject-gate",
+      "group": "hooks",
+      "kind": "hooks",
+      "label": "commit subject gate",
+      "description": "Blocks a git commit whose subject is not `type(scope): text` or carries a ticket key, in a repo whose workflow profile says conventional commits. Silent everywhere else.",
+      "requires": ["workflow-profile"],
+      "hooks": ".agents/hooks/commit-subject-gate.json"
     },
     {
       "id": "session-cleanup",
