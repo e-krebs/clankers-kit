@@ -16,11 +16,15 @@ directory or a documented section) so each tool's setup stays turnkey.
 Skills are held to a **"refined enough to represent you publicly"** bar — generic, self-contained,
 and genuinely useful, not tuned to one company's stack.
 
-1. Add `.agents/skills/<name>/SKILL.md` (plus any scripts it needs).
+1. Add `.agents/skills/<name>/SKILL.md` (plus any scripts it needs, and an optional `hooks/` dir:
+   a script with a `# codex:` header, its `hooks.json` fragment, and a `fixtures/<name>/run.sh`
+   suite).
 2. Make it **portable**: no employer/project names, no hard-coded personal paths, no assumptions
    about a specific issue tracker or repo layout. Where an integration is unavoidable, make it
-   opt-in and document it.
+   opt-in and document it. Add a `skill` row to `kit.json` with its `requires` edges.
 3. Note in the PR how you verified it runs standalone.
+
+A skill that reads the workflow profile must still run, and say so, when no profile resolves.
 
 ## Presets and hooks
 
