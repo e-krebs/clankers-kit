@@ -551,7 +551,7 @@ filter_kinds() {                    # $1 = csv of wanted ids, $2.. = kinds the f
   local csv="$1" i k hit; shift
   for ((i = 0; i < N; i++)); do
     hit=false; for k in "$@"; do [[ "${C_KIND[i]}" == "$k" ]] && hit=true; done
-    $hit && [[ -z "${C_LOCKED[i]}" ]] || continue
+    if ! $hit || [[ -n "${C_LOCKED[i]}" ]]; then continue; fi
     if csv_has "$csv" "${C_ID[i]}"; then SEL[i]=1; else SEL[i]=""; fi
   done
 }

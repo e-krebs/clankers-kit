@@ -68,7 +68,7 @@ pass "--without deactivates a skill"
 
 # --- 3b. --without on a link row restores a real copy ----------------------------------------
 HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without memories > /dev/null
-[ ! -L "$H/.claude/projects" ] && [ -d "$H/.claude/projects" ] || fail "--without memories left the link"
+{ [ ! -L "$H/.claude/projects" ] && [ -d "$H/.claude/projects" ]; } || fail "--without memories left the link"
 [ -f "$H/.claude/projects/README.md" ] || fail "--without memories lost the content"
 [ -L "$H/.claude/hooks" ] || fail "--without memories touched the core links"
 # a re-run seeds from disk, so the unlinked row stays off until named again
@@ -82,11 +82,11 @@ HOME="$H" bash "$K/uninstall.sh" --yes
 while IFS= read -r l; do
   case "$(readlink "$l")" in "$K"*) fail "$l still points into the repo" ;; esac
 done < <(find "$H" -type l)
-[ ! -L "$H/.claude/settings.json" ] && [ -f "$H/.claude/settings.json" ] || fail "settings.json not restored as a file"
-[ ! -L "$H/.claude/hooks" ] && [ -d "$H/.claude/hooks" ] || fail "hooks not restored as a dir"
+{ [ ! -L "$H/.claude/settings.json" ] && [ -f "$H/.claude/settings.json" ]; } || fail "settings.json not restored as a file"
+{ [ ! -L "$H/.claude/hooks" ] && [ -d "$H/.claude/hooks" ]; } || fail "hooks not restored as a dir"
 [ -f "$H/.claude/hooks/forbid-bash-patterns.sh" ] || fail "hooks content not restored"
-[ ! -L "$H/.claude/CLAUDE.md" ] && [ -f "$H/.claude/CLAUDE.md" ] || fail "CLAUDE.md not restored as a file"
-[ ! -L "$H/.codex/AGENTS.md" ] && [ -f "$H/.codex/AGENTS.md" ] || fail ".codex/AGENTS.md not restored as a file"
+{ [ ! -L "$H/.claude/CLAUDE.md" ] && [ -f "$H/.claude/CLAUDE.md" ]; } || fail "CLAUDE.md not restored as a file"
+{ [ ! -L "$H/.codex/AGENTS.md" ] && [ -f "$H/.codex/AGENTS.md" ]; } || fail ".codex/AGENTS.md not restored as a file"
 [ ! -e "$H/.claude/skills/rebase-branch" ] || fail "a kit skill link survived uninstall"
 jq -e . "$H/.claude/settings.json" >/dev/null || fail "restored settings.json is not valid JSON"
 pass "uninstall"
