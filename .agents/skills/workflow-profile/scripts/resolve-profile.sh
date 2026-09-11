@@ -88,7 +88,7 @@ profile_field() {
   local target="$1" file prefix line val
   prefix="| $target |"
   for file in "$PROFILE_REPO_FILE" "$PROFILE_ORG_FILE"; do
-    [ -n "$file" ] && [ -f "$file" ] || continue
+    [ -f "$file" ] || continue
     line=$(grep -Fm1 -- "$prefix" "$file" 2>/dev/null)
     [ -n "$line" ] || continue
     val="${line#"$prefix"}"
@@ -130,7 +130,7 @@ profile_rows() {
   local file line idx j
 
   for file in "$PROFILE_ORG_FILE" "$PROFILE_REPO_FILE"; do
-    [ -n "$file" ] && [ -f "$file" ] || continue
+    [ -f "$file" ] || continue
     while IFS= read -r line; do
       _parse_table_line "$line" || continue
       idx=-1
