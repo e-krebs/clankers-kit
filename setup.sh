@@ -474,10 +474,13 @@ row_desc() {                        # $1 = index -> the detail-pane text
 }
 
 # An upstream skill lives in ~/.agents/skills/<name> (the skills CLI installs it there and links
-# it into each agent's skills dir), so it is on disk when that entry exists and is not ours.
+# it into each agent's skills dir), so it is on disk when that entry exists and is not ours — and,
+# with Claude wired, when ~/.claude/skills/<name> exists too, so an agent added later gets its link.
 upstream_installed() {              # $1 = skill name
   local p="${HOME}/.agents/skills/${1}"
-  [[ -e "$p" || -L "$p" ]] && ! ours_link "$p"
+  { [[ -e "$p" || -L "$p" ]] && ! ours_link "$p"; } || return 1
+  if has_agent claude; then [[ -e "${CLAUDE_HOME}/skills/${1}" || -L "${CLAUDE_HOME}/skills/${1}" ]] || return 1; fi
+  return 0
 }
 agents_flag() {                     # the skills CLI agent names for the wired agents, space-separated
   local out=""

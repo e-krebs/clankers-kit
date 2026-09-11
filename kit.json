@@ -160,7 +160,7 @@
       "group": "workflow",
       "kind": "skill",
       "label": "rebase-branch",
-      "requires": ["workflow-profile"],
+      "soft": ["workflow-profile"],
       "skill": "rebase-branch"
     },
     {
@@ -184,8 +184,7 @@
       "group": "review",
       "kind": "skill",
       "label": "hooks-review",
-      "requires": ["skill-review"],
-      "soft": ["skill-hooks"],
+      "soft": ["skill-review", "skill-hooks"],
       "skill": "hooks-review"
     },
     {
@@ -194,7 +193,8 @@
       "kind": "skill",
       "label": "memory-review",
       "agents": ["claude"],
-      "requires": ["skill-review", "memories"],
+      "requires": ["memories"],
+      "soft": ["skill-review"],
       "skill": "memory-review"
     },
     {
@@ -203,7 +203,7 @@
       "kind": "skill",
       "label": "clankers-review",
       "agents": ["claude"],
-      "requires": ["skill-review", "hooks-review", "memory-review"],
+      "soft": ["skill-review", "hooks-review", "memory-review"],
       "skill": "clankers-review"
     },
     {
