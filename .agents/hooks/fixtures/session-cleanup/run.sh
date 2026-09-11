@@ -20,7 +20,7 @@ fail_case() { printf 'FAIL %s: %s\n' "$1" "$2"; overall=1; }
 sid_a="fixture-sid-a"
 sid_b="fixture-sid-b-$$"
 
-# shellcheck disable=SC2329  # invoked by the trap below
+# shellcheck disable=SC2329,SC2317  # invoked by the trap below
 cleanup() {
   rm -rf "$end_work" "$sweep_work" "$agent_work" 2>/dev/null
 }
