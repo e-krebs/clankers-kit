@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# PreToolUse(Bash) gate: block a "git commit" whose subject isn't "type(scope): text", or that
-# smuggles a ticket key into the subject (a ticket ref belongs in the PR body, not the subject).
-# Profile-gated: only runs when the resolved profile's Commit convention starts with
-# "conventional" (case-insensitive); every other repo is skipped.
+# PreToolUse(Bash) gate: block a "git commit" whose subject breaks the resolved profile's Commit
+# convention. The row is read as flags, case-insensitive: it must start with "conventional" (every
+# other repo is skipped); a "scope" mention requires "type(scope): text", else "type: text" passes
+# too; a "ticket ref in PR body" mention denies a ticket key in the subject.
 #
 # Fails open everywhere: bad/missing stdin, a subagent session, no "git commit" in the command,
 # no profile resolved, a non-conventional profile, an editor/-F commit, --amend --no-edit,
@@ -43,6 +43,10 @@ case "$low" in
   conventional*) ;;
   *) exit 0 ;;
 esac
+need_scope=0
+no_ticket=0
+case "$low" in *scope*) need_scope=1 ;; esac
+case "$low" in *"ticket ref in pr body"*) no_ticket=1 ;; esac
 
 deny() {  # $1 = reason shown back to Claude, $2 = rule id
   hook_log deny "$2"
@@ -135,9 +139,16 @@ case "$subject" in
   "Merge "*|"Revert "*) exit 0 ;;      # auto-generated merge/revert subject
 esac
 
-if ! printf '%s' "$subject" | grep -qE '^[a-z]+\([^)]+\): .+'; then
-  deny "Commit subject \"$subject\" doesn't match the required shape type(scope): text — e.g. feat(hooks): add x." "shape"
+if [ "$need_scope" -eq 1 ]; then
+  shape='^[a-z]+\([^)]+\): .+'; label='type(scope): text — e.g. feat(hooks): add x'
+else
+  shape='^[a-z]+(\([^)]+\))?: .+'; label='type: text or type(scope): text — e.g. feat: add x'
 fi
+if ! printf '%s' "$subject" | grep -qE "$shape"; then
+  deny "Commit subject \"$subject\" doesn't match the required shape $label." "shape"
+fi
+
+[ "$no_ticket" -eq 1 ] || exit 0
 
 shopt -s extglob
 stripped="${subject//@(UTF|SHA|ISO|RFC|MD|ES)-+([0-9])/}"

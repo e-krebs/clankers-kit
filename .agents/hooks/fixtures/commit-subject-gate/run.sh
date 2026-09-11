@@ -92,6 +92,8 @@ rm -f /tmp/csg-syn-lib.$$ 2>/dev/null
 conv_prof=$(copy_profiles "$fixtures_dir/profiles-conventional")
 free_prof=$(copy_profiles "$fixtures_dir/profiles-freeform")
 empty_prof=$(copy_profiles "$fixtures_dir/profiles-empty")
+scoped_prof=$(copy_profiles "$fixtures_dir/profiles-scoped")
+plain_prof=$(copy_profiles "$fixtures_dir/profiles-plain")
 never_prof=$(missing_profiles_dir)
 
 # --- valid: type(scope): text passes ------------------------------------------------
@@ -123,6 +125,35 @@ err=""
 is_deny "$HOOK_OUT" || err="${err:+$err; }expected a deny, got: $HOOK_OUT"
 reason=$(deny_reason_of "$HOOK_OUT")
 contains "$reason" "ticket key" || err="${err:+$err; }deny reason missing 'ticket key'"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+
+# --- scoped-ticket-key: 'conventional w/ scope' says nothing about ticket refs, passes ---
+case_name="scoped-ticket-key"
+repo=$(make_repo "repo" "https://github.com/scoped/proj.git")
+run_hook "$repo" "$fixtures_dir/scoped-ticket-key.json" "$scoped_prof"
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+[ -z "$HOOK_OUT" ] || err="${err:+$err; }expected no deny (no ticket rule in the row), got: $HOOK_OUT"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+
+# --- plain-noscope: plain 'conventional' accepts 'feat: add x' ----------------------
+case_name="plain-noscope"
+repo=$(make_repo "repo" "https://github.com/plain/proj.git")
+run_hook "$repo" "$fixtures_dir/plain-noscope.json" "$plain_prof"
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+[ -z "$HOOK_OUT" ] || err="${err:+$err; }expected no deny (no scope rule in the row), got: $HOOK_OUT"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+
+# --- plain-notype: plain 'conventional' still denies 'add x' ------------------------
+case_name="plain-notype"
+repo=$(make_repo "repo" "https://github.com/plain/proj.git")
+run_hook "$repo" "$fixtures_dir/plain-notype.json" "$plain_prof"
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+is_deny "$HOOK_OUT" || err="${err:+$err; }expected a deny, got: $HOOK_OUT"
+reason=$(deny_reason_of "$HOOK_OUT")
+contains "$reason" "add x" || err="${err:+$err; }deny reason missing the subject"
 if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
 
 # --- utf-code: 'UTF-8' in the subject is not a ticket key, passes -------------------

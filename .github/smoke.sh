@@ -109,6 +109,7 @@ jq '.hooks.UserPromptSubmit += [{"hooks":[{"type":"command","command":"bash \"$H
 HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex > "$tmp/foreign.log" 2>&1
 jq -e '[.hooks[][].hooks[].command] | any(contains("skills/foo/hooks/bar.sh"))' "$H/.claude/settings.json" >/dev/null || fail "the composer dropped a live hook of a skill it does not manage"
 grep -q 'dropped a stale' "$tmp/foreign.log" && fail "the composer reported a live foreign skill hook as stale"
+grep -q 'the hooks of every active skill' "$tmp/foreign.log" && fail "a foreign skill hook seeded the skill-hooks toggle on"
 pass "foreign skill hook survives"
 
 # --- 3f. a row unchecked while codex is off the agent list still leaves the Codex wiring ---------
@@ -139,7 +140,9 @@ while IFS= read -r p; do
   [ -n "$p" ] || continue
   [ -f "${p/#\$HOME/$H}" ] || fail "skill-hooks: $p does not resolve to a file"
 done < <(jq -r '.hooks[][].hooks[].command | select(startswith("bash \"")) | split("\"")[1]' "$H/.claude/settings.json")
-HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --components "$ALL,skill-hooks" > "$tmp/toggle2.log" 2>&1
+# a plain re-run names no row, so only the seeding from disk can turn the toggle on
+# shellcheck disable=SC2086  # NOUP is two words on purpose
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex $NOUP > "$tmp/toggle2.log" 2>&1
 grep -q 'compose: .* + the hooks of every active skill' "$tmp/toggle2.log" || fail "skill-hooks: the toggle did not seed on from the wiring on disk"
 HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --components "$ALL" > /dev/null 2>&1
 # the foreign skills/foo entry from case 3e stays; only the kit skills' entries must go

@@ -77,7 +77,7 @@ which applies to every command in that cell.
 
 ## Gotchas
 
-- Write through the real path that `readlink` returns; a write through the `~/.claude/workflow-profiles`
-  or `~/.agents/workflow-profiles` symlink is refused.
+- Write through the real path that `readlink` returns: a guard hook can refuse a write through
+  the `~/.agents/workflow-profiles` symlink.
 - The `.asked/` markers belong to the session-start hook, which writes them to nudge once.
   Read them if useful, leave them as they are.

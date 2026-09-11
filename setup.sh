@@ -467,10 +467,12 @@ skill_description() {               # the SKILL.md frontmatter `description:` va
   if [[ -n "$line" ]]; then printf '%s' "$line"; else printf "the '%s' skill" "$1"; fi
 }
 
-row_desc() {                        # $1 = index -> the detail-pane text
+row_desc() {                        # $1 = index -> the detail-pane text, plus the advisory edges
   if [[ -n "${C_DESC[$1]}" ]]; then printf '%s' "${C_DESC[$1]}"
   elif [[ -n "${C_SKILL[$1]}" ]]; then skill_description "${C_SKILL[$1]}"
   else printf '%s' "${C_LABEL[$1]}"; fi
+  [[ -n "${C_SOFT[$1]}" ]] && printf ' Works better with: %s.' "${C_SOFT[$1]//,/, }"
+  return 0
 }
 
 # An upstream skill lives in ~/.agents/skills/<name> (the skills CLI installs it there and links
@@ -530,10 +532,16 @@ hooks_composed() {                  # $1 = fragment path
   done < <(jq -r '.hooks[][]?.hooks[]?.command // empty | select(startswith("${CLAUDE_PLUGIN_ROOT}/")) | ltrimstr("${CLAUDE_PLUGIN_ROOT}/")' "$1" 2>/dev/null)
   return 1
 }
-skill_hooks_composed() {            # the toggle is on disk when any skill hook is wired
+skill_hooks_composed() {            # the toggle is on disk when a hook of a kit skill is wired
   [[ -f "${CLAUDE_SRC}/settings.json" ]] || return 1
-  # shellcheck disable=SC2016  # the literal $HOME is what the composer writes
-  jq -e '[.hooks[][]?.hooks[]?.command // ""] | any(contains("$HOME/.claude/skills/"))' "${CLAUDE_SRC}/settings.json" >/dev/null 2>&1
+  local i
+  for ((i = 0; i < N; i++)); do     # a skill another tool put under ~/.claude/skills does not count
+    [[ "${C_KIND[i]}" == skill ]] || continue
+    # shellcheck disable=SC2016  # the literal $HOME is what the composer writes
+    jq -e --arg c "\$HOME/.claude/skills/${C_SKILL[i]}/hooks/" '[.hooks[][]?.hooks[]?.command // ""] | any(contains($c))' \
+      "${CLAUDE_SRC}/settings.json" >/dev/null 2>&1 && return 0
+  done
+  return 1
 }
 
 run_argv() {                        # $1 = JSON argv -> runs it; return 1 on an empty list
@@ -597,6 +605,9 @@ filter_kinds() {                    # $1 = csv of wanted ids, $2.. = kinds the f
   done
 }
 
+# EXP_OFF marks a row the user turned off by name (--without) or by hand (the picker). A list
+# that merely omits a row (--components, --skills) leaves an installed upstream skill in place.
+EXP_OFF=()
 if $COMPONENTS_SET; then
   for ((i = 0; i < N; i++)); do [[ -n "${C_LOCKED[i]}" ]] || SEL[i]=""; done
   IFS=',' read -r -a want <<< "$OPT_COMPONENTS"
@@ -612,7 +623,7 @@ if [[ -n "$OPT_WITHOUT" ]]; then
     id="$(trim "$id")"; [[ -z "$id" ]] && continue
     j="$(cidx "$id")" || { warn "  unknown component '${id}' in --without — ignored"; continue; }
     [[ -n "${C_LOCKED[j]}" ]] && { warn "  ${id} is part of the core layout — kept"; continue; }
-    SEL[j]=""
+    SEL[j]=""; EXP_OFF[j]=1
   done
 fi
 $PRESETS_SET && filter_kinds "$(trim "$OPT_PRESETS")" settings command hooks toggle
@@ -638,7 +649,7 @@ if $INTERACTIVE && ! $COMPONENTS_SET && ! $PRESETS_SET && ! $SKILLS_SET; then
   multiselect "What to install — everything on by default, uncheck what you don't want" || { say "Aborted — nothing was changed."; exit 0; }
   for ((i = 0; i < N; i++)); do
     row="${MS_ROW[i]:-}"; [[ -n "$row" ]] || continue
-    if [[ ${MS_ON[row]:-} == 1 ]]; then SEL[i]=1; else SEL[i]=""; fi
+    if [[ ${MS_ON[row]:-} == 1 ]]; then SEL[i]=1; else SEL[i]=""; EXP_OFF[i]=1; fi
   done
 fi
 settle_requires
@@ -746,12 +757,14 @@ if $SKILL_HOOKS; then
 fi
 
 # --- commands (the chrome-devtools MCP) and upstream skills (the skills CLI) --------------
+# An upstream skill is removed only when its row was turned off by name or by hand: the skills
+# CLI installs globally, and the kit cannot tell its own install from one the user made.
 CMDS=(); UPS_ADD=(); UPS_DROP=()
 for ((i = 0; i < N; i++)); do
   [[ "${C_KIND[i]}" == command ]] && selected "$i" && CMDS+=("$i")
   if [[ "${C_KIND[i]}" == upstream && -n "${APPL[i]}" ]]; then
     if selected "$i"; then upstream_installed "${C_UP_SKILL[i]}" || UPS_ADD+=("$i")
-    elif upstream_installed "${C_UP_SKILL[i]}"; then UPS_DROP+=("$i"); fi
+    elif [[ -n "${EXP_OFF[i]:-}" ]] && upstream_installed "${C_UP_SKILL[i]}"; then UPS_DROP+=("$i"); fi
   fi
 done
 
