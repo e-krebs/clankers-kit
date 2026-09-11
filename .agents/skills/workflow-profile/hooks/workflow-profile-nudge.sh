@@ -10,6 +10,7 @@
 
 hooks_lib="${AGENTS_HOOKS_LIB:-$(dirname "${BASH_SOURCE[0]}")/../../../hooks/lib}"
 [ -f "$hooks_lib/hook-log.sh" ] || hooks_lib="$HOME/.claude/hooks/lib"
+# shellcheck source=../../../hooks/lib/hook-log.sh
 source "$hooks_lib/hook-log.sh"
 
 input=$(jq -c 'select(type == "object")' 2>/dev/null) || exit 0
@@ -29,6 +30,7 @@ is_repo=$(command cd "$cwd" 2>/dev/null && git rev-parse --is-inside-work-tree 2
 
 resolver="${AGENTS_WORKFLOW_RESOLVER:-$HOME/.agents/skills/workflow-profile/scripts/resolve-profile.sh}"
 [ -f "$resolver" ] || exit 0                     # the setup skill is not installed: nothing to resolve
+# shellcheck source=../../workflow-profile/scripts/resolve-profile.sh
 source "$resolver" || exit 0
 resolve_profile "$cwd"
 

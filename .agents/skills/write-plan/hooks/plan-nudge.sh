@@ -21,6 +21,7 @@ prompt=$(printf '%s' "$input" | jq -r '.prompt // empty' 2>/dev/null)
 
 hooks_lib="${AGENTS_HOOKS_LIB:-$(dirname "${BASH_SOURCE[0]}")/../../../hooks/lib}"
 [ -f "$hooks_lib/prompt-guards.sh" ] || hooks_lib="$HOME/.claude/hooks/lib"
+# shellcheck source=../../../hooks/lib/prompt-guards.sh
 source "$hooks_lib/prompt-guards.sh" || exit 0
 
 prompt_is_notification "$prompt" && exit 0
@@ -35,6 +36,7 @@ session_id=$(printf '%s' "$input" | jq -r '.session_id // "unknown"' 2>/dev/null
 marker="${TMPDIR:-/tmp}/claude-plan-nudge-${session_id//[^A-Za-z0-9_-]/}"
 
 if [ "$permission_mode" = "plan" ] && [ ! -e "$marker" ]; then
+  # shellcheck disable=SC2086  # word splitting is the point: the words are counted
   set -- $prompt
   word_count=$#
   trimmed="${prompt%"${prompt##*[![:space:]]}"}"

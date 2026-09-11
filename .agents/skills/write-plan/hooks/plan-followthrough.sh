@@ -16,6 +16,7 @@ agent_id=$(printf '%s' "$input" | jq -r '.agent_id // empty' 2>/dev/null)
 
 hooks_lib="${AGENTS_HOOKS_LIB:-$(dirname "${BASH_SOURCE[0]}")/../../../hooks/lib}"
 [ -f "$hooks_lib/prompt-guards.sh" ] || hooks_lib="$HOME/.claude/hooks/lib"
+# shellcheck source=../../../hooks/lib/prompt-guards.sh
 source "$hooks_lib/prompt-guards.sh" || exit 0
 
 response=$(printf '%s' "$input" | jq -r '.tool_response | tostring' 2>/dev/null)

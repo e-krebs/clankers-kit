@@ -18,6 +18,7 @@ prompt=$(printf '%s' "$input" | jq -r '.prompt // empty' 2>/dev/null)
 
 hooks_lib="${AGENTS_HOOKS_LIB:-$(dirname "${BASH_SOURCE[0]}")/../../../hooks/lib}"
 [ -f "$hooks_lib/prompt-guards.sh" ] || hooks_lib="$HOME/.claude/hooks/lib"
+# shellcheck source=../../../hooks/lib/prompt-guards.sh
 source "$hooks_lib/prompt-guards.sh" || exit 0
 
 prompt_is_notification "$prompt" && exit 0

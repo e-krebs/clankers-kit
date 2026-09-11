@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Sourced library: resolve which workflow-profile files apply to a cwd, and read/merge their
 # tables. Defines functions and globals only — running this file directly does nothing.
 #
@@ -75,6 +76,7 @@ resolve_profile() {
   if [ "$PROFILE_KIND" = "remote" ]; then
     PROFILE_KEY="remote-${sown}-${srepo}"
   else
+    # shellcheck disable=SC2034  # read by workflow-profile-nudge.sh's unresolved-marker path
     PROFILE_KEY="basename-${srepo}"
   fi
   return 0

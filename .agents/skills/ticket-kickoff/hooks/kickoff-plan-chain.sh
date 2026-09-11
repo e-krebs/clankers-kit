@@ -16,6 +16,7 @@ skill=$(printf '%s' "$input" | jq -r '.tool_input.skill // empty' 2>/dev/null)
 
 hooks_lib="${AGENTS_HOOKS_LIB:-$(dirname "${BASH_SOURCE[0]}")/../../../hooks/lib}"
 [ -f "$hooks_lib/prompt-guards.sh" ] || hooks_lib="$HOME/.claude/hooks/lib"
+# shellcheck source=../../../hooks/lib/prompt-guards.sh
 source "$hooks_lib/prompt-guards.sh" || exit 0
 emit_context "PostToolUse" "Ticket read. Invoke the planning skill, the installed skill whose description covers writing the plan file, via the Skill tool once the ticket digest is in context."
 exit 0

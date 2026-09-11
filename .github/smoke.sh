@@ -60,11 +60,11 @@ jq -e '[.hooks[][].hooks[].command] | any(contains("forbid-verbose-comments"))' 
 jq -e '.hooks.Notification[0].matcher == "permission_prompt"' "$H/.claude/settings.json" >/dev/null || fail "Notification group missing from settings.json"
 jq -e '.hooks.PermissionRequest[0] | has("matcher") | not' "$H/.codex/hooks.json" >/dev/null || fail "Codex PermissionRequest group missing or still carries a matcher"
 jq -e '[.hooks[][].hooks[].command] | any(contains("skills/"))' "$H/.claude/settings.json" >/dev/null && fail "a skill hook was wired with the toggle off"
-[ -L "$H/.claude/output-styles" ] || fail "~/.claude/output-styles is not linked"
+[ -L "$H/.claude/output-styles" ] || fail ".claude/output-styles is not linked"
 [ -f "$H/.claude/output-styles/plain.md" ] || fail "the Plain style is not reachable through the link"
 jq -e '.outputStyle == "Plain"' "$H/.claude/settings.json" >/dev/null || fail "outputStyle was not set"
 for s in workflow-profile write-plan pr-merge verify review-changes skill-review hooks-review memory-review clankers-review; do
-  [ -L "$H/.agents/skills/$s" ] || fail "~/.agents/skills/$s missing"
+  [ -L "$H/.agents/skills/$s" ] || fail ".agents/skills/$s missing"
 done
 [ ! -e "$H/.agents/skills/writing-for-agents" ] || fail "the upstream skill was installed despite --without"
 jq -e '[.hooks.PreToolUse[].hooks[].command] | any(contains("commit-subject-gate"))' "$H/.claude/settings.json" >/dev/null || fail "commit-subject-gate not composed"
@@ -142,7 +142,8 @@ done < <(jq -r '.hooks[][].hooks[].command | select(startswith("bash \"")) | spl
 HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --components "$ALL,skill-hooks" > "$tmp/toggle2.log" 2>&1
 grep -q 'compose: .* + the hooks of every active skill' "$tmp/toggle2.log" || fail "skill-hooks: the toggle did not seed on from the wiring on disk"
 HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --components "$ALL" > /dev/null 2>&1
-jq -e '[.hooks[][].hooks[].command] | any(contains("skills/"))' "$H/.claude/settings.json" >/dev/null && fail "skill-hooks: turning the toggle off left a skill hook wired"
+# the foreign skills/foo entry from case 3e stays; only the kit skills' entries must go
+jq -e '[.hooks[][].hooks[].command] | any(contains("skills/") and (contains("skills/foo/") | not))' "$H/.claude/settings.json" >/dev/null && fail "skill-hooks: turning the toggle off left a skill hook wired"
 pass "skill-hooks toggle"
 
 # --- 4. uninstall: no link resolves into the repo, real files remain ---------------------------

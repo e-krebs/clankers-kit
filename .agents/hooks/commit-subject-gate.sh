@@ -31,6 +31,7 @@ cwd=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)
 
 resolver="${AGENTS_WORKFLOW_RESOLVER:-$HOME/.agents/skills/workflow-profile/scripts/resolve-profile.sh}"
 [ -f "$resolver" ] || exit 0
+# shellcheck source=../skills/workflow-profile/scripts/resolve-profile.sh
 source "$resolver" || exit 0
 resolve_profile "$cwd"
 

@@ -19,6 +19,7 @@ input=$(jq -c 'select(type=="object")' 2>/dev/null) || exit 0
 
 hooks_lib="${AGENTS_HOOKS_LIB:-$(dirname "${BASH_SOURCE[0]}")/../../../hooks/lib}"
 [ -f "$hooks_lib/hook-log.sh" ] || hooks_lib="$HOME/.claude/hooks/lib"
+# shellcheck source=../../../hooks/lib/hook-log.sh
 source "$hooks_lib/hook-log.sh"
 HOOK_SESSION=$(printf '%s' "$input" | jq -r '.session_id // empty' 2>/dev/null)
 
@@ -131,7 +132,7 @@ _style_advisory() {
   local measure tmp out lines
   # cd -P resolves the hook's physical directory first, so a call through a ~/.claude symlink
   # still lands on the repo's style-metrics rather than on a missing ~/.claude sibling.
-  measure="$(CDPATH= cd -P "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/../../../../.claude/style-metrics/measure.py"
+  measure="$(CDPATH='' cd -P "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)/../../../../.claude/style-metrics/measure.py"
   command -v python3 >/dev/null 2>&1 || return 0
   [ -f "$measure" ] || return 0
   tmp=$(mktemp "${TMPDIR:-/tmp}/claude-plangate-style-XXXXXX" 2>/dev/null) || return 0
@@ -267,6 +268,7 @@ cwd=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)
 
 resolver="${AGENTS_WORKFLOW_RESOLVER:-$HOME/.agents/skills/workflow-profile/scripts/resolve-profile.sh}"
 resolved=1
+# shellcheck source=../../workflow-profile/scripts/resolve-profile.sh
 if [ -f "$resolver" ] && source "$resolver" 2>/dev/null; then
   resolve_profile "$cwd"
   profile_resolved || resolved=0
