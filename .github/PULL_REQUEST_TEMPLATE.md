@@ -13,6 +13,6 @@
 ## Checklist
 
 - [ ] No personal data (names other than authorship, emails, employer/project names, ticket IDs, absolute paths)
-- [ ] `shellcheck setup.sh .claude/hooks/*.sh` passes
+- [ ] `shellcheck setup.sh uninstall.sh .agents/lint-manifest.sh .agents/hooks/*.sh` passes
 - [ ] Tested `setup.sh` in a sandbox `HOME` (not my real `~/.claude`)
 - [ ] Anything opinionated is opt-in and documented

@@ -18,4 +18,4 @@ assignees: ''
 
 - OS (macOS / Linux / WSL):
 - bash / jq versions:
-- Ran `setup.sh` with which flags/presets:
+- Ran `setup.sh` with which flags/components:

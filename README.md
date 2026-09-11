@@ -52,12 +52,25 @@ other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 | Piece | What it is |
 | --- | --- |
-| `.claude/CLAUDE.example.md` | A worked example of a personal instructions file — *"I write who I am."* |
-| `.claude/CLAUDE.template.md` | A blank version `setup.sh` fills in for you. |
+| `kit.json` | The manifest: every row `setup.sh` offers, its group, its defaults, and what it requires. |
+| `.agents/AGENTS.example.md` | A worked example of a personal instructions file — *"I write who I am."* |
+| `.agents/AGENTS.template.md` | A blank version `setup.sh` fills in for you. |
 | `.claude/settings/` | Opt-in setting **presets** (safe-command allowlist, enforcement, notification) composed into your `settings.json`. |
-| `.claude/hooks/` | The enforcement + notification scripts — *"enforce, don't just ask."* |
+| `.agents/hooks/` | The enforcement + notification scripts — *"enforce, don't just ask."* |
 | `.claude/projects/` | Where per-project **memory** is tracked — *"my agent's brain."* |
-| `.claude/skills/` | A catalog for small, composable skills — TypeScript tips + a git/PR/ticket workflow family, plus bring your own. See the [catalog](.claude/skills/README.md). |
+| `.agents/workflow-profiles/` | Per-org and per-repo tables the workflow skills read (ticket system, commit policy, CI watcher, verify commands). |
+| `.agents/skills/` | A catalog for small, composable skills — TypeScript tips + a git/PR/ticket workflow family, plus bring your own. See the [catalog](.agents/skills/README.md). |
+
+## Layout
+
+The kit composes three homes from one repo:
+
+- `~/.claude` — Claude-only config: `settings.json`, project memories.
+- `~/.agents` — shared across agents: instructions, skills, hooks, workflow profiles.
+- `~/.codex` — Codex-only: the hook wiring and its `AGENTS.md` link.
+
+A codex-only run still wires `~/.claude` — every composed hook path resolves through
+`~/.claude/hooks`.
 
 ## Requirements
 
@@ -67,6 +80,7 @@ other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 - **Recommended** (each unlocks a feature; `setup.sh` offers to install missing ones via your
   package manager — `brew` / `apt` / `dnf` / `pacman` — or links you to the download):
   - [`claude`](https://docs.anthropic.com/en/docs/claude-code) — the Claude Code CLI you're configuring.
+  - [`codex`](https://github.com/openai/codex) — the Codex CLI, when you run it; setup wires it too.
   - [`gh`](https://cli.github.com/) — lets setup offer to keep your fork private.
   - [Node.js](https://nodejs.org/) (`npx`) — used by the optional chrome-devtools MCP preset.
 
@@ -82,18 +96,22 @@ other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
    `HOME` + a copy of the repo, so your real `~/.claude` is never touched — it prints exactly
    where to inspect the result (and how to delete it) when it's done. (The Claude interview is
    skipped in `--sandbox`: a throwaway `HOME` isn't logged in — run setup for real to use it.)
-2. `setup.sh` asks a few questions, then shows a **recap of exactly what it will do** — including
-   any existing `~/.claude` content it will merge — and waits for one confirmation before it
-   touches anything. It will:
-   - seed your `.claude/CLAUDE.md` — a few short questions (name, role, and how you work), or, if
-     the `claude` CLI is installed, let Claude **interview you** and draft the whole file (the
+2. `setup.sh` asks which agents you run (Claude Code, Codex — defaults to whatever it finds on
+   your `PATH`), then shows **one grouped picker** covering layout, instructions, presets, skills,
+   and hooks: every row is on by default, so uncheck what you don't want. Unchecking a row another
+   checked row depends on re-checks it with a note naming the dependant; checking a row checks
+   everything it needs. Then it shows a **recap of exactly what it will do** — including any
+   existing `~/.claude` content it will merge — and waits for one confirmation before it touches
+   anything. It will:
+   - seed your `AGENTS.md` — a few short questions (name, role, and how you work), or, if the
+     `claude` CLI is installed, let Claude **interview you** and draft the whole file (the
      interview runs at the very end, once everything else is wired);
-   - ask which setting **presets** to enable (all off by default);
-   - symlink `settings.json`, `CLAUDE.md`, `hooks/`, and `projects/` into `~/.claude`
-     (an existing file is **adopted, never overwritten** — your current setup is preserved);
-   - let you activate any skills in the catalog;
+   - symlink settings, `AGENTS.md`, hooks, memories, and workflow profiles into `~/.claude`,
+     `~/.agents`, and `~/.codex` as each row needs (an existing file is **adopted, never
+     overwritten** — your current setup is preserved);
+   - symlink each activated skill into both `~/.claude/skills/` and `~/.agents/skills/`;
    - offer to make your repo private.
-3. Open `.claude/CLAUDE.md` and flesh out how you actually work. Restart Claude Code.
+3. Open `.agents/AGENTS.md` and flesh out how you actually work. Restart Claude Code.
 
 Re-run `./setup.sh` any time — linked paths are left alone, and you can activate more skills.
 
@@ -106,7 +124,7 @@ any agent, no fork — install it with [`npx skills`](https://github.com/vercel-
 npx skills add e-krebs/clankers-kit --skill typescript-tips
 ```
 
-Swap `typescript-tips` for any skill in the [catalog](.claude/skills/README.md) — e.g.
+Swap `typescript-tips` for any skill in the [catalog](.agents/skills/README.md) — e.g.
 `ticket-kickoff`, `rebase-branch`, `changes-to-pr`, `pr-followup`. That's skill *distribution*,
 not a framework to depend on — the kit itself is still yours to own.
 
@@ -121,15 +139,17 @@ not a framework to depend on — the kit itself is still yours to own.
 
 ## Build your own
 
-Read `.claude/CLAUDE.example.md`, then rewrite it as *you*. Add a hook when you catch the agent
-doing something you keep correcting. Drop a skill into `.claude/skills/` when you find yourself
+Read `.agents/AGENTS.example.md`, then rewrite it as *you*. Add a hook when you catch the agent
+doing something you keep correcting. Drop a skill into `.agents/skills/` when you find yourself
 repeating the same multi-step task. The kit is a starting point — the point is to make it yours.
 
 ## Keeping it yours
 
-Your fork is a normal git repo: commit your `CLAUDE.md`, settings, hooks, and memories as they
+Your fork is a normal git repo: commit your `AGENTS.md`, settings, hooks, and memories as they
 evolve. Pull updates from upstream when you want new scaffolding, but your personal files are
-yours — `setup.sh` never overwrites an existing `CLAUDE.md` or `settings.json`.
+yours — `setup.sh` never overwrites an existing `AGENTS.md` or `settings.json`. Pulling upstream
+then re-running `./setup.sh` also migrates an older fork's `.claude/` layout in place,
+idempotently, backing up any colliding file as `<name>.clankers-bak`.
 
 ## Uninstall
 
@@ -137,11 +157,12 @@ yours — `setup.sh` never overwrites an existing `CLAUDE.md` or `settings.json`
 ./uninstall.sh
 ```
 
-This replaces every `~/.claude` symlink that points into this repo with a **real copy** of its
-content, and deactivates any skills you activated from the catalog — so your `~/.claude` keeps
-working on its own. Your content is preserved; the repo copy is left intact (delete it separately
-if you're done with it). It won't touch your own files, foreign symlinks, or your GitHub repo's
-visibility, and it offers to remove the chrome-devtools MCP if setup added it.
+This replaces every symlink in `~/.claude`, `~/.agents`, and `~/.codex` that points into this
+repo with a **real copy** of its content, and deactivates any skills you activated from the
+catalog — so your three homes keep working on their own. Your content is preserved; the repo
+copy is left intact (delete it separately if you're done with it). It won't touch your own files,
+foreign symlinks, or your GitHub repo's visibility, and it offers to remove the chrome-devtools
+MCP if setup added it.
 
 ## License
 

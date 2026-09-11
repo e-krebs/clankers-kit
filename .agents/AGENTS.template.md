@@ -1,9 +1,10 @@
 # About {{NAME}}
 
 <!--
-  Your personal CLAUDE.md — Claude reads it on every turn, so keep it terse and high-signal.
-  CLAUDE.example.md is a filled-in version for reference. Delete these guidance comments as
-  you fill each section in. setup.sh seeds this from the answers you gave; flesh out the rest.
+  Your personal AGENTS.md — read by Claude Code as ~/.claude/CLAUDE.md and by Codex as
+  ~/.codex/AGENTS.md, on every turn, so keep it terse and high-signal. AGENTS.example.md is a
+  filled-in version for reference. Delete these guidance comments as you fill each section in.
+  setup.sh seeds this from the answers you gave; flesh out the rest.
 -->
 
 ## Role
@@ -19,6 +20,7 @@
 ## Communication style
 
 - Cite code with a clickable `path/to/file.ts:42` reference
+- For refactors and multi-file changes, propose an approach before touching code
 {{COMMS}}
 <!-- how should the agent talk to you and present work? propose-approach-first? ask-when-ambiguous?
      proportional solutions? preferred comment style? -->
@@ -29,5 +31,7 @@
 
 ## Workflow habits
 
+- One concern per PR
+- A mechanical rule gets a hook, not prose: spec text alone doesn't hold, so enforceable rules go into hooks and the instructions file keeps the judgment calls
 {{WORKFLOW}}
 <!-- plan-first? one-concern-per-PR? commit convention? how do you want changes verified before "done"? -->
