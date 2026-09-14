@@ -51,6 +51,7 @@ err=""
 [ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
 contains "$ctx" "/Users/e/.claude/plans/foo-bar.md" || err="${err:+$err; }missing the saved path: $ctx"
 contains "$ctx" "Deferred kickoff actions" || err="${err:+$err; }missing the ordering instruction"
+contains "$ctx" "No Step commits or pushes" || err="${err:+$err; }missing the no-commit-in-steps rule"
 if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
 
 # --- approved-without-path ----------------------------------------------------
@@ -61,6 +62,7 @@ err=""
 [ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
 contains "$ctx" "Plan approved." || err="${err:+$err; }missing plain approval text: $ctx"
 contains "$ctx" "Deferred kickoff actions" || err="${err:+$err; }missing the ordering instruction"
+contains "$ctx" "No Step commits or pushes" || err="${err:+$err; }missing the no-commit-in-steps rule"
 if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
 
 # --- rejected: silent ----------------------------------------------------------
