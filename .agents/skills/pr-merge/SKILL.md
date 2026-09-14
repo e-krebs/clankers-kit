@@ -20,10 +20,11 @@ restack step. The steps below are the lone-PR path.
 ## Steps
 
 1. Read the workflow profile: the rows the session-start hook injected into context, else the
-   table `bash ~/.agents/skills/workflow-profile/scripts/resolve-profile.sh --rows` prints. Three rows
-   matter: Commit policy, PR shape, Ticket system. Commit policy `direct commits to main`, or
-   PR shape `n/a`, means this repo has no PR flow: say so and stop.
-   Done when those three rows are in hand, or the no-PR-flow exit has fired.
+   table `bash ~/.agents/skills/workflow-profile/scripts/resolve-profile.sh --rows` prints. Four rows
+   matter: Commit policy, PR shape, Ticket system, Default branch. Commit policy
+   `direct commits to main`, or PR shape `n/a`, means this repo has no PR flow: say so and stop.
+   Default branch is the trunk step 2 compares a base against.
+   Done when those four rows are in hand, or the no-PR-flow exit has fired.
 2. Gather PR state, read-only:
    `gh pr view [<number>|<url>|<branch>] --json number,title,state,isDraft,reviewDecision,mergeable,mergeStateStatus,statusCheckRollup,headRefName,baseRefName,body,url`.
    With no argument it resolves the current branch, and that PR is the only candidate: no PR
@@ -35,9 +36,20 @@ restack step. The steps below are the lone-PR path.
    **It has to run here.** GitHub retargets a stacked PR's dependants about two seconds after
    the parent merges — both dependants in the incident logged
    `automatic_base_change_succeeded` two seconds in — so a post-merge query finds nothing at all.
-   - **Empty** ⇒ a lone PR: follow steps 3 and 4 below, and nothing about stacks reaches the
-     user. An ordinary merge pays this one extra call, plus step 3's sibling search where a
+   - **Empty** ⇒ read this PR's own `baseRefName`, which step 2 already has. A base equal to the
+     Default branch row ⇒ a lone PR: follow steps 3 and 4 below, and nothing about stacks reaches
+     the user. An ordinary merge pays this one extra call, plus step 3's sibling search where a
      tracker is named.
+   - **Empty, and `baseRefName` is not the Default branch** ⇒ this PR sits on something, and the
+     query proves only that nothing sits **above** it, while `gh stack merge` lands every member
+     **below** the PR named. One more query settles it:
+     `gh pr list --state open --head <baseRefName> --json number,url`. A row means the base is
+     itself an open PR, so a chain runs below this one: **run no further command until you have
+     read [references/gh-stack-merge.md](references/gh-stack-merge.md) in full**, then follow it
+     from M1 with an empty restack set and let its own membership check settle the rest. No row
+     means the base is an ordinary branch — a release branch is the common case — so take the
+     lone-PR path below. The query failing takes the lone-PR path too, with one line saying the
+     chain check did not run.
    - **Non-empty** ⇒ **run no further command until you have read
      [references/gh-stack-merge.md](references/gh-stack-merge.md) in full**, then follow it. It
      replaces steps 3 and 4 and adds the restack. Beyond this one query it is the only source

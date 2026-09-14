@@ -222,6 +222,21 @@
         "ACME-2200 is listed once in the question and transitioned once, not once per member",
         "The report carries both merge SHAs and the ticket's new state"
       ]
+    },
+    {
+      "name": "non-trunk-base-routes-past-an-empty-dependant-query",
+      "prompt": "Merge PR 30116. Acme profile: Ticket system Jira (ACME), Commit policy 'PRs, never direct', PR shape 'draft-first, squash, CODEOWNERS review', Default branch develop. #30116 is open, approved, green, head credentials/read, base credentials/base, linked to ACME-2200. #30096 is open on credentials/base with base develop, approved, but its build-and-test check is still PENDING. No open PR targets credentials/read. gh-stack tracks the stack and lists credentials/base and credentials/read. Current branch credentials/read, main worktree, no cascade paused.",
+      "expected_output": "The dependant query comes back empty, but #30116's base is credentials/base rather than develop, so the run reads references/gh-stack-merge.md in full and follows it from M1 with an empty restack set. The merge set walks down to #30096, whose pending check blocks the whole set, and one line names it.",
+      "assertions": [
+        "The empty --base query is not the end of the question, because gh stack merge lands every member below the PR named",
+        "A baseRefName that is not the Default branch is what routes the run, not a profile row",
+        "references/gh-stack-merge.md is read in full before any further command, and entered at M1",
+        "The merge set is walked downward to develop and every member is judged by the same blocker rules",
+        "#30096's pending check blocks the set even though #30116 is clear, and the blocker line names #30096",
+        "The restack set is empty, so the restack step takes its nothing-above exit",
+        "No merge runs and no ticket is transitioned",
+        "The second query, on --head credentials/base, is what proves a chain runs below"
+      ]
     }
   ]
 }

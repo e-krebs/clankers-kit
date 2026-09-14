@@ -1,6 +1,8 @@
 # Stacked PRs (`gh stack`)
 
-You are here because SKILL.md's step 2 found an open PR based on this one, or because
+You are here because SKILL.md's step 2 found an open PR based on this one, because its dependant
+query came back empty on a PR whose base is neither the trunk nor an ordinary branch but an open
+PR of its own — in which case you enter at M1 with an empty restack set — or because
 `gh pr merge` came back with `GraphQL: This pull request is part of a stack and must be merged
 using the asynchronous merge REST API`. This file replaces SKILL.md's steps 3 and 4 and adds the
 restack. SKILL.md's step 1 and its blocker rules still apply.
@@ -41,7 +43,11 @@ here, all read-only.
 - **Walk the merge set downward**:
   `gh pr view <baseRefName> --json number,title,state,isDraft,reviewDecision,mergeable,mergeStateStatus,statusCheckRollup,headRefName,baseRefName,body,url`,
   repeated from each `baseRefName` until it reaches the trunk. Same field set as the primary PR,
-  because M2 judges every member from identical data.
+  because M2 judges every member from identical data. A base that names no PR ends the walk: the
+  members found so far are the whole merge set, and its lowest one sits on an ordinary branch
+  rather than on the trunk. Say so in M2's offer, because `gh stack merge` still lands that set
+  into that branch. Distinguish it from a failing `gh` — auth, a rate limit — which records the
+  merge set as incomplete and takes M2's stop rather than merging a set it could not read.
 - **Membership, not file presence.** `gh stack view --json` must list the primary PR's
   `headRefName` among the members. The metadata file merely existing proves nothing: in the
   incident it tracked a different, fully merged stack. When the current branch is not the PR's
