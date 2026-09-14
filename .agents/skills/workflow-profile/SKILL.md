@@ -37,8 +37,14 @@ stages, and the hooks that glue them, with the diagram in `workflow-map.html` be
    check. Done when every field carries a current value and a proposed value.
 3. Interview the deltas in one batched question call — the harness's question tool when it has
    one, else numbered questions in prose. Ask only about fields whose proposal differs from the
-   current value, showing `current → proposed` so the user picks per field. Done when every
-   differing field holds the user's answer and no field was asked twice.
+   current value, showing `current → proposed` so the user picks per field. One exception to that
+   filter: where Git source names GitHub, ask whether a multi-PR change should land as a stack,
+   unless PR shape already holds the clause. Skip the question where the clause would be inert —
+   Commit policy `direct commits to main`, PR shape `n/a`, or Remote `local-only` — since those
+   leave no stack to build. A yes adds `gh stack for a multi-PR change` to the PR
+   shape cell and changes nothing else in it, except that it replaces a negated mention rather than
+   leaving the cell contradicting itself. Done when every differing field plus that question
+   holds the user's answer and no field was asked twice.
 4. Write, through the real path from step 1. The org file gets the table created, or the chosen
    rows updated in place with every other row left byte-identical, spacing included. The repo
    override keeps only rows that deviate from the org row, plus the repo facts; delete it when
@@ -68,7 +74,7 @@ which applies to every command in that cell.
 | Commit policy | how work reaches that branch | `direct commits to main` | `PRs, never direct` |
 | Commit convention | commit subject shape | `conventional w/ scope` | `conventional w/ scope, ticket ref in PR body only` |
 | CI watcher | CI to poll after a push | `none` | `CircleCI` |
-| PR shape | review and merge habits | `n/a` | `draft-first, squash, CODEOWNERS review` |
+| PR shape | review and merge habits, plus the stacked-PR clause | `n/a` | `draft-first, squash, gh stack for a multi-PR change, CODEOWNERS review` |
 | Remote | whether the repo has one | `yes`, or `local-only` without a remote | `yes` |
 | Install command | repo fact: dependency install | `—` | `_client: yarn install` |
 | Verify commands | repo fact: gates, `, `-separated | `—` | `_client: yarn test, yarn lint --quiet` |
@@ -77,6 +83,11 @@ which applies to every command in that cell.
 
 ## Gotchas
 
+- The stacked-PR clause lives in PR shape and nowhere else: `gh stack for a multi-PR change`, or
+  the `gh-stack` spelling, is what the PR-stage skills read to know a multi-PR change lands as a
+  stack. They read the clause, not a bare mention, so a negated one such as `no gh stack here`
+  means no stacking. Git source, Commit policy and Remote outrank it, because a non-GitHub source,
+  `direct commits to main` and `local-only` each leave no stack to build.
 - Write through the real path that `readlink` returns: a guard hook can refuse a write through
   the `~/.agents/workflow-profiles` symlink.
 - The `.asked/` markers belong to the session-start hook, which writes them to nudge once.

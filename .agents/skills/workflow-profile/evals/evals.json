@@ -9,7 +9,20 @@
         "Resolves the profiles directory via readlink and writes through the real path",
         "Proposes all twelve rows in order with the documented defaults",
         "Reviewers lists only installed review agents (codex only if on PATH)",
-        "Exactly one batched question round before any write"
+        "Exactly one batched question round before any write",
+        "That round also asks whether a multi-PR change lands as a stack, because Git source names GitHub"
+      ]
+    },
+    {
+      "name": "stack-answer-adds-only-the-clause",
+      "prompt": "Refresh the workflow profile for this repo. Its origin is git@github.com:acme/hotkey.git, acme.md has PR shape 'draft-first, squash, CODEOWNERS review', and I confirm a multi-PR change should land as a stack.",
+      "expected_output": "Writes PR shape as 'draft-first, squash, gh stack for a multi-PR change, CODEOWNERS review' — the existing habits kept verbatim, the clause added inside the same cell — and touches no other row. The report shows that single row as old → new.",
+      "assertions": [
+        "The clause is added inside the PR shape cell, not as a new row",
+        "CODEOWNERS review and the other existing clauses survive verbatim",
+        "The eleven other rows stay byte-identical",
+        "No thirteenth row is invented for the stack setting",
+        "A repo whose PR shape already holds the clause is not asked again"
       ]
     },
     {
