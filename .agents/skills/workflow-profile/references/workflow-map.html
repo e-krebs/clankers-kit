@@ -111,8 +111,9 @@ fire on a phrase or an event. Labels under the row: the hooks that route or gate
 <tr><td>Verify</td><td>verify</td><td>the plan's Closing steps, <code>/verify</code></td><td>Install command, Verify commands, Browser check</td><td>the review stage</td></tr>
 <tr><td>Review</td><td>review-changes</td><td>the plan's Closing steps, <code>/review-changes</code></td><td>Reviewers</td><td>the PR stage</td></tr>
 <tr><td>Land</td><td>changes-to-pr</td><td>"commit and PR this", <code>/changes-to-pr</code></td><td>Commit policy, Commit convention, PR shape, Remote, Ticket system</td><td>the push hook</td></tr>
-<tr><td>Watch</td><td>pr-followup</td><td>the push hook</td><td>CI watcher, Ticket system</td><td>the merge stage</td></tr>
-<tr><td>Merge</td><td>pr-merge</td><td>"merge the PR", <code>/pr-merge</code></td><td>PR shape, Commit policy, Ticket system</td><td>done</td></tr>
+<tr><td>Watch</td><td>pr-followup</td><td>the push hook</td><td>CI watcher, Ticket system, PR shape, Default branch</td><td>the merge stage</td></tr>
+<tr><td>Rebase</td><td>rebase-branch</td><td>"rebase this branch", "restack my stack", <code>/rebase-branch</code></td><td>Default branch</td><td>the push hook, back to the watch stage</td></tr>
+<tr><td>Merge</td><td>pr-merge</td><td>"merge the PR", <code>/pr-merge</code></td><td>PR shape, Commit policy, Ticket system, Default branch</td><td>done</td></tr>
 </tbody>
 </table>
 
@@ -135,6 +136,7 @@ fire on a phrase or an event. Labels under the row: the hooks that route or gate
 <ul>
 <li>A repo with <code>direct commits to main</code> stops at changes-to-pr's commit: pr-followup and pr-merge never fire, and nothing else changes.</li>
 <li>A repo with no tracker skips every ticket step; the same skills run.</li>
+<li>A repo whose PR shape carries <code>gh stack for a multi-PR change</code> splits a multi-PR change into a stack: changes-to-pr opens it, pr-followup watches every member, rebase-branch cascades it, and pr-merge restacks the dependants after each merge. Without the clause the same skills run the lone-PR path.</li>
 <li>A repo that ships its own review skill gets it named in the plan next to review-changes.</li>
 <li>Adding a stage means one new skill that reads the rows it needs, and, when a phrase or an event should trigger it, one hook that routes to it.</li>
 </ul>

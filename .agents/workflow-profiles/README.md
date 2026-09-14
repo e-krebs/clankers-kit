@@ -5,6 +5,11 @@ of the git remote), `repos/<repo>.md` overrides rows for one repo, and a repo wi
 resolves to `repos/<basename>.md` alone. `—` means unset; `none` and `n/a` are values. The
 `.asked/` markers record which repos got their one-time nudge and stay local.
 
+In `PR shape`, the clause `gh stack for a multi-PR change` is the signal that a multi-PR change
+lands as a stack. The PR-stage skills read that clause, and there is no separate row. An override
+replaces the whole cell, so a repo that keeps its own `PR shape` must repeat the clause to keep the
+habit.
+
 The resolver every consumer shares is `~/.agents/skills/workflow-profile/scripts/resolve-profile.sh`:
 hooks source it, and `bash … --rows` prints the merged table for anything else.
 
@@ -20,6 +25,7 @@ The map of the whole skill set, with a diagram, lives in the setup skill at
 | commit-subject-gate.sh | Commit convention |
 | create-ticket-nudge.sh | Ticket system |
 | write-plan, ticket-kickoff | Ticket system, Commit policy, CI watcher, Reviewers, repo facts |
-| changes-to-pr, pr-followup, pr-merge | Ticket system, Commit policy, Commit convention, CI watcher, PR shape, Remote |
+| changes-to-pr, pr-followup, pr-merge | Ticket system, Commit policy, Commit convention, CI watcher, PR shape, Remote, Default branch |
+| rebase-branch | Default branch |
 | verify | Install command, Verify commands, Browser check |
 | review-changes | Reviewers |
