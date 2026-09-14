@@ -2,8 +2,8 @@
 
 This is the **skill catalog**. Each subdirectory here is a Claude Code skill (a `SKILL.md`
 plus any files it needs). `setup.sh` lets you pick which ones to *activate*: it symlinks the
-ones you choose into `~/.claude/skills/`, so you opt in per skill rather than getting all of
-them at once.
+ones you choose into both `~/.claude/skills/` and `~/.agents/skills/` (Codex and Cursor read
+`~/.agents/skills/`), so you opt in per skill rather than getting all of them at once.
 
 ## Bring your own — plus a few curated examples
 
@@ -24,8 +24,8 @@ adding more are welcome (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 1. Drop a skill directory here: `skills/<name>/SKILL.md` (plus any scripts it needs).
 2. Re-run `./setup.sh` and pick it when prompted — or `./setup.sh --skills <name>`.
 
-That symlinks `~/.claude/skills/<name>` → this repo, so Claude Code auto-discovers it and it's
-version-controlled in your fork.
+That symlinks `~/.claude/skills/<name>` and `~/.agents/skills/<name>` → this repo, so your
+agents auto-discover it and it's version-controlled in your fork.
 
 ## Grab a single skill into any agent
 

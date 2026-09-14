@@ -16,7 +16,7 @@ directory or a documented section) so each tool's setup stays turnkey.
 Skills are held to a **"refined enough to represent you publicly"** bar — generic, self-contained,
 and genuinely useful, not tuned to one company's stack.
 
-1. Add `.claude/skills/<name>/SKILL.md` (plus any scripts it needs).
+1. Add `.agents/skills/<name>/SKILL.md` (plus any scripts it needs).
 2. Make it **portable**: no employer/project names, no hard-coded personal paths, no assumptions
    about a specific issue tracker or repo layout. Where an integration is unavoidable, make it
    opt-in and document it.
@@ -24,24 +24,29 @@ and genuinely useful, not tuned to one company's stack.
 
 ## Presets and hooks
 
-- Setting presets live in `.claude/settings/<preset>.json` and are deep-merged by
-  `.claude/settings/merge.jq` (arrays concatenate). Add a fragment + a line in `setup.sh`'s
-  preset list.
-- Hooks live in `.claude/hooks/`. Keep them **fail-open** (a hook error must never block the
+- Setting presets live in `.claude/settings/<preset>.json` and are applied additively by
+  `.claude/settings/merge.jq` (arrays union, a scalar is set only when absent, nothing removed).
+  Add a fragment + a `settings` row in `kit.json`.
+- Hooks live in `.agents/hooks/`. Keep them **fail-open** (a hook error must never block the
   user) and cross-platform where practical (see `play-sound.sh` for the pattern).
+
+## Manifest
+
+A new preset, skill, or link needs a row in `kit.json` (id, group, kind, label, defaults,
+`requires`). Run `bash .agents/lint-manifest.sh` and make sure it passes.
 
 ## Ground rules
 
 - **No personal data.** No real names (other than authorship), emails, employer/project names,
   ticket IDs, internal URLs, or machine-specific absolute paths.
 - **Keep it terse.** `CLAUDE.md` content is re-read every turn; every line should earn its place.
-- **`shellcheck` must pass** on `setup.sh` and everything in `.claude/hooks/`. Run it locally:
-  `shellcheck setup.sh .claude/hooks/*.sh`.
+- **`shellcheck` must pass** on `setup.sh`, `uninstall.sh`, and everything in `.agents/hooks/` and
+  `.agents/lint-manifest.sh`. Run it locally:
+  `shellcheck setup.sh uninstall.sh .agents/lint-manifest.sh .agents/hooks/*.sh`.
 - **Test `setup.sh` in a sandbox**, never against your real `~/.claude` — the built-in flag does
   it for you (copies the repo + points `HOME` at throwaway dirs):
   ```bash
-  ./setup.sh --sandbox --yes --name Test --role Tester \
-    --presets allowlist,enforcement,notification
+  ./setup.sh --sandbox --yes --name Test --role Tester --agents claude,codex
   ```
 
 ## Regenerating the demo GIF

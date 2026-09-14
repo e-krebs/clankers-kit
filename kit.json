@@ -1,0 +1,134 @@
+{
+  "description": "The kit manifest: what setup.sh offers, in picker order, and what depends on what. Every row is on by default unless it says otherwise; a locked row is the core layout and cannot be unchecked. `requires` is a hard edge (checking a row checks its closure, unchecking a required row re-checks it), `soft` is advisory and only listed. `agents` limits a row to the agents the user runs, `needs` to the tools on PATH. Skill rows take their description from SKILL.md. Lint with .agents/lint-manifest.sh.",
+  "groups": [
+    { "id": "layout", "label": "Layout" },
+    { "id": "instructions", "label": "Instructions" },
+    { "id": "style", "label": "Output style" },
+    { "id": "presets", "label": "Settings presets" },
+    { "id": "workflow", "label": "Workflow skills" },
+    { "id": "review", "label": "Review skills" },
+    { "id": "other", "label": "Other skills" },
+    { "id": "hooks", "label": "Hooks" }
+  ],
+  "components": [
+    {
+      "id": "core",
+      "group": "layout",
+      "kind": "links",
+      "label": "core links",
+      "description": "settings.json and the hooks dir into ~/.claude, and the Codex hook wiring into ~/.codex. Every composed hook path resolves through these, so they stay on.",
+      "locked": true,
+      "links": [
+        { "home": ".claude/settings.json", "repo": ".claude/settings.json", "type": "file" },
+        { "home": ".claude/hooks", "repo": ".agents/hooks", "type": "dir" },
+        { "home": ".codex/hooks.json", "repo": ".codex/user-hooks.json", "type": "file", "agent": "codex" }
+      ]
+    },
+    {
+      "id": "memories",
+      "group": "layout",
+      "kind": "links",
+      "label": "memories",
+      "description": "~/.claude/projects into the repo, so the per-project memories Claude Code writes are tracked with your fork. Keep the fork private.",
+      "agents": ["claude"],
+      "links": [
+        { "home": ".claude/projects", "repo": ".claude/projects", "type": "dir" }
+      ]
+    },
+    {
+      "id": "workflow-profiles",
+      "group": "layout",
+      "kind": "links",
+      "label": "workflow profiles",
+      "description": "~/.agents/workflow-profiles into the repo: one table per org and per repo that the workflow skills read (ticket system, commit policy, CI watcher, verify commands).",
+      "links": [
+        { "home": ".agents/workflow-profiles", "repo": ".agents/workflow-profiles", "type": "dir" }
+      ]
+    },
+    {
+      "id": "instructions",
+      "group": "instructions",
+      "kind": "links",
+      "label": "AGENTS.md",
+      "description": "Your personal instructions file, generated from .agents/AGENTS.template.md (or adopted from an existing one), linked as ~/.claude/CLAUDE.md and ~/.codex/AGENTS.md.",
+      "links": [
+        { "home": ".claude/CLAUDE.md", "repo": ".agents/AGENTS.md", "type": "file", "agent": "claude" },
+        { "home": ".codex/AGENTS.md", "repo": ".agents/AGENTS.md", "type": "file", "agent": "codex" }
+      ]
+    },
+    {
+      "id": "allowlist",
+      "group": "presets",
+      "kind": "settings",
+      "label": "safe-command allowlist",
+      "description": "git status/diff/log, gh pr view, grep/ls/find and friends stop prompting for approval.",
+      "agents": ["claude"],
+      "settings": ".claude/settings/allowlist.json"
+    },
+    {
+      "id": "mcp",
+      "group": "presets",
+      "kind": "command",
+      "label": "chrome-devtools MCP",
+      "description": "Let Claude drive and inspect a real browser. Installed with 'claude mcp add' at user scope; needs claude and npx on PATH.",
+      "agents": ["claude"],
+      "needs": ["claude", "npx"],
+      "installed": ["bash", "-c", "jq -e '.mcpServers[\"chrome-devtools\"]' \"$HOME/.claude.json\" >/dev/null 2>&1"],
+      "install": ["claude", "mcp", "add", "--scope", "user", "chrome-devtools", "--", "npx", "-y", "chrome-devtools-mcp@latest"],
+      "remove": ["claude", "mcp", "remove", "chrome-devtools"]
+    },
+    {
+      "id": "changes-to-pr",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "changes-to-pr",
+      "skill": "changes-to-pr"
+    },
+    {
+      "id": "pr-followup",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "pr-followup",
+      "skill": "pr-followup"
+    },
+    {
+      "id": "rebase-branch",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "rebase-branch",
+      "skill": "rebase-branch"
+    },
+    {
+      "id": "ticket-kickoff",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "ticket-kickoff",
+      "skill": "ticket-kickoff"
+    },
+    {
+      "id": "typescript-tips",
+      "group": "other",
+      "kind": "skill",
+      "label": "typescript-tips",
+      "skill": "typescript-tips"
+    },
+    {
+      "id": "enforcement",
+      "group": "hooks",
+      "kind": "settings",
+      "label": "enforcement hooks",
+      "description": "Block cd, git -C, sed/cat/awk, secret-leaking echo, destructive find/sort, and verbose TS comments.",
+      "agents": ["claude"],
+      "settings": ".claude/settings/enforcement.json"
+    },
+    {
+      "id": "notification",
+      "group": "hooks",
+      "kind": "settings",
+      "label": "notification sounds",
+      "description": "One sound when a permission prompt is waiting, one when Claude finishes a turn.",
+      "agents": ["claude"],
+      "settings": ".claude/settings/notification.json"
+    }
+  ]
+}
