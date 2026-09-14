@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/ticket-kickoff/hooks/pick-up-next-ticket.sh", "timeout": 5 } ] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Skill", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/ticket-kickoff/hooks/kickoff-plan-chain.sh", "timeout": 5 } ] }
+    ]
+  }
+}

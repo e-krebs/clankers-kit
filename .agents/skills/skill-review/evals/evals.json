@@ -1,0 +1,46 @@
+{
+  "evals": [
+    {
+      "name": "single-skill-gate-after-edit",
+      "prompt": "I just edited the foo-bar skill. Run the hygiene gate on it.",
+      "expected_output": "Loads the conventions skill (or states the fallback), reviews foo-bar against the checklist quoting offending lines, greps for cross-skill references, runs the lint runner with .agents as the argument, proposes fixes via AskUserQuestion, applies approved ones, and reports before/after scores.",
+      "assertions": [
+        "Lint runner invoked with the parent of skills/, not .agents/skills",
+        "Run validity checked: the skills-checked count equals the target count, with per-skill symlink re-runs on a shortfall",
+        "Findings quote the offending line",
+        "Fixes gated on AskUserQuestion approval",
+        "Report shows before and after scores"
+      ]
+    },
+    {
+      "name": "cross-reference-classification",
+      "prompt": "Audit all my skills. One of them names another skill in its body.",
+      "expected_output": "Classifies the hit: a finding unless the user explicitly granted that dependency and the text states a fallback; runtime naming in questions/reports is not a finding. Published-channel skills get the absolute rule.",
+      "assertions": [
+        "Distinguishes authored-text references from runtime naming",
+        "Granted dependency requires both an explicit user grant and a stated fallback",
+        "Published skills held to the absolute no-reference rule"
+      ]
+    },
+    {
+      "name": "degrades-without-the-runner",
+      "prompt": "Review the foo skill on a machine without the internal-skills repo.",
+      "expected_output": "Falls back to the inline checklist as the gate, says so plainly in the report, and does not fabricate a lint score.",
+      "assertions": [
+        "No fabricated score",
+        "Fallback stated in the report",
+        "Checklist review still performed in full"
+      ]
+    },
+    {
+      "name": "gather-stops-after-scoring",
+      "prompt": "Run skill-review over every installed skill with the argument gather.",
+      "expected_output": "Runs steps 1 to 4, returns per skill the findings list and the lint score, and makes no AskUserQuestion call and no file change.",
+      "assertions": [
+        "No AskUserQuestion call",
+        "No skill file is edited",
+        "Every target skill has a findings list and a score from a valid run"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "evals": [
+    {
+      "name": "fresh-remote-repo-proposes-org-template",
+      "prompt": "Set up the workflow profile for this repo. Its origin is git@github.com:acme/hotkey.git and no profile file exists yet.",
+      "expected_output": "Resolves the real profiles directory with readlink, reports that neither acme.md nor repos/hotkey.md exists, and proposes a full twelve-row org template with Git source 'GitHub (acme)', Default branch from origin/HEAD (else main), Ticket system none, CI watcher none, PR shape n/a, Remote yes, the three repo facts as —, and Reviewers listing only the review agents actually installed. Asks about the deltas in a single batched question call before writing anything.",
+      "assertions": [
+        "Parses owner and repo from the ssh remote form",
+        "Resolves the profiles directory via readlink and writes through the real path",
+        "Proposes all twelve rows in order with the documented defaults",
+        "Reviewers lists only installed review agents (codex only if on PATH)",
+        "Exactly one batched question round before any write"
+      ]
+    },
+    {
+      "name": "re-run-changes-one-field-only",
+      "prompt": "Refresh the workflow profile for this repo. acme.md already exists; I only want the CI watcher changed from CircleCI to none.",
+      "expected_output": "Reads the existing rows, asks only about the fields whose proposal differs, and rewrites the CI watcher row alone. Every other row keeps its exact current text, and the report shows a single row with old → new plus a diff that touches nothing else.",
+      "assertions": [
+        "Only the CI watcher row is rewritten",
+        "The eleven other rows stay byte-identical, spacing included",
+        "The completion check is a diff limited to the chosen rows",
+        "Existing Tracker rules section is left untouched"
+      ]
+    },
+    {
+      "name": "remote-less-repo-writes-basename-file",
+      "prompt": "Create the workflow profile for this directory. It is a git repo with no remote, in a folder called sandbox-notes.",
+      "expected_output": "Resolves by directory basename, writes repos/sandbox-notes.md only (no org file, since there is no owner), and fills every one of the twelve rows in that single file with Remote set to local-only, PR shape n/a and Git source left unset.",
+      "assertions": [
+        "Writes repos/sandbox-notes.md and no owner-level file",
+        "The override carries all twelve rows because no org file backs it",
+        "Remote is local-only",
+        "No question is asked about an owner that does not exist"
+      ]
+    },
+    {
+      "name": "jira-org-appends-tracker-rules",
+      "prompt": "Set the ticket system for this org to Jira, project key SDK.",
+      "expected_output": "Writes 'Jira (SDK)' into the Ticket system row and appends the ## Tracker rules section from the Jira reference to the org file, with <PROJECT> replaced by SDK, the three state names (In Progress / In Review / Done) and all seven rules intact.",
+      "assertions": [
+        "Loads references/tracker-rules-jira.md before writing the section",
+        "<PROJECT> is replaced by SDK everywhere it appears",
+        "All seven rules and the three state names are present",
+        "The section is not duplicated when it already exists"
+      ]
+    },
+    {
+      "name": "override-drops-rows-equal-to-org",
+      "prompt": "The repo override for this repo repeats Default branch main and Commit policy 'PRs, never direct', both identical to the org template, and sets no repo fact. Refresh it.",
+      "expected_output": "Recognises that no row deviates and no repo fact is set, so it deletes the override file rather than rewriting it, and reports the deletion.",
+      "assertions": [
+        "Rows equal to the org row are dropped from the override",
+        "The override file is deleted when nothing deviates and no repo fact is set",
+        "The org file rows are left unchanged",
+        "The .asked markers are not touched"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "skill_name": "memory-review",
+  "evals": [
+    {
+      "name": "flags-expired-pending-memory",
+      "prompt": "Run a memory review. One memory says: 'PENDING: after PR #123 merges, delete the foo_bar runtime flag, then delete this memory.' PR #123 merged 60 days ago.",
+      "expected_output": "Flags the memory as an expired trigger, verifies the live PR state before judging, checks whether the follow-up already happened or is tracked (e.g. an existing ticket) before proposing a new tracker item, and recommends completing the action then deleting the memory, asking the user before any outward action.",
+      "assertions": [
+        "Verifies the PR's live state instead of trusting the memory",
+        "Looks for an existing tracker item before proposing to create one",
+        "Recommends delete only after the action is done or confirmed tracked",
+        "Asks via AskUserQuestion with the repository name leading the question"
+      ]
+    },
+    {
+      "name": "orders-projects-and-leads-with-repo-name",
+      "prompt": "Review my memories across three projects: alpha has 12 memories, beta has 2, gamma has 5.",
+      "expected_output": "Reviews beta first, then gamma, then alpha (ascending count). Every AskUserQuestion about a memory opens with the project/repo name. Flagged memories are asked first, then one multi-select confirm-all for each project's clean set.",
+      "assertions": [
+        "Ascending project order by memory count",
+        "Questions lead with the repository name",
+        "Flagged-first, then a batched confirm-all per project",
+        "Offers the five verdicts: keep, delete, refresh, merge, promote"
+      ]
+    },
+    {
+      "name": "closing-report-numbers",
+      "prompt": "Finish the review and show me the result.",
+      "expected_output": "A closing report with per-project before/deleted/refreshed/merged/promoted/kept/after and a global total, where promoted rules went, size before/after in files and words, and integrity fixes (links, index lines, slugs). Writes the last-review marker date.",
+      "assertions": [
+        "Per-project and global before/after counts present",
+        "Size reduction reported from a before-snapshot taken in phase 1",
+        "Integrity fixes enumerated",
+        "Updates ~/.claude/projects/.last-memory-review"
+      ]
+    },
+    {
+      "name": "gather-returns-findings-and-asks-nothing",
+      "prompt": "Run memory-review with the argument gather.",
+      "expected_output": "Runs phase 1 and phase 2 only, returns the findings table (repository, memory, flags, recommended verdict, evidence) plus the before snapshot, and makes no AskUserQuestion call and no file change.",
+      "assertions": [
+        "No AskUserQuestion call",
+        "No memory file, index or marker is written",
+        "Every memory has a row with a recommended verdict"
+      ]
+    },
+    {
+      "name": "apply-reads-verdicts-and-skips-the-chain",
+      "prompt": "Run memory-review with the argument apply /tmp/verdicts.md, where the file holds one verdict per memory.",
+      "expected_output": "Skips the interview, applies the verdicts from the file, rebuilds the index and the wikilinks, writes the marker, commits per concern, prints the closing report and stops: no codex adversarial review, no /doctor recommendation.",
+      "assertions": [
+        "No AskUserQuestion call",
+        "Verdicts come from the file, not from a new interview",
+        "The closing report is produced and the chain is not run"
+      ]
+    }
+  ]
+}

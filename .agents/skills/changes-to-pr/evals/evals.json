@@ -3,57 +3,80 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "I've got a bunch of uncommitted changes on my current branch. Open a PR for them.",
-      "expected_output": "Inspects the working tree, proposes a branch + atomic commit split + a drafted PR description, and only creates a draft PR after the user approves the consolidated plan.",
+      "prompt": "Profile: Ticket system Jira (ACME), Git source GitHub (acme), Default branch develop, Commit policy PRs never direct, Commit convention conventional w/ scope + ticket ref in PR body only, CI watcher CircleCI, PR shape draft-first squash CODEOWNERS review, Remote yes. Open a PR for my changes on feat/composition-panel — no linked ticket yet.",
+      "expected_output": "The widgets-like path, unchanged in behaviour: inspect, one batched Gate 1 (ticket, branch target, split, review), a plan with atomic conventional-scope commits and a template-based description, Gate 2, then a draft PR and a hand-off line naming the CI watch.",
       "assertions": [
-        "Inspects working tree first (git status / git diff against the base branch) before asking anything",
-        "Presents a consolidated Gate-2 plan (branch name + commit split + PR description) for approval before running any command",
-        "Does not commit, push, or open the PR until the user approves the plan",
-        "Creates the PR as a draft (gh pr create --draft), not a ready-for-review PR"
+        "Reads the workflow profile rows from context before asking anything",
+        "Runs the git inspection (branch, base develop, status, diff, branch lead) first",
+        "Asks about the ticket because Ticket system names a tracker, detecting the id through the profile's Tracker rules detection order",
+        "Commits nothing and pushes nothing before Gate 2 approval",
+        "Uses conventional commit subjects with a scope and no ticket id, putting the reference in the PR body only, as the Commit convention row says",
+        "Creates the PR with --draft because the PR shape row is draft-first",
+        "Closes by saying a hook hands off to the CI watch, since the CI watcher row names CircleCI",
+        "Names no other skill anywhere in the run"
       ]
     },
     {
       "id": 2,
-      "prompt": "Cut a PR for my changes — but the diff has both a bug fix and an unrelated refactor mixed together.",
-      "expected_output": "Detects the two distinct concerns and offers to split them into one branch + commits + draft PR per concern, rather than bundling everything into one PR.",
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy direct commits to main, Commit convention conventional w/ scope, CI watcher none, PR shape n/a, Remote yes. Commit and PR this.",
+      "expected_output": "Under direct commits to main it commits on the default branch and stops: no branch, no PR, no ticket question, and it says plainly that no CI watch follows.",
       "assertions": [
-        "Flags that the change spans more than one distinct concern",
-        "Offers a choice between one PR and splitting into per-concern branches/PRs",
-        "If splitting, each concern gets its own atomic commits and its own draft PR",
-        "Commit messages are conventional-commit style with a scope (e.g. fix(...) / refactor(...))"
+        "Honors Commit policy direct commits to main — commits on main with no branch created and no PR opened",
+        "Asks no ticket question and performs no tracker move, because Ticket system is none",
+        "Still splits the work into atomic conventional-scope commits, one per concern, gated at Gate 2",
+        "Drafts no PR description",
+        "Says plainly that no CI watch follows, since the CI watcher row is none",
+        "Explains the direct-commit choice rather than silently ignoring the PR half of the request"
       ]
     },
     {
       "id": 3,
-      "prompt": "Ship these changes as a PR, and run a review over them first.",
-      "expected_output": "Runs an independent agent review in a subagent, applies only high-confidence fixes to the working tree, summarizes the rest in an 'Agent review' section of the PR, then proceeds to the branch/commit/draft-PR flow.",
+      "prompt": "Profile: Ticket system none, Git source none, Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape n/a, Remote local-only. Ship these changes.",
+      "expected_output": "With Remote local-only the run ends at the commits: it builds the split, gates it, commits, and reports that nothing was pushed and no PR exists to open.",
       "assertions": [
-        "Runs the review in a separate subagent, not as self-review by the implementing agent",
-        "Auto-applies only high-confidence fixes; uncertain findings are reported, not applied",
-        "Re-reads the diff after the review before computing the commit split and PR description",
-        "Adds an 'Agent review' section (coverage + findings + verdict) to the PR description"
+        "Stops at the commits because Remote is local-only — no git push and no gh pr create",
+        "Reports explicitly that nothing was pushed rather than failing on a missing remote",
+        "Skips the branch-target question that only applies to a remote PR flow",
+        "Asks no ticket question and says no CI watch follows"
       ]
     },
     {
       "id": 4,
-      "prompt": "Commit and PR this. Please reuse the repo's pull request template for the description.",
-      "expected_output": "Reads the repo's PR template and drafts the description using its sections, filling conditional sections only when relevant and leaving no placeholder text.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, Commit convention conventional w/ scope + ticket ref in PR body only, CI watcher CircleCI, PR shape draft-first squash CODEOWNERS review, Remote yes, Reviewers claude and codex. The approved plan is in context: its Closing steps line reads 'review: judgment tier x 2' and it prescribes two commits. Cut the PR for ACME-2258.",
+      "expected_output": "It takes the tier and the count from the plan's Closing steps line, delegates to the review capability read-only, applies the findings it accepts itself and re-reads the diff, follows the plan's prescribed commit split, and asks the tracker move batched into Gate 2.",
       "assertions": [
-        "Reads the repo PR template (e.g. .github/pull_request_template.md) and uses its sections as the structure",
-        "Fills conditional sections (env vars, dependencies) only when the diff actually contains them",
-        "Verifies no leftover template placeholder text remains before showing the plan",
-        "Keeps the description concise rather than a line-by-line code walkthrough"
+        "Reads the tier and reviewer count from the plan's Closing steps review line rather than offering its own",
+        "Delegates to the review capability with exactly that tier and count",
+        "Treats reviewers as read-only — the main agent applies the accepted findings and no reviewer edits the tree",
+        "Re-reads the working-tree diff after applying the accepted fixes, before building the split and the description",
+        "Follows the commit split the plan prescribed instead of regrouping by its own analysis",
+        "Batches the move of ACME-2258 to the work-started state into the Gate 2 interaction, best-effort on failure",
+        "Adds an Agent review section to the PR body naming coverage, findings, verdict, and which findings were applied"
       ]
     },
     {
       "id": 5,
-      "prompt": "Package my working-tree changes into a draft PR against main.",
-      "expected_output": "Creates a branch, atomic commits, and a draft PR based on main; conventional commit messages carry no issue reference while any linked-issue reference goes only in the PR body's motivation section.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, PR shape draft-first squash CODEOWNERS review, Remote yes. Commit and PR this — the diff mixes a bugfix and an unrelated refactor. Split them.",
+      "expected_output": "Detects the two concerns, confirms the split at Gate 1, then runs the build-and-execute steps once per concern, presenting all per-concern plans at a single Gate 2, with the tracker move running once up front.",
       "assertions": [
-        "Creates a draft PR with the base branch set to main",
-        "Branch name and commit messages contain no issue reference / ticket ID",
-        "Any linked-issue reference appears only in the PR description's 'why'/motivation section",
-        "Aborts gracefully if the working tree is clean or HEAD is detached"
+        "Detects the two concerns from the diff and asks whether to proceed as one PR or split",
+        "Produces one branch, its atomic commits, and one PR per concern",
+        "Presents the per-concern plans together at a single Gate 2",
+        "Runs the tracker move once up front for the single ticket, not once per PR",
+        "Bases each concern's branch per the Gate 1 choice — independent off develop, or stacked"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, CI watcher GitHub Actions, PR shape squash CODEOWNERS review, Remote yes. Update the existing PR for this branch with my new commits. It already has a description I wrote by hand.",
+      "expected_output": "Recognizes the non-template body, warns at Gate 2 that it would be replaced and offers to keep it, and on approval pushes and updates via gh pr edit; with a PR shape that is not draft-first it opens nothing as a draft, and it still hands off to the CI watch.",
+      "assertions": [
+        "Detects the existing PR and that its body is non-template",
+        "Warns at Gate 2 that the hand-written body would be replaced and offers to keep it",
+        "Replaces the body only on explicit approval, via gh pr edit --body-file -",
+        "Omits --draft because the PR shape row is not draft-first",
+        "Never promotes the PR to ready, merges it, or watches CI itself, closing instead on the hand-off to the CI watch",
+        "Aborts a hunk-level commit cleanly on a git apply --cached failure, pushing no partial result"
       ]
     }
   ]

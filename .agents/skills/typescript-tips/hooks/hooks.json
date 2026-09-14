@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/typescript-tips/hooks/typescript-tips-nudge.sh", "timeout": 5 } ] }
+    ]
+  }
+}

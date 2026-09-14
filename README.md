@@ -56,10 +56,11 @@ other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 | `.agents/AGENTS.example.md` | A worked example of a personal instructions file — *"I write who I am."* |
 | `.agents/AGENTS.template.md` | A blank version `setup.sh` fills in for you. |
 | `.claude/settings/` | Opt-in setting **presets** — the safe-command allowlist and `base.json` — composed into your `settings.json`. |
+| `.claude/output-styles/` | The Plain output style: Simplified Technical English for the agent's replies, five units, no bold, one baton emoji. |
 | `.agents/hooks/` | The shared hook scripts, their `hooks.json` fragments, the composer, and the fixture suites — *"enforce, don't just ask."* |
 | `.claude/projects/` | Where per-project **memory** is tracked — *"my agent's brain."* |
 | `.agents/workflow-profiles/` | Per-org and per-repo tables the workflow skills read (ticket system, commit policy, CI watcher, verify commands). |
-| `.agents/skills/` | A catalog for small, composable skills — TypeScript tips + a git/PR/ticket workflow family, plus bring your own. See the [catalog](.agents/skills/README.md). |
+| `.agents/skills/` | A catalog of skills: a workflow family that reads one shared profile (plan, kick off a ticket, verify, review, PR, watch CI, merge, rebase), a review family (code, skills, hooks, memories), TypeScript tips — see the [catalog](.agents/skills/README.md). |
 
 ## Layout
 
@@ -99,6 +100,24 @@ it on to also compose the `hooks.json` of every active skill.
 > hook once you've trusted it. After `setup.sh` — and after any re-run that changes the wiring —
 > open `codex` and run `/hooks` once. Until then, `codex exec` skips untrusted hooks silently.
 
+## Skills
+
+The workflow skills — `workflow-profile`, `write-plan`, `ticket-kickoff`, `verify`,
+`changes-to-pr`, `pr-followup`, `pr-merge`, `rebase-branch` — read one shared contract, the
+workflow profile. `/workflow-profile` writes it: the ticket system, the commit policy, the commit
+convention, the CI watcher, the PR shape, the verify commands, the reviewers. The usual order is
+ticket-kickoff → write-plan → verify → review-changes → changes-to-pr → pr-followup → pr-merge,
+and every skill also works alone, typed as `/name`.
+
+The review skills — `review-changes`, `skill-review`, `hooks-review`, `memory-review`,
+`clankers-review` — audit a diff, a skill, the hooks layer, and the memory store;
+`clankers-review` runs the others together behind one gate.
+
+One row is upstream: `writing-for-agents`, Matt Pocock's guide to writing documents for agents.
+`setup.sh` installs it with `npx skills add mattpocock/skills --skill writing-for-agents -g` into
+`~/.agents/skills`; it isn't tracked in this repo. See the full
+[catalog](.agents/skills/README.md) for what each skill does.
+
 ## Requirements
 
 - **macOS or Linux** (WSL is fine). Native Windows is not supported — it's bash + POSIX symlinks.
@@ -124,11 +143,11 @@ it on to also compose the `hooks.json` of every active skill.
    where to inspect the result (and how to delete it) when it's done. (The Claude interview is
    skipped in `--sandbox`: a throwaway `HOME` isn't logged in — run setup for real to use it.)
 2. `setup.sh` asks which agents you run (Claude Code, Codex — defaults to whatever it finds on
-   your `PATH`), then shows **one grouped picker** covering layout, instructions, presets, skills,
-   and hooks (the skill trigger hooks stay off by default): every row is on by default, so
-   uncheck what you don't want. Unchecking a row another
-   checked row depends on re-checks it with a note naming the dependant; checking a row checks
-   everything it needs. Then it shows a **recap of exactly what it will do** — including any
+   your `PATH`), then shows **one grouped picker**: layout, instructions, output style, settings
+   presets, workflow skills, review skills, other skills, and hooks (the skill trigger hooks stay
+   off by default). Every row is on by default, so uncheck what you don't want. Unchecking a row
+   another checked row depends on re-checks it with a note naming the dependant; checking a row
+   checks everything it needs. Then it shows a **recap of exactly what it will do** — including any
    existing `~/.claude` content it will merge — and waits for one confirmation before it touches
    anything. It will:
    - seed your `AGENTS.md` — a few short questions (name, role, and how you work), or, if the
@@ -156,6 +175,10 @@ Swap `typescript-tips` for any skill in the [catalog](.agents/skills/README.md) 
 `ticket-kickoff`, `rebase-branch`, `changes-to-pr`, `pr-followup`. That's skill *distribution*,
 not a framework to depend on — the kit itself is still yours to own. It copies the skill's
 `hooks/` directory too, but nothing wires those hooks; only `setup.sh`'s composer does that.
+
+The workflow and review skills expect their siblings and the profile — `ticket-kickoff` needs
+`write-plan`, `pr-merge` needs `rebase-branch`, and `hooks-review`, `memory-review`, and
+`clankers-review` need `skill-review` — so grab those as a set.
 
 ## Privacy
 

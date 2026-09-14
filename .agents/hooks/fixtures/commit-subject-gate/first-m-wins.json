@@ -1,0 +1,8 @@
+{
+  "session_id": "case-first-m-wins",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "git commit -m \"feat(x): valid subject\" --message=\"PROJ-123 in the body\""
+  }
+}

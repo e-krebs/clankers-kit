@@ -1,0 +1,7 @@
+{
+  "session_id": "case-subagent",
+  "hook_event_name": "UserPromptSubmit",
+  "cwd": "/tmp/repo",
+  "agent_id": "abc123",
+  "prompt": "merge the PR"
+}

@@ -1,0 +1,46 @@
+{
+  "skill_name": "clankers-review",
+  "evals": [
+    {
+      "name": "gate-one-before-any-worker",
+      "prompt": "Run the full clankers review.",
+      "expected_output": "Records the starting commit, then asks one multi-select AskUserQuestion naming the four sub-topics (memories, hooks, skills, AGENTS.md) and launches no worker and no child skill until the answer is in.",
+      "assertions": [
+        "The first tool call after the scratch file is AskUserQuestion with the four sub-topics",
+        "No Agent, Skill or codex call precedes the answer",
+        "Only the selected sub-topics are gathered afterwards"
+      ]
+    },
+    {
+      "name": "gate-two-approves-every-item",
+      "prompt": "Gathering is done: 9 memory rows, 6 hook rows, 2 candidates and 3 AGENTS.md lines are in the table.",
+      "expected_output": "Asks sub-topic by sub-topic, flagged items first, up to four items per AskUserQuestion call with one question per item, closes each sub-topic with a confirm-all for its clean set, writes every verdict into the scratch table, and only then runs the appliers.",
+      "assertions": [
+        "Every row receives its own verdict before any apply",
+        "No file outside the scratch dir changes before gate 2 closes",
+        "The children are re-run with the argument apply and the scratch file path"
+      ]
+    },
+    {
+      "name": "continues-when-a-child-is-absent",
+      "prompt": "Run the full clankers review with memories and hooks. The hooks-review skill is not installed on this machine.",
+      "expected_output": "Gathers the memory half, says that the hooks sub-topic is unavailable because its SKILL.md is absent, runs gate 2 and the apply on the memory rows, and still runs the closing chain over the commits that exist.",
+      "assertions": [
+        "Names the unavailable sub-topic instead of stopping",
+        "The memory half still runs through gather, gate 2 and apply",
+        "The closing chain still runs over the commits that exist"
+      ]
+    },
+    {
+      "name": "closing-chain-adversarial-review",
+      "prompt": "Every verdict is applied and committed. Finish the pass.",
+      "expected_output": "Runs an independent adversarial review with a different model (codex when on the path, read-only sandbox) against the range from the recorded starting commit plus the verdict table, applies high-confidence findings as a fixup commit, declines the rest with cause in the report, and closes by recommending the built-in /doctor checkup to the user.",
+      "assertions": [
+        "The reviewer is a different model, not a self-review",
+        "The review checks deletes gone, keeps untouched, trims lossless, rule changes cased, new code sound",
+        "Each finding ends applied or declined-with-cause",
+        "Recommends /doctor to the user rather than claiming to run it"
+      ]
+    }
+  ]
+}

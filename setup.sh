@@ -421,18 +421,20 @@ fi
 US=$'\037'
 C_ID=(); C_GROUP=(); C_KIND=(); C_LABEL=(); C_DESC=(); C_DEFAULT=(); C_LOCKED=(); C_REQ=(); C_SOFT=()
 C_AGENTS=(); C_NEEDS=(); C_SETTINGS=(); C_HOOKS=(); C_SKILL=(); C_LINKS=(); C_INSTALLED=(); C_INSTALL=(); C_REMOVE=()
-while IFS="$US" read -r id group kind label desc def locked req soft agents needs settings hooks skill links installed install remove; do
+C_UP_SRC=(); C_UP_SKILL=()
+while IFS="$US" read -r id group kind label desc def locked req soft agents needs settings hooks skill links installed install remove up_src up_skill; do
   C_ID+=("$id"); C_GROUP+=("$group"); C_KIND+=("$kind"); C_LABEL+=("$label"); C_DESC+=("$desc")
   C_DEFAULT+=("$def"); C_LOCKED+=("$locked"); C_REQ+=("$req"); C_SOFT+=("$soft"); C_AGENTS+=("$agents")
   C_NEEDS+=("$needs"); C_SETTINGS+=("$settings"); C_HOOKS+=("$hooks"); C_SKILL+=("$skill"); C_LINKS+=("$links")
-  C_INSTALLED+=("$installed"); C_INSTALL+=("$install"); C_REMOVE+=("$remove")
+  C_INSTALLED+=("$installed"); C_INSTALL+=("$install"); C_REMOVE+=("$remove"); C_UP_SRC+=("$up_src"); C_UP_SKILL+=("$up_skill")
 done < <(jq -r '.components[] | [
     .id, .group, .kind, .label, (.description // ""),
     (if .default == false then "" else "1" end), (if .locked == true then "1" else "" end),
     ((.requires // []) | join(",")), ((.soft // []) | join(",")), ((.agents // []) | join(",")),
     ((.needs // []) | join(",")), (.settings // ""), (.hooks // ""), (.skill // ""),
     ((.links // []) | map([.home, .repo, .type, (.agent // "")] | join("|")) | join(";")),
-    ((.installed // []) | @json), ((.install // []) | @json), ((.remove // []) | @json)
+    ((.installed // []) | @json), ((.install // []) | @json), ((.remove // []) | @json),
+    (.upstream.source // ""), (.upstream.skill // "")
   ] | join("")' "$MANIFEST")
 G_ID=(); G_LABEL=()
 while IFS="$US" read -r id label; do G_ID+=("$id"); G_LABEL+=("$label"); done \
@@ -458,17 +460,51 @@ applicable() {                      # $1 = index -> 0 when the row concerns a wi
 }
 
 skill_description() {               # the SKILL.md frontmatter `description:` value, or a safe fallback
-  local f="${AGENTS_SRC}/skills/${1}/SKILL.md" line
-  line="$(grep -m1 '^description:' "$f" 2>/dev/null || true)"
-  line="${line#description:}"                       # drop the key
-  line="${line#"${line%%[![:space:]]*}"}"           # trim leading whitespace
-  if [[ -n "$line" ]]; then printf '%s' "$line"; else printf "the '%s' skill" "$1"; fi
+  local f="${AGENTS_SRC}/skills/${1}/SKILL.md" line val="" in_fm=false folded=false
+  [[ -f "$f" ]] || { printf "the '%s' skill" "$1"; return 0; }
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" == "---" ]]; then $in_fm && break; in_fm=true; continue; fi
+    $in_fm || continue
+    if $folded; then                                  # a `>-` / `|` block: the indented lines that follow
+      [[ "$line" == [[:space:]]* ]] || break
+      line="${line#"${line%%[![:space:]]*}"}"
+      val="${val:+$val }$line"
+      continue
+    fi
+    [[ "$line" == description:* ]] || continue
+    val="${line#description:}"; val="${val#"${val%%[![:space:]]*}"}"
+    case "$val" in '>'*|'|'*) val=""; folded=true ;; *) break ;; esac
+  done < "$f"
+  val="${val%"${val##*[![:space:]]}"}"
+  case "$val" in                                      # one layer of YAML quotes
+    \"*\") val="${val#\"}"; val="${val%\"}" ;;
+    \'*\') val="${val#\'}"; val="${val%\'}" ;;
+  esac
+  if [[ -n "$val" ]]; then printf '%s' "$val"; else printf "the '%s' skill" "$1"; fi
 }
 
-row_desc() {                        # $1 = index -> the detail-pane text
+row_desc() {                        # $1 = index -> the detail-pane text, plus the advisory edges
   if [[ -n "${C_DESC[$1]}" ]]; then printf '%s' "${C_DESC[$1]}"
   elif [[ -n "${C_SKILL[$1]}" ]]; then skill_description "${C_SKILL[$1]}"
   else printf '%s' "${C_LABEL[$1]}"; fi
+  [[ -n "${C_SOFT[$1]}" ]] && printf ' Works better with: %s.' "${C_SOFT[$1]//,/, }"
+  return 0
+}
+
+# An upstream skill lives in ~/.agents/skills/<name> (the skills CLI installs it there and links
+# it into each agent's skills dir), so it is on disk when that entry exists and is not ours — and,
+# with Claude wired, when ~/.claude/skills/<name> exists too, so an agent added later gets its link.
+upstream_installed() {              # $1 = skill name
+  local p="${HOME}/.agents/skills/${1}"
+  { [[ -e "$p" || -L "$p" ]] && ! ours_link "$p"; } || return 1
+  if has_agent claude; then [[ -e "${CLAUDE_HOME}/skills/${1}" || -L "${CLAUDE_HOME}/skills/${1}" ]] || return 1; fi
+  return 0
+}
+agents_flag() {                     # the skills CLI agent names for the wired agents, space-separated
+  local out=""
+  has_agent claude && out="claude-code"
+  has_agent codex && out="${out:+$out }codex"
+  printf '%s' "$out"
 }
 
 # each_link: iterate a component's link entries for the wired agents. Sets home_rel, repo_rel, ltype.
@@ -512,10 +548,16 @@ hooks_composed() {                  # $1 = fragment path
   done < <(jq -r '.hooks[][]?.hooks[]?.command // empty | select(startswith("${CLAUDE_PLUGIN_ROOT}/")) | ltrimstr("${CLAUDE_PLUGIN_ROOT}/")' "$1" 2>/dev/null)
   return 1
 }
-skill_hooks_composed() {            # the toggle is on disk when any skill hook is wired
+skill_hooks_composed() {            # the toggle is on disk when a hook of a kit skill is wired
   [[ -f "${CLAUDE_SRC}/settings.json" ]] || return 1
-  # shellcheck disable=SC2016  # the literal $HOME is what the composer writes
-  jq -e '[.hooks[][]?.hooks[]?.command // ""] | any(contains("$HOME/.claude/skills/"))' "${CLAUDE_SRC}/settings.json" >/dev/null 2>&1
+  local i
+  for ((i = 0; i < N; i++)); do     # a skill another tool put under ~/.claude/skills does not count
+    [[ "${C_KIND[i]}" == skill ]] || continue
+    # shellcheck disable=SC2016  # the literal $HOME is what the composer writes
+    jq -e --arg c "\$HOME/.claude/skills/${C_SKILL[i]}/hooks/" '[.hooks[][]?.hooks[]?.command // ""] | any(contains($c))' \
+      "${CLAUDE_SRC}/settings.json" >/dev/null 2>&1 && return 0
+  done
+  return 1
 }
 
 run_argv() {                        # $1 = JSON argv -> runs it; return 1 on an empty list
@@ -536,6 +578,7 @@ on_disk() {                         # $1 = index -> 0 when the row is already in
     toggle)   skill_hooks_composed ;;
     skill)    skill_active "${C_SKILL[$1]}" ;;
     command)  [[ "${C_INSTALLED[$1]}" != "[]" ]] && run_argv "${C_INSTALLED[$1]}" >/dev/null 2>&1 ;;
+    upstream) upstream_installed "${C_UP_SKILL[$1]}" ;;
     *) return 1 ;;
   esac
 }
@@ -578,6 +621,9 @@ filter_kinds() {                    # $1 = csv of wanted ids, $2.. = kinds the f
   done
 }
 
+# EXP_OFF marks a row the user turned off by name (--without) or by hand (the picker). A list
+# that merely omits a row (--components, --skills) leaves an installed upstream skill in place.
+EXP_OFF=()
 if $COMPONENTS_SET; then
   for ((i = 0; i < N; i++)); do [[ -n "${C_LOCKED[i]}" ]] || SEL[i]=""; done
   IFS=',' read -r -a want <<< "$OPT_COMPONENTS"
@@ -593,7 +639,7 @@ if [[ -n "$OPT_WITHOUT" ]]; then
     id="$(trim "$id")"; [[ -z "$id" ]] && continue
     j="$(cidx "$id")" || { warn "  unknown component '${id}' in --without — ignored"; continue; }
     [[ -n "${C_LOCKED[j]}" ]] && { warn "  ${id} is part of the core layout — kept"; continue; }
-    SEL[j]=""
+    SEL[j]=""; EXP_OFF[j]=1
   done
 fi
 $PRESETS_SET && filter_kinds "$(trim "$OPT_PRESETS")" settings command hooks toggle
@@ -619,7 +665,7 @@ if $INTERACTIVE && ! $COMPONENTS_SET && ! $PRESETS_SET && ! $SKILLS_SET; then
   multiselect "What to install — everything on by default, uncheck what you don't want" || { say "Aborted — nothing was changed."; exit 0; }
   for ((i = 0; i < N; i++)); do
     row="${MS_ROW[i]:-}"; [[ -n "$row" ]] || continue
-    if [[ ${MS_ON[row]:-} == 1 ]]; then SEL[i]=1; else SEL[i]=""; fi
+    if [[ ${MS_ON[row]:-} == 1 ]]; then SEL[i]=1; else SEL[i]=""; EXP_OFF[i]=1; fi
   done
 fi
 settle_requires
@@ -726,9 +772,17 @@ if $SKILL_HOOKS; then
   done
 fi
 
-# --- commands (the chrome-devtools MCP) --------------------------------------
-CMDS=()
-for ((i = 0; i < N; i++)); do [[ "${C_KIND[i]}" == command ]] && selected "$i" && CMDS+=("$i"); done
+# --- commands (the chrome-devtools MCP) and upstream skills (the skills CLI) --------------
+# An upstream skill is removed only when its row was turned off by name or by hand: the skills
+# CLI installs globally, and the kit cannot tell its own install from one the user made.
+CMDS=(); UPS_ADD=(); UPS_DROP=()
+for ((i = 0; i < N; i++)); do
+  [[ "${C_KIND[i]}" == command ]] && selected "$i" && CMDS+=("$i")
+  if [[ "${C_KIND[i]}" == upstream && -n "${APPL[i]}" ]]; then
+    if selected "$i"; then upstream_installed "${C_UP_SKILL[i]}" || UPS_ADD+=("$i")
+    elif [[ -n "${EXP_OFF[i]:-}" ]] && upstream_installed "${C_UP_SKILL[i]}"; then UPS_DROP+=("$i"); fi
+  fi
+done
 
 # --- repo privacy (detect only; the change happens in APPLY) -----------------
 PRIV_STATE="off"       # off | none | public | private | unknown
@@ -780,6 +834,8 @@ for ((i = 0; i < N; i++)); do
     && info "             (${C_ID[i]} was applied earlier — opting out is a manual edit of .claude/settings.json)"
 done
 for ci in "${CMDS[@]:-}"; do [[ -n "$ci" ]] && rc "${C_ID[ci]}" "install ${C_LABEL[ci]}"; done
+for ci in "${UPS_ADD[@]:-}"; do [[ -n "$ci" ]] && rc "upstream" "npx skills add ${C_UP_SRC[ci]} --skill ${C_UP_SKILL[ci]} (into ~/.agents/skills)"; done
+for ci in "${UPS_DROP[@]:-}"; do [[ -n "$ci" ]] && rc "upstream" "npx skills remove ${C_UP_SKILL[ci]} (unchecked)"; done
 
 hlist="none"; [[ ${#HOOK_NAMES[@]} -gt 0 ]] && hlist="$(IFS=,; printf '%s' "${HOOK_NAMES[*]}")"
 if $SKILL_HOOKS; then rc "hooks" "compose: ${hlist} + the hooks of every active skill"
@@ -1091,6 +1147,25 @@ for ci in "${CMDS[@]:-}"; do
     ok "  ${C_ID[ci]}         installed ${C_LABEL[ci]}"
   else
     warn "  ${C_ID[ci]}: install failed — run it later by hand: $(jq -r 'join(" ")' <<< "${C_INSTALL[ci]}")"
+  fi
+done
+
+# --- 5b. upstream skills — installed by the skills CLI into ~/.agents/skills, never tracked here --
+for ci in "${UPS_ADD[@]:-}"; do
+  [[ -n "$ci" ]] || continue
+  # shellcheck disable=SC2046  # agents_flag is a space-separated list the CLI takes as separate words
+  if npx -y skills add "${C_UP_SRC[ci]}" --skill "${C_UP_SKILL[ci]}" -g -y -a $(agents_flag) >/dev/null 2>&1; then
+    ok "  upstream    installed ${C_UP_SKILL[ci]} from ${C_UP_SRC[ci]}"
+  else
+    warn "  upstream    could not install ${C_UP_SKILL[ci]} — run it later by hand: npx skills add ${C_UP_SRC[ci]} --skill ${C_UP_SKILL[ci]} -g"
+  fi
+done
+for ci in "${UPS_DROP[@]:-}"; do
+  [[ -n "$ci" ]] || continue
+  if npx -y skills remove -g -y -s "${C_UP_SKILL[ci]}" >/dev/null 2>&1; then
+    ok "  upstream    removed ${C_UP_SKILL[ci]}"
+  else
+    warn "  upstream    could not remove ${C_UP_SKILL[ci]} — run it later by hand: npx skills remove -g -s ${C_UP_SKILL[ci]}"
   fi
 done
 

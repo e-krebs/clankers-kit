@@ -1,0 +1,198 @@
+<!-- Source of truth: when a plan uses this HTML rendering, this file is the plan and the
+     markdown beside it is a stub — an H1, one `Source: <this file>.html` line, then the ten
+     headings below each with a one-line pointer back here. Edit the plan here, not there. -->
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PLAN_TITLE</title>
+<style>
+:root {
+  --bg: #14161a;
+  --bg-tint: #191c21;
+  --bg-inset: #111316;
+  --bg-raised: #1f232a;
+  --fg: #e6e4de;
+  --fg-muted: #9aa0a8;
+  --line: #2c3138;
+  --line-strong: #454c55;
+  --accent: #7f95ff;
+  --ok: #62b37a;
+  --warn: #c9a54b;
+  --danger: #cf6b62;
+  --hatch: repeating-linear-gradient(-45deg, var(--line) 0 1px, transparent 1px 6px);
+  --pad: 1.25rem;
+  --mono: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
+  --sans: ui-sans-serif, "Inter", system-ui, sans-serif;
+}
+:root[data-theme="light"] {
+  --bg: #e8e3d9;
+  --bg-tint: #e2ddd2;
+  --bg-inset: #dcd6ca;
+  --bg-raised: #f0ece3;
+  --fg: #1b1d21;
+  --fg-muted: #565c64;
+  --line: #c3bdb0;
+  --line-strong: #8f897c;
+  --accent: #3849b8;
+  --ok: #3c7a4f;
+  --warn: #8a6b1d;
+  --danger: #a3392f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 14px/1.55 var(--sans);
+}
+.page { max-width: 56rem; margin: 0 auto; padding: 0 var(--pad) 4rem;
+  border-inline: 1px solid var(--line); }
+.topbar { display: flex; justify-content: space-between; align-items: baseline;
+  padding: .6rem 0; border-bottom: 1px solid var(--line); font-family: var(--mono); }
+.hatch { height: 10px; background: var(--hatch); }
+.kicker, .label, .chip, th, .source, .caption, .colophon, h1, h2, h3, .metric-label {
+  font-family: var(--mono); }
+.kicker { text-transform: uppercase; letter-spacing: .17em; font-size: 11px;
+  color: var(--fg-muted); margin: 1.4rem 0 .6rem; }
+h1 { font-size: 1.45rem; line-height: 1.25; font-weight: 600; margin: 0 0 1rem;
+  margin-inline: calc(-1 * var(--pad)); padding: .6rem var(--pad);
+  border-block: 1px solid var(--line-strong); }
+h2 { font-size: .95rem; text-transform: uppercase; letter-spacing: .14em; margin: 2rem 0 .8rem;
+  margin-inline: calc(-1 * var(--pad)); padding: .5rem var(--pad);
+  border-block: 1px solid var(--line); }
+h2::before { content: ""; display: block; height: 8px; background: var(--hatch);
+  margin: -.5rem calc(-1 * var(--pad)) .5rem; }
+h1 + .lede, .lede { max-width: 72ch; font-size: 15px; }
+p, li { max-width: 72ch; }
+.metric-line { display: flex; gap: 2rem; margin-inline: calc(-1 * var(--pad));
+  padding: .7rem var(--pad); border-block: 1px solid var(--line); background: var(--bg-tint); }
+.metric-label { display: block; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .16em; color: var(--fg-muted); }
+.metric-value { font-family: var(--mono); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.table-wrap { margin-inline: calc(-1 * var(--pad)); overflow-x: auto;
+  border-block: 1px solid var(--line); background: var(--bg-tint); }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: .4rem var(--pad); border-bottom: 1px solid var(--line); }
+th { background: var(--bg-raised); text-transform: uppercase; letter-spacing: .12em;
+  font-size: 10px; color: var(--fg-muted); }
+tr:last-child td { border-bottom: 0; }
+pre { margin-inline: calc(-1 * var(--pad)); padding: .7rem var(--pad); overflow-x: auto;
+  background: var(--bg-inset); border-block: 1px solid var(--line);
+  font-family: var(--mono); font-size: 12.5px; }
+code { font-family: var(--mono); font-size: 12.5px; background: var(--bg-inset);
+  border: 1px solid var(--line); border-radius: 2px; padding: 0 .2em; }
+.source, .caption { font-size: 10.5px; color: var(--fg-muted); text-transform: uppercase;
+  letter-spacing: .1em; margin: .35rem 0 1.2rem; }
+.chip { display: inline-block; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .12em; padding: 0 .35em; border: 1px solid var(--line-strong);
+  color: var(--fg-muted); }
+.chip.accent { color: var(--accent); border-color: var(--accent); }
+.chip.ok { color: var(--ok); border-color: var(--ok); }
+.chip.warn { color: var(--warn); border-color: var(--warn); }
+.chip.bad { color: var(--danger); border-color: var(--danger); }
+a { color: var(--accent); }
+ol.steps { padding-left: 1.4rem; }
+ol.steps li { margin-bottom: .5rem; }
+.colophon { margin-top: 2.5rem; margin-inline: calc(-1 * var(--pad));
+  padding: .7rem var(--pad); border-top: 1px solid var(--line-strong);
+  font-size: 11px; color: var(--fg-muted); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="topbar"><span>PLAN</span><span>REPO · BRANCH</span></div>
+  <div class="hatch"></div>
+
+  <!-- kicker: three dot-separated status words -->
+  <p class="kicker">PLAN · STATUS · DATE</p>
+
+  <!-- heading: a full clause naming the change -->
+  <h1>HEADING_CLAUSE</h1>
+
+  <!-- slot 1 — Context, lede styling stays on the paragraph -->
+  <section class="context">
+    <h2 id="context">Context</h2>
+    <p class="lede">LEDE</p>
+  </section>
+
+  <!-- slot 2 — Decisions -->
+  <section>
+    <h2 id="decisions">Decisions</h2>
+    <ul><li>DECISION — who made it, and the alternative it beat.</li></ul>
+  </section>
+
+  <!-- slot 3 — Ticket -->
+  <section>
+    <h2 id="ticket">Ticket</h2>
+    <p>TICKET_OR_NA</p>
+  </section>
+
+  <!-- slot 4 — Approach + Files -->
+  <section>
+    <h2 id="approach-files">Approach + Files</h2>
+    <p>APPROACH_PARAGRAPH</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>File</th><th>Change</th></tr></thead>
+      <tbody><tr><td><code>PATH</code></td><td>WHAT_CHANGES</td></tr></tbody>
+    </table></div>
+    <p class="source">Source: plan section 4</p>
+  </section>
+
+  <!-- slot 5 — Model pick -->
+  <section>
+    <h2 id="model-pick">Model pick</h2>
+    <p>Tier: TIER · Model: MODEL · <code>/model MODEL</code> · Rationale: RATIONALE.</p>
+  </section>
+
+  <!-- slot 6 — Deferred kickoff actions -->
+  <section>
+    <h2 id="deferred-kickoff-actions">Deferred kickoff actions</h2>
+    <ul><li>ACTION_OR_NA</li></ul>
+  </section>
+
+  <!-- slot 7 — Steps + delegation, one chip per step for its tier -->
+  <section>
+    <h2 id="steps-delegation">Steps + delegation</h2>
+    <ol class="steps">
+      <li><span class="chip accent">JUDGE</span> STEP</li>
+      <li><span class="chip">WORKER · TIER · WORKTREE</span> STEP</li>
+    </ol>
+  </section>
+
+  <!-- slot 8 — Verification -->
+  <section>
+    <h2 id="verification">Verification</h2>
+    <pre># gates from the workflow profile
+COMMANDS</pre>
+    <p class="caption">Browser pass: DEV_SERVER → BASE_URL/PATH · network + console, or screenshot</p>
+  </section>
+
+  <!-- slot 9 — Closing steps -->
+  <section>
+    <h2 id="closing-steps">Closing steps</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Step</th><th>What runs</th></tr></thead>
+      <tbody>
+        <tr><td>Gates</td><td><code>/SKILL</code></td></tr>
+        <tr><td>Review</td><td>TIER tier x COUNT · <code>/SKILL</code> on TARGET</td></tr>
+        <tr><td>Hand-off</td><td><code>/SKILL</code> · commit split: SUBJECTS</td></tr>
+      </tbody>
+    </table></div>
+    <p class="source">Source: plan section 9, reviewer count from the size rule</p>
+  </section>
+
+  <!-- slot 10 — Plan review, colophon styling stays -->
+  <section class="plan-review">
+    <h2 id="plan-review">Plan review</h2>
+    <div class="colophon">
+      Generated DATE by AGENT from INPUTS (brief, ticket, commit SHA) · revision N ·
+      Reviewed by AGENTS: FINDINGS folded in.
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

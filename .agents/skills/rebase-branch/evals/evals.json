@@ -4,12 +4,14 @@
     {
       "id": 1,
       "prompt": "Rebase my current branch onto the latest main.",
-      "expected_output": "Fetches origin, syncs the local base to origin/main, snapshots a backup ref, rebases onto origin/main skipping any already-integrated commits, and verifies with range-diff before offering to push with --force-with-lease.",
+      "expected_output": "Fetches origin, syncs the local base to origin/main, snapshots a backup ref, rebases onto origin/main skipping any already-integrated commits, verifies with range-diff, then pushes directly with --force-with-lease (the permission prompt is the confirmation).",
       "assertions": [
         "Runs git fetch before rewriting history",
         "Targets origin/main (the freshly-fetched remote tip), not a stale local main",
         "Creates a backup ref before the rebase and runs a range-diff loss check after",
-        "Only ever proposes git push --force-with-lease, never --force"
+        "Checks whether the remote has commits on this branch that the local branch lacks, before rewriting",
+        "Only ever runs git push --force-with-lease, never --force",
+        "Keeps the backup ref until the push resolves, then deletes it"
       ]
     },
     {
@@ -18,7 +20,7 @@
       "expected_output": "Determines develop as the base, checks whether the branch is already on top of it, and if not rebases onto origin/develop, auto-skipping commits already integrated via cherry/--onto.",
       "assertions": [
         "Uses git merge-base / git cherry to detect commits already on the base",
-        "If the branch is already an ancestor of origin/develop, reports 'already up to date' and stops without rewriting",
+        "If origin/develop is already an ancestor of the branch, reports 'already up to date' and stops without rewriting",
         "Preserves all genuinely-new commits from the feature branch",
         "Does not blindly drop commits it cannot prove are already integrated"
       ]
@@ -30,7 +32,7 @@
       "assertions": [
         "Does not resolve the conflict with blanket -X ours / -X theirs or checkout --ours/--theirs",
         "Treats the lockfile as a case to escalate (generated/dangerous file) rather than auto-resolve",
-        "Explains both sides / asks the user how to proceed or regenerates the lockfile properly",
+        "Explains both sides and asks the user how to proceed, with candidate resolutions where it has them",
         "Keeps earlier resolutions and the backup ref intact while paused"
       ]
     },
@@ -42,7 +44,7 @@
         "Runs git status --porcelain and notices the working tree is dirty before rebasing",
         "Asks the user how to handle uncommitted work (e.g. autostash vs commit & push) instead of silently discarding or blindly rewriting",
         "Does not start the rebase while uncommitted changes are unhandled",
-        "After resolving the dirty tree, proceeds with fetch + backup ref + rebase"
+        "After resolving the dirty tree, proceeds with base setup + backup ref + rebase"
       ]
     },
     {
@@ -54,6 +56,206 @@
         "Recommends re-running with --creation-factor=999",
         "Distinguishes an intentionally-dropped already-integrated commit from genuine loss",
         "Confirms whether the commit's changes are actually present in HEAD before declaring loss, and restores from the backup ref if truly lost"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Update my branch — it's the middle branch of a gh-stack stack of three.",
+      "expected_output": "Detects the stack metadata in pre-flight, reads references/gh-stack-cascade.md before running any gh stack command, then cascades the whole stack with gh stack rebase, verifies each moved branch with its own range-diff, and pushes with gh stack push.",
+      "assertions": [
+        "Reads references/gh-stack-cascade.md before running any gh stack command",
+        "Reads the stack with gh stack view --json, the only form that distinguishes 'not in a stack' from 'in several stacks'",
+        "Writes a backup ref per branch, plus each branch's remote tip captured before the delegated fetch, before anything moves",
+        "Checks every branch for remote commits the local branch lacks before invoking the cascade",
+        "Runs a per-branch range-diff loss check after the cascade and blocks the push on confirmed loss",
+        "Asserts each branch whose base moved actually moved, and does not demand movement from a branch whose base did not",
+        "Verifies every branch actually landed after gh stack push, since the push is not atomic",
+        "Reports every branch that moved, not just the one the user named"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Rebase this branch onto main. (An ordinary repository: no gh-stack metadata anywhere.)",
+      "expected_output": "Reads references/plain-rebase.md and follows it: base setup, backup ref, rebase, loss gate, push. Stacked-PR handling never surfaces.",
+      "assertions": [
+        "Tests for the metadata file's existence with --git-common-dir (not just that git rev-parse printed a path), finds none, and follows references/plain-rebase.md",
+        "Never opens references/gh-stack-cascade.md",
+        "Never mentions gh-stack, stacked PRs, or any gh stack command to the user",
+        "Invokes gh zero times"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "My stack is out of date and I have uncommitted changes — can you rebase it?",
+      "expected_output": "Refuses to hand a dirty tree to the delegated cascade: stashes explicitly, re-asserts a clean tree before invoking gh stack rebase, and restores with git stash apply only after the push decision.",
+      "assertions": [
+        "Does not offer or rely on git rebase --autostash in the stacked path",
+        "Stashes explicitly with git stash push --include-untracked and records the stash SHA",
+        "Re-checks git status --porcelain is empty immediately before invoking gh stack rebase",
+        "Restores with git stash apply (not pop) after the push decision and after checking the original branch back out, and reports the stash still held"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Rebase my branch onto main. (The repo uses gh-stack for another feature, but this branch isn't part of any stack. Its PR targets main, which is the default branch, and no open PR targets this branch.)",
+      "expected_output": "Finds the metadata file, consults the reference, learns from gh stack view --json that this branch is not part of a stack, then asks the PR graph before believing it. The --base query returns nothing and the --head query is skipped because this PR's base is the trunk, so there is no chain, and the run returns to the ordinary flow — handling the dirty-tree check it skipped on the way out.",
+      "assertions": [
+        "Does not treat the mere presence of stack metadata as proof this branch is in a stack",
+        "Uses gh stack view --json to decide membership and recognises the 'not part of a stack' outcome",
+        "Does not treat that outcome as final either: it runs the PR-graph probe, finds no chain, and says so",
+        "The --base query is filtered to this branch rather than listing the repository's open PRs",
+        "The --head query is skipped, because its value would be the trunk and a standing trunk-to-release PR would read as a chain",
+        "Switches to references/plain-rebase.md, including pre-flight's dirty-tree handling, rather than continuing in the cascade path",
+        "Never runs gh stack rebase, gh stack sync, gh stack checkout or gh stack push"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Update this branch — the repo has a gh-stack stack but I never installed the gh extension.",
+      "expected_output": "Warns that the repo has a stack and no tooling to cascade it, names the branches at risk only if the metadata parses unambiguously, and offers install / single-branch-anyway / abort rather than silently orphaning the branches above.",
+      "assertions": [
+        "Detects that gh stack is unavailable and does not fall through to a silent single-branch rebase",
+        "Offers gh extension install github/gh-stack as an option",
+        "If it proceeds single-branch, warns that the branches above will point at abandoned commits and need their own rebase",
+        "Does not invent branch names when the metadata shape is unclear"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "The stack push only updated two of my three branches. What now?",
+      "expected_output": "Treats a partial push as an incident, not a success: identifies which branches published, explains that the stack is now inconsistent on GitHub, and offers re-cascade-then-repush or restore from the captured remote tips.",
+      "assertions": [
+        "Recognises that gh stack push is not atomic, so a partial update is an expected outcome",
+        "Verifies each branch against its remote tip rather than trusting the command's exit",
+        "Explains that the un-pushed branches' PR diffs and CI now run against an abandoned base",
+        "Does not report the run as successful, and keeps the backup refs"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Rebase this branch onto develop.",
+      "expected_output": "In a stack whose trunk is main, recognises that the named base isn't the stack trunk and asks rather than silently cascading; if the user takes the leave-the-stack option, runs gh stack unstack --local before returning to the ordinary flow.",
+      "assertions": [
+        "Notices the passed base differs from the stack's trunk and asks instead of choosing",
+        "Explains that gh stack rebase would ignore the named base and target the trunk",
+        "On the leave-the-stack option, runs gh stack unstack --local before rebasing",
+        "Explains why leaving the metadata in place would corrupt a later cascade's cut point"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Rebase my branch. (A gh stack rebase from yesterday is still paused mid-cascade.)",
+      "expected_output": "Detects the paused cascade in pre-flight — before the detached-HEAD abort could fire — and offers only the cascade's own continue/abort, warning that the abort is destructive to the working tree.",
+      "assertions": [
+        "Detects the paused cascade before aborting on a detached HEAD",
+        "Offers gh stack rebase --continue / --abort, never plain git rebase --continue",
+        "Warns that the abort restores every branch and is destructive to the working tree",
+        "Does not start a fresh rebase"
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "Rebase this branch onto main. (Backup refs from an earlier run that never completed are still under refs/rebase-skill/.)",
+      "expected_output": "Asks what to do with the leftover refs (adopt / discard / abort) instead of overwriting the only pointer to that run's pre-rebase state.",
+      "assertions": [
+        "Checks refs/rebase-skill/ before writing a new snapshot",
+        "Asks rather than overwriting, and explains that the leftovers are an earlier run's only restore point",
+        "Distinguishes adopting the old snapshot from discarding it",
+        "Uses a ref name that is valid for git (no colons from an ISO timestamp)"
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "Rebase this branch onto main. (An ordinary repository with no stack metadata.)",
+      "expected_output": "Reads references/plain-rebase.md before running any rebase, rather than improvising the base detection and cut-point logic from the shared mechanics alone.",
+      "assertions": [
+        "Opens references/plain-rebase.md before rebasing, not just SKILL.md",
+        "Uses git cherry to classify already-integrated commits rather than guessing a cut point",
+        "Runs the loss gate from SKILL.md with origin/<base> as the new base",
+        "Does not skip base detection or invent a rebase invocation of its own"
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "Rebase feat/parent onto main. (I have feat/child1 and feat/child2 cut off feat/parent by hand — no gh-stack in this repo.)",
+      "expected_output": "Takes the plain path, rebases feat/parent, then detects the two hand-stacked children via git branch --contains on the backup ref and warns before the push that they now point at abandoned commits and need their own rebase bottom-up. Does not rebase or push them.",
+      "assertions": [
+        "Does not treat the absence of gh-stack metadata as proof the branch has no branches stacked on it",
+        "Runs git branch --contains against the backup ref (not the rebased tip) to find descendants",
+        "Names feat/child1 and feat/child2 and says each needs its own rebase, bottom-up",
+        "Rebases and pushes only feat/parent, leaving the children to the user"
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "Restack credentials/delete. (On acme/widgets, default branch develop. .git/gh-stack exists but tracks an older stack whose every member is merged, so gh stack view reports credentials/delete is not part of a stack. On GitHub: #30132 is open on credentials/delete with base credentials/list, #30129 is open on credentials/list with base credentials/read, and #30116 and #30096 on credentials/read and credentials/base are already merged. The stack was created with gh stack link, which writes no local tracking state. I have uncommitted changes, and when asked I choose stash.)",
+      "expected_output": "Refuses to accept the not-in-a-stack answer at face value. Resolves the trunk with gh repo view, then walks the PR chain in both directions until nothing new appears, finding #30129 and #30116's branch through the --head queries rather than stopping one level up. Carries that chain as the member list, stashes, adopts with gh stack checkout on a still-open member's PR URL, confirms every probed branch appears in the adopted view, and only then does the per-branch refs and divergence checks — because adoption is what fetched those branches. Cascades that adopted stack with gh stack sync --prune, having first checked the dirty tree, the divergence and the unpushed-work preconditions.",
+      "assertions": [
+        "The metadata tracking a different, fully merged stack is not treated as proof this branch is in no stack",
+        "The trunk is resolved from gh repo view or the profile, since gh stack view — the usual source — is what failed",
+        "The chain walk continues in both directions until nothing new appears, so a four-member stack is not read as two branches",
+        "Adoption is confirmed by checking that every branch the probe found appears in the adopted view, and extra members are accepted rather than treated as a mismatch, because the probe queried --state open and cannot see a merged member",
+        "The stash happens before adoption, because gh stack checkout moves the worktree and an uncommitted edit riding that checkout is unrecoverable",
+        "The backup, upstream- and mb- refs and the divergence check run after adoption, because a probed member may not exist locally until adoption fetches it",
+        "The branch the user started on is recorded before the worktree moves",
+        "gh stack sync is used only because this stack was adopted this run, and the run says its push precedes the loss gate, so S3 is detect-and-revert and S4 is skipped",
+        "The upstream- refs are named as the only revert path on that route"
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "The cascade just finished. It reported success, every branch matches its remote, and the range-diffs are all empty. My run wrote refs under refs/rebase-skill/20260911-101500/. Is the restack actually done?",
+      "expected_output": "Not necessarily: a sync that aborted on local/remote divergence pushes nothing yet still fast-forwards the trunk, and an unmoved branch passes both a range-diff (empty against itself) and a remote-match check. Runs the movement assertion for each branch whose base moved, and reports a half-synced repo by name when it fails.",
+      "assertions": [
+        "Recognises that a range-diff and a remote-match check both pass on a branch that never moved",
+        "Compares each branch's tip against refs/rebase-skill/20260911-101500/<branch> and checks the trunk is an ancestor of it",
+        "Applies the assertion only to branches whose base moved, and not to a merged, queued or never-rebased one whose tip legitimately did not change",
+        "Explains that a sync divergence abort leaves the trunk fast-forwarded with no --abort to undo it, and that recovery runs through the upstream- refs",
+        "Does not report the run as complete on the strength of the cascade's own exit"
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "Rebase this branch onto main. (The repo has gh-stack metadata for another feature. This branch's PR targets release/2.x, no open PR targets this branch, and no open PR has release/2.x as its head branch.)",
+      "expected_output": "The probe finds no chain: the --base query returns nothing, and the --head query on release/2.x also returns nothing. A base that merely differs from the trunk is not the test, so the run falls through to references/plain-rebase.md without adopting anything.",
+      "assertions": [
+        "A non-trunk base is not treated as evidence of a stack",
+        "The --head query runs here, because release/2.x is not the trunk, and its empty result is what settles the question",
+        "No gh stack checkout runs, so the worktree never moves and no local metadata is written",
+        "The run falls through to references/plain-rebase.md and rebases onto release/2.x rather than onto the trunk"
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "Restack this branch. (I'm in a linked worktree under .claude/worktrees/, and the repo has gh-stack metadata that does list this branch.)",
+      "expected_output": "Stops. From a linked worktree gh stack reports the current branch is not part of a stack even when the metadata lists it, so that answer is a known false negative. The worktree stop comes before the PR-graph probe, so the run does not spend an authenticated round trip on an answer it would have to discard.",
+      "assertions": [
+        "The linked-worktree condition is checked before the PR-graph probe runs",
+        "The not-in-a-stack answer from a worktree is named as a known false negative rather than acted on",
+        "No probe query, no adoption and no cascade runs",
+        "The run says the repo has a stack and stops, rather than falling through to the plain path"
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "Restack this branch. (A busy monorepo with roughly 400 open PRs and gh-stack metadata for another feature. gh stack view says this branch is not part of a stack. This branch's PR is #30132 with base credentials/list, and #30129 is open on credentials/list.)",
+      "expected_output": "The filtered --head query on credentials/list finds #30129 regardless of how many PRs the repo has open, because the filter narrows the listing at the server. An unfiltered gh pr list would have returned only its first 30 items and missed the chain, reproducing the original fail-open.",
+      "assertions": [
+        "The probe uses --base and --head filters rather than listing the repository's open PRs and searching them locally",
+        "The chain through #30129 is found even though the repo has hundreds of open PRs",
+        "No repo-wide PR listing is fetched at all, so gh pr list's default limit of 30 never applies"
+      ]
+    },
+    {
+      "id": 22,
+      "prompt": "Restack this adopted stack. (Same widgets setup as the incident: the probe found the chain, adoption succeeded, and gh stack view now lists credentials/read as merged, plus credentials/list and credentials/delete. credentials/read has one local commit that was never pushed. The working tree is clean and no branch has remote commits the local branch lacks.)",
+      "expected_output": "Refuses the sync. --prune deletes the local branches it classifies as merged, and credentials/read has a commit its remote lacks, so git rev-list --count origin/credentials/read..credentials/read is non-zero. Stops and asks, naming the branch, because this path holds no snapshot of a branch it never rebased.",
+      "assertions": [
+        "Every merged member is checked for commits its remote lacks before the sync runs",
+        "A branch with no remote ref at all is treated as non-zero rather than skipped",
+        "The non-zero count stops the run and asks, naming credentials/read, rather than being disclosed and proceeding",
+        "gh stack sync is not run",
+        "The reason given is that --prune would delete the branch and the local-only commit with it"
       ]
     }
   ]

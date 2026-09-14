@@ -1,81 +1,69 @@
 ---
 name: ticket-kickoff
-description: Kick off work from a tracker item — read the issue and any linked spec (PRD/RFC), plan in plan-mode, then on approval move it to In Progress. Use when picking up or kicking off a ticket — a specific one (PROJ-42) or your next To Do ("pick up the next ticket"). Don't use to query status or bulk-edit issues.
+description: "Kick off a ticket: read it and any linked spec, then hand the work to planning. Use when picking up or kicking off a ticket — a specific ID, or the next one to start ('pick up the next ticket'). Not for bulk-creating tickets, querying tracker status, or sprint management."
 ---
 
 # ticket-kickoff
 
-The front door of the work lifecycle. Read the tracker item, lean on your **normal plan-mode
-flow** for the planning itself, and on plan approval move the item to **In Progress**. Reads
-happen while planning; every mutation is deferred until you approve the plan.
+The front door of the ticket lifecycle: identify the ticket, read it, then hand the work to
+planning. Every read happens now; every mutation waits for plan approval.
 
-## Safety
+## Profile
 
-- All tracker / spec-doc / codebase reads are **read-only**.
-- Mutations — creating an item, refreshing the base branch, the In Progress move — are **deferred
-  until plan approval (`ExitPlanMode`)**; nothing mutates while planning. To skip one, drop its
-  line from the plan before approving.
-- The In Progress move is **best-effort** — a tracker error never blocks the work, and the move is
-  silently skipped when none applies (no item / already In Progress / tracker unreachable).
-- Don't invent an existing item's content — read it. (Drafting a new item in Step 1 is authored
-  from the scoped intent and confirmed with you.)
+Read the workflow profile rows from context — the session-start hook injects the resolved table.
+When they are absent from context, run
+`bash ~/.agents/skills/workflow-profile/scripts/resolve-profile.sh --rows` and read its table. Ticket system decides whether
+Step 0 runs at all.
 
-## Step 0 — Resolve & read (read-only)
+Done when the rows are in hand and the Ticket-system branch is chosen.
 
-- Authenticate / resolve access to your tracker if it needs it (cache any workspace or project id
-  so you resolve it once).
-- Identify the item: an explicit ID in the prompt · else auto-detect an issue key (`[A-Z]{2,}-\d+`)
-  in the branch name / `<base>..HEAD` commits · else a "mine, not started" picker via a tracker
-  query (items assigned to you with a not-started status, highest priority first) · else the
-  no-item path (Step 1).
-- Read it → a concise **digest**: goal, an **acceptance-criteria checklist**, type, status,
-  assignee, linked items/subtasks. Pull any linked **spec doc (PRD/RFC)** — directly-linked pages
-  only — as planning context.
-- Discover the In Progress transition: read the item's available transitions and pick the one
-  whose **target status** (case-insensitive) is **In Progress** — match the target, not the
-  transition's display name (e.g. a transition called "Start Progress" lands on "In Progress").
-  Outcomes to carry forward: a matched transition · the candidate list (when transitions exist but
-  none target In Progress, for a picker) · nothing-applicable (already In Progress, or tracker
-  unreachable — skip silently).
+## Step 0 — Resolve and read the ticket (read-only)
 
-## Step 1 — No item? Offer to create (read-only gathering)
+This step runs only when Ticket system names a tracker. When it reads `none`, say in one line that
+the repo has no tracker and go straight to Step 2 — no ticket question, no tracker call.
 
-Ask whether to create a tracker item. If yes: draft a **title + description** from the scoped
-intent and show it for confirm/edit, then gather — which **parent/epic**, **add to the current
-sprint/iteration?**, **assign to me?**. Prefer an **available issue-creation skill or tool** for
-the actual creation (it handles parent links, sprint, and custom-field discovery); fall back to
-your tracker's create API (with the gathered fields) when none is available. Creation is a
-mutation → **deferred to exit**. If creation is declined, draft the item into the plan file and
-skip the move (the real item gets created later, when the work is done).
+The tracker mechanics live in the profile's `## Tracker rules` section: workspace/cloud id
+resolution, the ticket-ID detection order, transition discovery by target status, the picker for
+when no transition targets the wanted state, and the best-effort contract. Read that section and
+follow it — it is the single source of those rules.
 
-## Step 2 — Plan (normal plan-mode flow)
+- Identify the ticket through the rules' detection order. With nothing detected, offer the rules'
+  picker over the user's not-started tickets; with nothing there either, take Step 1.
+- Read the ticket into a concise digest: goal, an acceptance-criteria checklist, type, status,
+  assignee, linked issues and subtasks. Pull any directly linked spec page (PRD, RFC) as planning
+  context. An unreachable tracker or doc space means skipping that read, not stopping.
+- Resolve the move to the tracker's work-started state, and carry forward which outcome applies:
+  a matched transition, the picker candidates, or nothing applicable.
 
-Lean on your standard plan-mode planning — explore the codebase guided by the item/spec, draft the
-plan file (context from the item, approach, the acceptance-criteria checklist, files to touch,
-verification). Don't re-specify your planning flow here.
+Done when the ticket is identified, its digest and any linked spec are read, and the work-started
+move is resolved — or the no-tracker branch was taken.
 
-Record a **Deferred kickoff actions** block in the plan file (each line droppable by editing):
-create the item (if chosen) · refresh the base (if chosen) · move `<ITEM>` (`<current> → In
-Progress`), or the picker candidates if no transition targets In Progress. Listing them explicitly
-keeps them surviving into the post-approval turn.
+## Step 1 — No ticket? Offer to create one
 
-## Step 3 — Approve & kick off (`ExitPlanMode` → deferred execution)
+Ask whether to create a ticket. On yes: draft a title and description from the scoped intent, show
+them for confirm or edit, then gather the fields a create needs — parent or epic, the current
+sprint, the assignee. Prefer an available ticket-creation capability for the create itself, since
+it handles hierarchy, sprint sizing and custom-field discovery; fall back to an inline best-effort
+create with the gathered fields when none is available. Creating is a mutation, so it is deferred
+to plan approval. On no, the drafted ticket rides in the plan file and no tracker move is queued.
 
-On approval, run the chosen deferred actions in order:
+Done when the create-or-draft choice is settled with its fields.
 
-1. **Create item** (if chosen) — via the delegated creation skill/tool, or the create-API fallback.
-2. **Refresh base** (if chosen) — `git fetch` and bring the base branch current with origin.
-3. **In Progress move** — transition the item to In Progress via the resolved transition id; report
-   the move. Best-effort — on error, report and continue.
+## Step 2 — Hand off to planning
 
-Then work begins.
+The planning capability takes over. It explores the codebase against the digest, interviews the
+user, and writes the plan file to the plan contract; its Deferred kickoff actions section
+carries the lines this kickoff produced — create the ticket, refresh the base branch, move the
+ticket to the work-started state — and it owns the base-refresh question.
+
+On plan approval the deferred actions run in the order that section lists them, best-effort on
+the tracker move.
+
+Done when the planning capability holds the digest, the create-or-draft outcome, and the resolved
+move.
 
 ## Gotchas
 
-- Item **already In Progress** → no move.
-- **No transition targets In Progress** → offer a picker of available transitions plus Skip. Match
-  on target status, not the transition's display name.
-- **Tracker / spec-doc unreachable** → skip that read and proceed; never block the work.
-- Every mutation is **deferred to plan approval**. If you catch yourself creating or transitioning
-  an item while still planning, stop — that belongs in the post-`ExitPlanMode` turn.
-- Tracker write calls (create / transition) may **prompt for permission** unless allowlisted.
+- Tracker and doc-page calls prompt for permission unless they are allowlisted.
+- A digest without an acceptance-criteria checklist starves the plan's Steps section; when the
+  ticket carries no criteria, draft them from the goal and say they are drafted.

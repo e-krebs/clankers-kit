@@ -1,0 +1,73 @@
+{
+  "skill_name": "review-changes",
+  "evals": [
+    {
+      "name": "working-tree-with-plan-in-context",
+      "prompt": "Profile: acme (Reviewers: claude, codex; Default branch main). The approved plan is in context and its Closing steps read \"verify → review (judgment tier × 2) → hand off to the PR capability\". The implementation is done and uncommitted. Run the review.",
+      "expected_output": "Targets the uncommitted diff, reads judgment × 2 from the plan's review line, launches a Claude subagent on Opus and codex on Astra in one parallel message, both read-only in the shared tree, then triages into one report.",
+      "assertions": [
+        "Target is the working tree, named with its diff command, not a branch range",
+        "Tier and count come from the plan's Closing steps review line, not from a question to the user",
+        "Two reviewers launched in one message: a claude subagent at Opus and codex at the judgment-tier model",
+        "Codex invoked as `codex exec --sandbox read-only` with stdin from /dev/null",
+        "No worktree created and no file edited",
+        "One report: severity counts, findings P1 down with file:line and a fix, ruled-out list, per-reviewer counts"
+      ]
+    },
+    {
+      "name": "pr-target-without-a-plan",
+      "prompt": "Profile: acme (Reviewers: claude, codex). Review PR 4821 for bugs. No plan file exists for this work.",
+      "expected_output": "Reads the PR diff through gh, falls back to one judgment-tier reviewer because neither a plan nor the caller supplied tier and count, and reports the fallback it applied.",
+      "assertions": [
+        "PR read through `gh pr diff` / `gh pr view` rather than a checkout, unless a checkout is needed and then only after asking",
+        "Falls back to one reviewer at the judgment tier and states that fallback",
+        "The first Reviewers entry is the one that runs",
+        "No fix applied to the PR branch"
+      ]
+    },
+    {
+      "name": "plan-file-target-contract-gaps",
+      "prompt": "Profile: acme (Reviewers: claude, codex; Commit policy: direct commits to main). Review ~/.claude/plans/new-cache-layer.md before I approve it — it has no Verification heading and its Steps mention two files that Approach + Files never lists.",
+      "expected_output": "Reviews the plan text against the ten-heading contract, returns the missing Verification heading and the two unlisted files as ranked findings, and applies no edit to the plan.",
+      "assertions": [
+        "Target kind is a plan file and reviewers read the plan text, not a code diff",
+        "Findings check the ten headings in order and flag the missing Verification section",
+        "Steps naming files absent from Approach + Files reported as a contradiction",
+        "Findings ranked P1-P3 and quote headings instead of file:line",
+        "The plan file is not edited or completed by this skill"
+      ]
+    },
+    {
+      "name": "single-installed-reviewer-under-count-two",
+      "prompt": "Profile: a fixture org template whose Reviewers row reads `claude` only. The plan's review line reads \"judgment tier × 2\". Review the working tree.",
+      "expected_output": "Runs the one installed reviewer, and the report states that a count of 2 yielded one reviewer because the Reviewers row lists only claude.",
+      "assertions": [
+        "Exactly one reviewer runs; codex is not invoked",
+        "The shortfall is stated explicitly in the report — count 2 requested, one installed",
+        "No reviewer is invented beyond the Reviewers row",
+        "The review still completes with a full triaged report"
+      ]
+    },
+    {
+      "name": "codex-stdin-and-tier-mapping",
+      "prompt": "Profile: acme. Review this branch against main with codex at the fast tier.",
+      "expected_output": "Runs the branch range against main, maps the fast tier to the codex Luna model, and invokes codex read-only with stdin redirected from /dev/null so the call cannot hang.",
+      "assertions": [
+        "Branch range computed from `git merge-base` against the profile's Default branch",
+        "Tier and reviewer taken from the caller's words, no plan consulted",
+        "`< /dev/null` present on the codex invocation",
+        "Model codename mapped from the tiers table, and the actual reviewing model recorded if codex rejects the codename"
+      ]
+    },
+    {
+      "name": "no-repo-review-skill-picked",
+      "prompt": "Profile: acme, in a repo that ships its own review skill. Review my uncommitted changes for bugs with independent reviewers.",
+      "expected_output": "Runs the reviewers from the Reviewers row only, leaving any repo-side review skill to the plan that names it.",
+      "assertions": [
+        "Reviewers come from the profile's Reviewers row",
+        "No repo-based review skill invoked or recommended as part of this run",
+        "Report notes nothing was fixed"
+      ]
+    }
+  ]
+}

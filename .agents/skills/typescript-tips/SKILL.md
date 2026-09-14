@@ -1,16 +1,16 @@
 ---
 name: typescript-tips
-description: TypeScript best-practice conventions and idioms. Use when writing new TypeScript (.ts/.tsx) or editing existing code, to keep what you touch type-safe and maintainable. Not for code you aren't changing.
+description: TypeScript best-practice conventions and idioms. Use when writing new TypeScript (.ts/.tsx), editing existing code, or reviewing a diff (the tips are the review rubric for the changed lines). Not for untouched code outside the change under review.
 ---
 
 # TypeScript Tips
 
-Fifteen conventions that improve type safety and maintainability. Each is a small win; together they compound. Worked before/after examples for every tip live in [references/examples.md](references/examples.md) — pull the one you need when a tip's transformation isn't obvious from its one-liner.
+Conventions that improve type safety and maintainability.
 
 ## How to apply
 
-1. **Scope to your change.** Apply these to code you write or edit — not to surrounding code you aren't touching. For unrelated violations in a touched file, note them briefly — don't rewrite them.
-2. **Let the tips set direction.** Prefer the idiom for in-scope and new code even when surrounding code diverges; flag divergent existing code (e.g. `enum`s) as a migration candidate rather than silently converting it.
+1. **Scope to your change.** Apply these to code you write or edit, and as the rubric for the changed lines when reviewing a diff — not to surrounding code the change doesn't touch. For unrelated violations in a touched file, note them briefly — don't rewrite them.
+2. **Let the tips set direction.** Prefer the idiom for in-scope and new code even when surrounding code diverges; flag divergent existing code (e.g. `enum`s) as a migration candidate rather than silently converting it. Keep fixes proportional — flag heavier type machinery (tips #4, #12, #13) as opt-in on low-churn data rather than applying it by default.
 3. **Cite as `tip #N (Title)`** when you apply or flag one, so the reference is traceable and survives reordering.
 4. **Open [references/examples.md](references/examples.md)** for the exact before/after when the principle line alone isn't enough.
 

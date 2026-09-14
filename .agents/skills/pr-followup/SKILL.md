@@ -1,126 +1,121 @@
 ---
 name: pr-followup
-description: Watch CI after a push or PR, then advance it: on green, mark a draft PR ready for review or re-request a stale review and move the linked tracker item to In Review; on red, analyse and report. Use when you want CI watched after a git push or gh pr create. Do not use to merge or auto-fix.
+description: Watch CI after a push or PR-create and advance the PR — on green mark a draft ready or re-request a stale review and move the linked ticket to the in-review state; on red report the failures. Use when CI should be watched after git push / gh pr create. Do not use to merge or auto-fix.
 ---
 
 # pr-followup
 
-After a push or PR-create, watch the PR's CI and advance it: green → open a draft for
-review or re-request a now-stale review and move the linked tracker item to In Review; red →
-analyse and report. Gathers state first, then makes **one** offer that authorizes the whole
-chain. Never merges, never auto-fixes.
+After a push or a PR-create, watch the PR's checks and advance it: green opens a draft for review
+or re-requests a now-stale review and moves the linked ticket; red analyses and reports. State is
+gathered first, then **one** offer authorizes the whole chain.
 
 ## Safety
 
-- Gather is read-only. Nothing is watched or mutated until the user approves the single
-  offer (Step 1). Opening a PR for review and re-requesting reviews are outward-facing.
-- The linked-item discovery (Step 0) is read-only; moving the tracker item is outward-facing,
-  gated by the Step 1 offer, runs only after the green GitHub action, best-effort, and silently
-  skipped when no move applies (no item / already In Review / tracker unreachable).
-- No associated PR → **exit silently**, with no output. Ordinary pushes to PR-less branches
-  must stay quiet.
-- The triggering hook is **permissive** — it can fire on any Bash command whose text mentions
-  `git push` / `gh pr create`, even one that doesn't actually push. So **resolve-or-exit
-  (Step 0) is always the first action**; on a missing / merged / closed PR it costs one quiet
-  `gh pr view` and stops, with nothing shown to the user.
-- On red CI, report and stop — never auto-fix or re-push.
+- No associated PR → exit silently, with no output. Ordinary pushes to PR-less branches stay quiet.
+- The triggering hook is permissive: it fires on any Bash command whose text mentions `git push` or
+  `gh pr create`, even one that pushed nothing. So resolve-or-exit (Step 0) is always the first
+  action; a missing, merged, or closed PR costs one quiet `gh pr view` and stops.
+
+## Profile
+
+Read the workflow profile rows from context — the session-start hook injects the resolved table.
+When they are absent from context, run
+`bash ~/.agents/skills/workflow-profile/scripts/resolve-profile.sh --rows` and read its table.
+Two rows decide the run:
+
+- CI watcher naming a CI (CircleCI, GitHub Actions) → the watch runs. Both report through
+  `gh pr checks`, so the row tells you which staged-job behaviour to expect, not which command to
+  use.
+- CI watcher `none` → nothing to watch: confirm in one line that the push landed (branch, commits,
+  and the PR link when one exists) and stop. No offer, no watch, no tracker move.
+- Ticket system `none` → no ticket question and no tracker move in this run.
+
+Done when the rows are in hand and the watch-or-stop branch is chosen.
 
 ## Step 0 — Gather (read-only, no side effects)
 
 - Current branch: `git branch --show-current`.
-- Resolve the PR for the current branch:
-  `gh pr view --json number,state,isDraft,url,title,body,reviewDecision,latestReviews,reviewRequests,headRefName,statusCheckRollup`.
-  - No PR (command errors / empty) → **exit silently**. Done.
-  - PR already `MERGED` or `CLOSED` → **exit silently**. Nothing to advance.
-- Derive from the JSON:
-  - **draft vs open**: `isDraft`.
-  - Submitted reviewers: distinct `latestReviews[].author.login`, minus the PR author,
-    bots (`[bot]` logins / `__typename == "Bot"`), and anyone whose request is already
-    pending in `reviewRequests` (re-adding them is a no-op). Only individuals submit
-    reviews, so this set is users, never teams — re-request scope is individual reviewers
-    by design.
-  - **CI status**: from `statusCheckRollup` (pending / passing / failing / none).
-  - **linked item** (only once the pull request is confirmed live): the first issue key —
-    `[A-Z]{2,}-\d+` or `#\d+` — in the body / branch name / `<base>..HEAD` commit subjects
-    (multiple → prefer the one on the `[TICKET]`/motivation line, else the first). If a tracker
-    is available, read the item's status and available transitions and pick the one whose
-    **target status** (case-insensitive) is **In Review** — match the target, not the
-    transition's display name. All read-only. No key / already In Review / tracker unreachable →
-    no move; transitions exist but none target In Review → keep the candidates for a Step-1 picker.
-- Decide the **green-action**:
-  - draft → mark ready (`gh pr ready`).
-  - open with submitted reviewers → re-request those reviewers.
-  - open without submitted reviewers → report-only (nothing to re-request).
-  - If a move applies, green **also** advances the linked item to In Review (best-effort) — in
-    any of the above cases; it self-no-ops once the item is already there.
-- **If CI is already complete** at gather time, skip the watch: green → go straight to the
-  green-action; red → straight to analyse + report. No checks configured → treat as green.
+- Resolve the PR for it: `gh pr view --json
+  number,state,isDraft,url,title,body,reviewDecision,latestReviews,reviewRequests,headRefName,statusCheckRollup`.
+  No PR (the command errors or returns empty) → exit silently. A `MERGED` or `CLOSED` PR → exit
+  silently; there is nothing to advance.
+- Derive from the JSON: draft vs open (`isDraft`); the submitted reviewers — distinct
+  `latestReviews[].author.login` minus the PR author, bots (`[bot]` logins, `__typename == "Bot"`),
+  and anyone whose request is already pending in `reviewRequests`, since re-adding them is a no-op;
+  and the CI status from `statusCheckRollup` (pending / passing / failing / none).
+- The linked ticket, only once the PR is confirmed live and only when Ticket system names a
+  tracker: take the ID through the detection order in the profile's `## Tracker rules`, starting
+  with the PR body, which conventionally carries the reference. With an ID, follow those same rules
+  to resolve the move to the tracker's in-review state, carrying forward a matched transition, the
+  picker candidates, or nothing applicable.
+- Decide the green-action: a draft → mark ready (`gh pr ready`); an open PR with submitted
+  reviewers → re-request those reviewers; an open PR without them → ask for reviewers. When a tracker
+  move applies, green also performs it, in every one of those cases.
+- CI already complete at gather time → skip the watch only: green still passes through the Step 1
+  offer before Step 3, red goes to Step 4. No checks configured → treat as green.
 
-## Step 1 — Offer (the GATE)
+Done when the PR state, the reviewer set, the CI status, the tracker-move candidate, and the
+green-action are all resolved, or the silent exit fired.
 
-Present a single summary, then make the offer through the **AskUserQuestion** tool — selectable
-choices, not a prose "Proceed?" you wait on. Spell out exactly what will happen, and offer
-"Proceed" (first / recommended) plus a decline option, e.g.:
+## Step 1 — Offer (the gate)
 
-> PR #123 «title» is **draft**, CI **pending**. I'll watch CI →
-> on **green** mark it ready for review (GitHub auto-requests the CODEOWNERS-matched
-> reviewers) and move PROJ-42 (To Do → In Review) → on **red** report the failing checks.
+Present one summary, then make the offer through the harness's question tool when it has one, else
+as numbered questions in prose — selectable choices, not a prose "Proceed?" you wait on. Spell out
+exactly what will happen, and offer Proceed (first, recommended) plus a decline.
 
-For the open case, name the reviewers to be re-requested. When a move is applicable, add it as a
-**separate, independently-declinable** question in the same AskUserQuestion batch — `Also move
-<ITEM> (<current> → In Review) on green? [Yes / Skip]` — so the user can advance the PR on
-Proceed while still skipping just the move; omit that question when no move applies. When
-transitions exist but none target In Review, make it a picker of the available transitions plus
-Skip. Nothing runs — not even the watch — until the user picks Proceed. One interaction settles
-both; the green-action and any approved item move then fire unattended.
+When a tracker move applies, batch a second, dedicated question alongside Proceed: also move
+`<TICKET>` (`<current>` → the in-review state) on green? — or the rules' picker plus Skip when no
+transition targets that state, so the move stays independently declinable. Omit it when no move
+applies. For the open-PR case, name the reviewers to be re-requested. Nothing runs — not even the
+watch — until the user picks Proceed; that one interaction authorizes the chain, and the
+green-action then fires unattended.
+
+Done when the user picks Proceed, or declines.
 
 ## Step 2 — Watch (after yes)
 
-Launch `gh pr checks <n> --watch` as a **background Bash task** (no `--fail-fast`, so the
-report covers all failing checks). It blocks until checks complete; the harness re-invokes
-on exit. (If Step 0 found CI already complete, skip straight to the green / red handling.)
+Launch `gh pr checks <n> --watch` as a background Bash task, without `--fail-fast`, so the report
+covers every failing check. It blocks until the checks complete, and the harness re-invokes on
+exit.
 
-Don't trust the watch's exit code. It only judges the checks registered when it polls;
-staged CIs (e.g. a dynamic `setup` job that generates the real pipeline) post the real jobs
-seconds later, so a watch can exit `0` on a lone bootstrap check before they appear. After
-every watch exit, **pause a few seconds, then re-gather `statusCheckRollup`** (staged jobs
-need a moment to register, and the pause keeps a thin terminal set from spinning); if
-anything is still pending, new checks appeared, or the set is suspiciously thin, **re-watch**.
-Only a fresh `gh pr view` with all checks terminal means settled.
+Distrust the watch's exit code: it judges only the checks registered when it polls, and a staged CI
+(a dynamic setup job that posts the real jobs seconds later) lets a watch exit `0` on a lone
+bootstrap check. After every watch exit, pause a few seconds, then re-gather `statusCheckRollup`;
+re-watch when anything is still pending, new checks appeared, or the set looks suspiciously thin.
+
+Done when a fresh `gh pr view` shows every check in a terminal state.
 
 ## Step 3 — On green
 
-- Draft PR → `gh pr ready <n>`. GitHub auto-requests the CODEOWNERS-matched reviewers on
-  undraft — don't parse `.github/CODEOWNERS` yourself. Instead, after undraft, read and
-  report the reviewers GitHub assigned — informational; do not add them manually.
-  `reviewRequests` includes teams (`.slug`), not just users (`.login`); report both, e.g.
+- Draft PR → `gh pr ready <n>`. The forge auto-requests the CODEOWNERS-matched reviewers on
+  undraft, so read and report who it assigned rather than parsing `.github/CODEOWNERS` or adding
+  anyone by hand. `reviewRequests` holds teams (`.slug`) as well as users (`.login`) — report both:
   `gh pr view <n> --json reviewRequests --jq '.reviewRequests[] | (.login // .slug)'`.
-- Open PR with submitted reviewers → for each, `gh pr edit <n> --add-reviewer <login>`
-  (GitHub treats adding someone who already reviewed as a re-request). Report who was
-  re-requested.
-- Open PR with no reviewers → report green; no mutation.
-- Linked item (if a move was resolved and approved) → after the GitHub action above, transition
-  it to In Review via the resolved transition id; report the move (`PROJ-42 → In Review`).
-  Best-effort — on a tracker error, report and continue; the PR is already advanced.
+- Open PR with submitted reviewers → `gh pr edit <n> --add-reviewer <login>` each; the forge treats
+  adding a past reviewer as a re-request. Report who was re-requested.
+- Open PR with no reviewers → ask who should review, through the harness's question tool when
+  it has one, else in prose, with cheap suggestions when they exist: the CODEOWNERS matches for
+  the touched paths, and the recent committers of those files (`git log --format=%an -- <paths>`).
+  Then `gh pr edit <n> --add-reviewer <login>` for the picks; a declined question mutates nothing.
+- Tracker move, when one was resolved and the user chose Yes → after the forge action, perform it
+  per the profile's `## Tracker rules` and report it. Best-effort: on error, report and continue,
+  since the PR is already advanced.
+
+Close by naming the next step: the merge capability takes it from here, once the review lands. This
+skill neither merges nor waits for the approval.
+
+Done when the green-action and, where it applies, the tracker move have both been attempted, and
+the next step is named.
 
 ## Step 4 — On red
 
-Report which checks failed; fetch + summarize the failing logs
-(`gh run view <id> --log-failed`); give a short root-cause read. Stop and ask whether to
-investigate. Do not auto-fix or re-push.
+Report which checks failed, fetch and summarize the failing logs (`gh run view <id> --log-failed`),
+give a short root-cause read, then ask whether to investigate. No tracker move happens on red.
+
+Done when the failures are reported and the question is asked; the next move is the user's.
 
 ## Gotchas
 
-- No PR / on the default branch (push with no PR) → silent exit (Step 0). Resolve-or-exit
-  is always the first action so a permissive hook never produces stray output.
-- Multiple PRs for the branch → `gh pr view` resolves by head branch; use that one.
-- Failed / dry-run push that still fired the hook → Step 0 re-derives real state and
-  exits silently if there's no PR. Harmless.
-- **Watch exit code lies** on staged pipelines — re-gather `statusCheckRollup` after every
-  watch exit; only all-terminal checks mean settled.
-- Bots and self-reviews are excluded from the re-request set; only real, previously-submitted
-  human reviewers get re-requested.
-- No linked item / already In Review / tracker unreachable (e.g. a headless or cron run) → no
-  item question and no move; the PR still advances normally.
-- Multiple issue keys in the body → prefer the one on the `[TICKET]`/motivation line, else the
-  first.
+- Several PRs for one branch → `gh pr view` resolves by head branch; use that one.
+- A headless or cron run has no tracker tooling: the best-effort contract skips the move and the
+  PR still advances.
