@@ -18,6 +18,8 @@
       "Bash(gh pr list:*)",
       "Bash(gh pr diff:*)",
       "Bash(gh pr checks:*)",
+      "Bash(gh stack view:*)",
+      "Bash(gh extension list:*)",
       "Bash(grep *)",
       "Bash(ls:*)",
       "Bash(find:*)",
