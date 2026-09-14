@@ -8,7 +8,8 @@ The diagram lives in [workflow-map.html](workflow-map.html), a self-contained pa
 same tables as below; open it in a browser. The usual order is ticket-kickoff → write-plan →
 implement per the plan → verify → review-changes → changes-to-pr → pr-followup → pr-merge, and
 hooks route one stage into the next; without any hook, every skill still works when typed as
-`/name`.
+`/name`. rebase-branch sits outside that order: it is entered on demand from any stage after the
+first push.
 
 ## Stages
 
@@ -20,8 +21,9 @@ hooks route one stage into the next; without any hook, every skill still works w
 | Verify | verify | the plan's Closing steps, `/verify` | Install command, Verify commands, Browser check | the review stage |
 | Review | review-changes | the plan's Closing steps, `/review-changes` | Reviewers | the PR stage |
 | Land | changes-to-pr | "commit and PR this", `/changes-to-pr` | Commit policy, Commit convention, PR shape, Remote, Ticket system | the push hook |
-| Watch | pr-followup | the push hook | CI watcher, Ticket system | the merge stage |
-| Merge | pr-merge | "merge the PR", `/pr-merge` | PR shape, Commit policy, Ticket system | done |
+| Watch | pr-followup | the push hook | CI watcher, Ticket system, PR shape, Default branch | the merge stage |
+| Rebase | rebase-branch | "rebase this branch", "restack my stack", `/rebase-branch` | Default branch | the push hook, back to the watch stage |
+| Merge | pr-merge | "merge the PR", `/pr-merge` | PR shape, Commit policy, Ticket system, Default branch | done |
 
 ## Hooks, the glue
 
@@ -45,6 +47,10 @@ enforces a profile row rather than a skill, so it stays in the shared `.agents/h
 - A repo with `direct commits to main` stops at changes-to-pr's commit: pr-followup and
   pr-merge never fire, and nothing else changes.
 - A repo with no tracker skips every ticket step; the same skills run.
+- A repo whose PR shape carries `gh stack for a multi-PR change` splits a multi-PR change into a
+  stack: changes-to-pr opens it, pr-followup watches every member, rebase-branch cascades it, and
+  pr-merge restacks the dependants after each merge. Without the clause the same skills run the
+  lone-PR path.
 - A repo that ships its own review skill gets it named in the plan next to review-changes.
 - Adding a stage means one new skill that reads the rows it needs, and, when a phrase or an
   event should trigger it, one hook that routes to it.
