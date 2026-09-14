@@ -34,7 +34,7 @@ if [ -n "$path" ]; then
 else
   msg="Plan approved."
 fi
-msg="${msg} If the plan asks for a model switch or a context clear, state the exact command in one line and wait for the user to confirm they ran it before any step. Then run Deferred kickoff actions, then Steps, then Closing steps, in order."
+msg="${msg} If the plan asks for a model switch or a context clear, state the exact command in one line and wait for the user to confirm they ran it before any step. Then run Deferred kickoff actions, then Steps, then Closing steps, in order. No Step commits or pushes: the commit split under Closing steps is a recommendation the PR skill applies after the reviews."
 
 emit_context "PostToolUse" "$msg"
 exit 0
