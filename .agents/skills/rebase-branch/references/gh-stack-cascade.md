@@ -66,8 +66,8 @@ and possibly pulling down branches earlier in its sequence. A **rebase conflict*
 restores every branch. Recovery from the divergence case runs through the `upstream-` refs S1
 wrote, and nothing else.
 
-Pass `--remote <rem>` to `rebase`, `push` and `sync`; other subcommands may reject it — drop it
-there.
+Pass `--remote <rem>` to `rebase`, `push`, `sync` and `submit`; `init`, `add` and `view` take no
+`--remote` at all — drop it there.
 
 **Assume any `gh stack` command may want to prompt.** Multiple remotes, a branch in several
 stacks, the argument-less `checkout` picker, `sync`'s divergence question and the first-run rerere
@@ -103,9 +103,10 @@ Branch on its outcome before anything else:
 - **Success** ⇒ the stack is **tracked**; proceed with the checks below.
 - **Reports the branch isn't part of a stack** ⇒ **do not believe it yet.** That answer comes from
   local tracking, and `gh stack link` creates a stack on GitHub without writing any. So ask the PR
-  graph, read-only, with **filtered** queries and no repo-wide scan — `gh pr list` fetches 30
-  items by default, and an unfiltered listing on a busy repo silently misses the very PRs that
-  matter:
+  graph, read-only, with **filtered** queries and no repo-wide scan — `gh pr list`
+  fetches 30 items by default, and an unfiltered listing on a busy repo silently misses the very PRs
+  that matter (these three rules are mirrored in the CI-watch capability's own stack reference,
+  sentence for sentence, so a diff across the two files catches drift):
   - The trunk, which `gh stack view` would normally have supplied and did not:
     `gh repo view --json defaultBranchRef`, or the profile's Default branch row where the session
     carries one.
@@ -118,8 +119,8 @@ Branch on its outcome before anything else:
     trunk-to-release PR would otherwise make every ordinary PR look like a chain. Walking to the
     end matters — a two-query probe reads a four-member stack as two branches, and the adoption
     check below would then reject the stack it just adopted.
-  - **Drop the cross-repo PRs.** `isCrossRepository` true means `headRefName` names a branch in a
-    fork, which is not a local branch and not yours to rebase. Name them and exclude them.
+  - **Drop the cross-repo PRs.** `isCrossRepository` true means `headRefName` names a branch in
+    a fork, which is not a local branch and nothing here may act on it. Name them and exclude them.
   - **A real chain is the test**: a query returning a PR whose head or base is one of these
     branches. A base that merely differs from the trunk is **not** — a PR onto a release branch is
     not a stack, and plenty of trunks aren't `main`. A chain of hand-cut branches is not
