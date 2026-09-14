@@ -17,7 +17,7 @@ here they run in `gather` mode, then in `apply` mode with the approved verdicts.
 ## Phase 1 — gate 1: sub-topics
 
 Create the scratch dir `${TMPDIR:-/tmp}/clankers-review-<date>/` and record `git rev-parse HEAD`
-in the clankers repo root and today's date in its `findings.md`. Then ask one multi-select
+in the config repo root and today's date in its `findings.md`. Then ask one multi-select
 `AskUserQuestion`: which sub-topics this pass gathers. Options: memories
 (the per-project memory store), hooks (the hook scripts, wiring and the new-hook suggestions),
 skills (the authoring hygiene of every installed skill), AGENTS.md (the global instructions).
