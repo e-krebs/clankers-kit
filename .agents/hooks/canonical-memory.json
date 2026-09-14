@@ -1,0 +1,8 @@
+{
+  "description": "Canonical memory: on SessionStart, points a session opened in a sub-workspace or a linked worktree at the repo's main-worktree memory dir, so the memories tracked under .claude/projects are one store per repo. Claude only (Codex has no memory layout to redirect).",
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/canonical-memory.sh", "timeout": 5 } ] }
+    ]
+  }
+}

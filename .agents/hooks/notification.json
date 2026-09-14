@@ -1,0 +1,11 @@
+{
+  "description": "Notification sounds: one when a permission prompt is waiting (Notification, renamed PermissionRequest for Codex by the composer), one when the agent finishes a turn (Stop). play-sound.sh reads the event from stdin.",
+  "hooks": {
+    "Notification": [
+      { "matcher": "permission_prompt", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/play-sound.sh", "timeout": 5 } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/play-sound.sh", "timeout": 5 } ] }
+    ]
+  }
+}

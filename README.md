@@ -55,8 +55,8 @@ other tools are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 | `kit.json` | The manifest: every row `setup.sh` offers, its group, its defaults, and what it requires. |
 | `.agents/AGENTS.example.md` | A worked example of a personal instructions file — *"I write who I am."* |
 | `.agents/AGENTS.template.md` | A blank version `setup.sh` fills in for you. |
-| `.claude/settings/` | Opt-in setting **presets** (safe-command allowlist, enforcement, notification) composed into your `settings.json`. |
-| `.agents/hooks/` | The enforcement + notification scripts — *"enforce, don't just ask."* |
+| `.claude/settings/` | Opt-in setting **presets** — the safe-command allowlist and `base.json` — composed into your `settings.json`. |
+| `.agents/hooks/` | The shared hook scripts, their `hooks.json` fragments, the composer, and the fixture suites — *"enforce, don't just ask."* |
 | `.claude/projects/` | Where per-project **memory** is tracked — *"my agent's brain."* |
 | `.agents/workflow-profiles/` | Per-org and per-repo tables the workflow skills read (ticket system, commit policy, CI watcher, verify commands). |
 | `.agents/skills/` | A catalog for small, composable skills — TypeScript tips + a git/PR/ticket workflow family, plus bring your own. See the [catalog](.agents/skills/README.md). |
@@ -71,6 +71,33 @@ The kit composes three homes from one repo:
 
 A codex-only run still wires `~/.claude` — every composed hook path resolves through
 `~/.claude/hooks`.
+
+## Hooks
+
+Shared hooks live in `.agents/hooks/`; a skill's own hooks live in `.agents/skills/<name>/hooks/`.
+
+A fragment is plugin `hooks.json` content: the usual events and matchers, but every `command`
+is a bare script path — `${CLAUDE_PLUGIN_ROOT}/hooks/<script>.sh` for a shared hook,
+`${CLAUDE_PLUGIN_ROOT}/skills/<name>/hooks/<script>.sh` for a skill's own — with no arguments; an
+argument goes in the script's header instead. That header is one line, `# codex: yes`,
+`# codex: no`, or `# codex: yes args=<string>`: `no` drops the hook from the Codex wiring, and
+`args` are appended to the Codex command only.
+
+Every run of `setup.sh` composes both wiring files from the fragments of the checked `Hooks`
+rows: `~/.claude/settings.json`, and, when Codex is one of your agents, `~/.codex/hooks.json`.
+It composes with `--own root`: it replaces the entries it wrote — or a stale one whose script is
+gone — and leaves every other entry alone, so a hook you added by hand survives a re-run. For
+Codex, the composer also renames `Notification` to `PermissionRequest` (dropping the matcher)
+and caps `SessionEnd` timeouts at 3.
+
+The picker's `Hooks` group has one row per shared fragment (enforcement, notification sounds,
+session cleanup, canonical memory) plus a `skill trigger hooks` toggle, **off by default**: turn
+it on to also compose the `hooks.json` of every active skill.
+
+> [!WARNING]
+> **Codex hooks need a one-time trust step.** Codex hashes each hook definition and only runs a
+> hook once you've trusted it. After `setup.sh` — and after any re-run that changes the wiring —
+> open `codex` and run `/hooks` once. Until then, `codex exec` skips untrusted hooks silently.
 
 ## Requirements
 
@@ -98,7 +125,8 @@ A codex-only run still wires `~/.claude` — every composed hook path resolves t
    skipped in `--sandbox`: a throwaway `HOME` isn't logged in — run setup for real to use it.)
 2. `setup.sh` asks which agents you run (Claude Code, Codex — defaults to whatever it finds on
    your `PATH`), then shows **one grouped picker** covering layout, instructions, presets, skills,
-   and hooks: every row is on by default, so uncheck what you don't want. Unchecking a row another
+   and hooks (the skill trigger hooks stay off by default): every row is on by default, so
+   uncheck what you don't want. Unchecking a row another
    checked row depends on re-checks it with a note naming the dependant; checking a row checks
    everything it needs. Then it shows a **recap of exactly what it will do** — including any
    existing `~/.claude` content it will merge — and waits for one confirmation before it touches
@@ -126,7 +154,8 @@ npx skills add e-krebs/clankers-kit --skill typescript-tips
 
 Swap `typescript-tips` for any skill in the [catalog](.agents/skills/README.md) — e.g.
 `ticket-kickoff`, `rebase-branch`, `changes-to-pr`, `pr-followup`. That's skill *distribution*,
-not a framework to depend on — the kit itself is still yours to own.
+not a framework to depend on — the kit itself is still yours to own. It copies the skill's
+`hooks/` directory too, but nothing wires those hooks; only `setup.sh`'s composer does that.
 
 ## Privacy
 

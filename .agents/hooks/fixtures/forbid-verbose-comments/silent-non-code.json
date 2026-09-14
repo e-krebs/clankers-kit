@@ -1,0 +1,1 @@
+{"tool_name":"Write","tool_input":{"file_path":"/nonexistent/fresh.md","content":"/**\n * JSDoc is fine here — this is not a code file.\n */\nconst a = 1;"}}

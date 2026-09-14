@@ -24,11 +24,14 @@ and genuinely useful, not tuned to one company's stack.
 
 ## Presets and hooks
 
-- Setting presets live in `.claude/settings/<preset>.json` and are applied additively by
-  `.claude/settings/merge.jq` (arrays union, a scalar is set only when absent, nothing removed).
-  Add a fragment + a `settings` row in `kit.json`.
-- Hooks live in `.agents/hooks/`. Keep them **fail-open** (a hook error must never block the
-  user) and cross-platform where practical (see `play-sound.sh` for the pattern).
+- **Setting presets** live in `.claude/settings/<preset>.json`, allowlist-style, and are applied
+  additively by `.claude/settings/merge.jq` (arrays union, a scalar is set only when absent,
+  nothing removed). Add a fragment + a `settings` row in `kit.json`.
+- **Hooks** are a script under `.agents/hooks/` with a `# codex: yes|no` header, its
+  `hooks.json` fragment, a `fixtures/<name>/run.sh` suite, and a `hooks` row in `kit.json`. Keep
+  every hook **fail-open** (a hook error must never block the user) and cross-platform where
+  practical (see `play-sound.sh` for the pattern). Run the whole fixture suite with
+  `bash .agents/hooks/run-fixtures.sh`.
 
 ## Manifest
 
@@ -40,9 +43,10 @@ A new preset, skill, or link needs a row in `kit.json` (id, group, kind, label, 
 - **No personal data.** No real names (other than authorship), emails, employer/project names,
   ticket IDs, internal URLs, or machine-specific absolute paths.
 - **Keep it terse.** `CLAUDE.md` content is re-read every turn; every line should earn its place.
-- **`shellcheck` must pass** on `setup.sh`, `uninstall.sh`, and everything in `.agents/hooks/` and
-  `.agents/lint-manifest.sh`. Run it locally:
-  `shellcheck setup.sh uninstall.sh .agents/lint-manifest.sh .agents/hooks/*.sh`.
+- **`shellcheck` must pass** on every shell script in the repo. Run it locally:
+  `shellcheck $(git ls-files '*.sh')`.
+- **A hook change comes with a fixture case.** Run the whole suite with
+  `bash .agents/hooks/run-fixtures.sh`; CI runs it too.
 - **Test `setup.sh` in a sandbox**, never against your real `~/.claude` — the built-in flag does
   it for you (copies the repo + points `HOME` at throwaway dirs):
   ```bash

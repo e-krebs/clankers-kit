@@ -61,6 +61,20 @@ while IFS=$'\t' read -r id repo; do
   esac
 done < <(jq -r '.components[] | .id as $id | (.links // [])[] | [$id, .repo] | @tsv' "$manifest")
 
+# --- fragments: a settings preset carries no hooks (the composer owns them), a hooks fragment
+#     holds ${CLAUDE_PLUGIN_ROOT}/ script commands only ---------------------------------------
+while IFS=$'\t' read -r id path; do
+  [ -f "${root}/${path}" ] || continue
+  jq -e 'has("hooks") | not' "${root}/${path}" >/dev/null 2>&1 || finding "${id}: settings preset ${path} holds a hooks key — make it a hooks fragment"
+done < <(jq -r '.components[] | select(.settings != null) | [.id, .settings] | @tsv' "$manifest")
+while IFS=$'\t' read -r id path; do
+  [ -f "${root}/${path}" ] || continue
+  jq -e '.hooks | type == "object"' "${root}/${path}" >/dev/null 2>&1 || { finding "${id}: ${path} has no .hooks object"; continue; }
+  # shellcheck disable=SC2016  # the literal placeholder is the fragment contract
+  bad="$(jq -r '.hooks[][]?.hooks[]? | (.command // "<no command>") | select(startswith("${CLAUDE_PLUGIN_ROOT}/") | not)' "${root}/${path}")"
+  [ -z "$bad" ] || finding "${id}: ${path} holds a command that is not a \${CLAUDE_PLUGIN_ROOT}/ script path: ${bad}"
+done < <(jq -r '.components[] | select(.hooks != null) | [.id, .hooks] | @tsv' "$manifest")
+
 # --- every skill dir is declared ----------------------------------------------------------
 declared="$(jq -r '[.components[] | .skill // empty, (.upstream.skill // empty)] | .[]' "$manifest")"
 for d in "${root}"/.agents/skills/*/; do

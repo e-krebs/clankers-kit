@@ -1,0 +1,11 @@
+{
+  "description": "Session housekeeping: reaps the per-session tmp markers other hooks leave behind, on SessionEnd for the ending session and on SessionStart for markers older than a day (a killed session never fires SessionEnd).",
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-cleanup.sh", "timeout": 15 } ] }
+    ],
+    "SessionEnd": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-cleanup.sh", "timeout": 15 } ] }
+    ]
+  }
+}

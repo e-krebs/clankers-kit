@@ -16,7 +16,7 @@
       "group": "layout",
       "kind": "links",
       "label": "core links",
-      "description": "settings.json and the hooks dir into ~/.claude, and the Codex hook wiring into ~/.codex. Every composed hook path resolves through these, so they stay on.",
+      "description": "settings.json and the hooks dir into ~/.claude, and the composed Codex hook wiring into ~/.codex. Every composed hook path resolves through these, so they stay on.",
       "locked": true,
       "links": [
         { "home": ".claude/settings.json", "repo": ".claude/settings.json", "type": "file" },
@@ -115,20 +115,44 @@
     {
       "id": "enforcement",
       "group": "hooks",
-      "kind": "settings",
+      "kind": "hooks",
       "label": "enforcement hooks",
-      "description": "Block cd, git -C, sed/cat/awk, secret-leaking echo, destructive find/sort, and verbose TS comments.",
-      "agents": ["claude"],
-      "settings": ".claude/settings/enforcement.json"
+      "description": "Block cd, git -C, sed/cat/awk, secret-leaking echo, loops, xargs, destructive find/sort and ad-hoc python in Bash, and JSDoc / block comments added to TS/JS files (the comment rule is Claude-only).",
+      "hooks": ".agents/hooks/enforcement.json"
     },
     {
       "id": "notification",
       "group": "hooks",
-      "kind": "settings",
+      "kind": "hooks",
       "label": "notification sounds",
-      "description": "One sound when a permission prompt is waiting, one when Claude finishes a turn.",
+      "description": "One sound when a permission prompt is waiting, one when the agent finishes a turn. Works for Claude Code and Codex.",
+      "hooks": ".agents/hooks/notification.json"
+    },
+    {
+      "id": "session-cleanup",
+      "group": "hooks",
+      "kind": "hooks",
+      "label": "session cleanup",
+      "description": "Reaps the per-session tmp markers other hooks leave behind, at session end and, for a killed session, a day later at the next session start.",
+      "hooks": ".agents/hooks/session-cleanup.json"
+    },
+    {
+      "id": "canonical-memory",
+      "group": "hooks",
+      "kind": "hooks",
+      "label": "canonical memory",
+      "description": "A session opened in a sub-workspace or a linked worktree reads and writes the repo's main memory store instead of an empty one keyed on its cwd.",
       "agents": ["claude"],
-      "settings": ".claude/settings/notification.json"
+      "requires": ["memories"],
+      "hooks": ".agents/hooks/canonical-memory.json"
+    },
+    {
+      "id": "skill-hooks",
+      "group": "hooks",
+      "kind": "toggle",
+      "label": "skill trigger hooks",
+      "description": "Also wire the hooks each active skill ships (nudges that suggest the skill when your prompt matches, gates that guard its steps). Off by default: try the skills first, then turn this on.",
+      "default": false
     }
   ]
 }

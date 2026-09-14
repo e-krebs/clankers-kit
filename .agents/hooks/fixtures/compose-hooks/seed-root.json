@@ -1,0 +1,21 @@
+{
+  "model": "keep-me",
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "bash \"/R/hooks/shared-a.sh\"", "timeout": 5 } ] },
+      { "hooks": [ { "type": "command", "command": "bash \"/R/hooks/gone.sh\"", "timeout": 5 } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "bash \"/R/hooks/shared-b.sh\" notify", "timeout": 5 } ] },
+      { "hooks": [ { "type": "prompt", "prompt": "Summarize the turn" } ] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash \"/R/my-extras/foo.sh\"", "timeout": 5 } ] },
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash \"/X/elsewhere.sh\"", "timeout": 5 } ] },
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash /R/hooks/shared-c.sh", "timeout": 5 } ] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "bash \"/R/skills/old/hooks/old-nudge.sh\"", "timeout": 5 } ] }
+    ]
+  }
+}

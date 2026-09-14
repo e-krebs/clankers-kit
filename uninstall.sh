@@ -121,14 +121,43 @@ done < <(jq -r '.components[] | (.links // [])[] | [.home, .repo] | @tsv' "$MANI
 points_into_repo "${HOME}/.claude/CLAUDE.md" && restore_one ".claude/CLAUDE.md" ".agents/AGENTS.md"
 
 step "Deactivating skills linked from this repo"
-found=false
+found=false; DROPPED=()
 for d in "${HOME}/.claude/skills" "${HOME}/.agents/skills"; do
   [[ -d "$d" ]] || continue
   while IFS= read -r link; do
-    if points_into_repo "$link"; then rm -f "$link"; say "  deactivated skill '$(basename "$link")' (${d/#$HOME/~})"; found=true; fi
+    if points_into_repo "$link"; then
+      rm -f "$link"; say "  deactivated skill '$(basename "$link")' (${d/#$HOME/~})"; found=true
+      DROPPED+=("$(basename "$link")")
+    fi
   done < <(find "$d" -mindepth 1 -maxdepth 1 -type l 2>/dev/null)
 done
 $found || say "  none linked from this repo"
+
+# The restored wiring still runs the shared hooks through ~/.claude/hooks, now a real copy; the
+# entries of the kit skills deactivated above would dangle, so they are dropped — those only, and
+# only from a wiring file that is a real file here (a foreign symlink was skipped above and stays).
+strip_skill_hooks() {               # $1 = wiring file; DROPPED holds the deactivated skill names
+  [[ -f "$1" && ! -L "$1" ]] || return 0
+  local names tmp
+  names="$(printf '%s\n' "${DROPPED[@]}" | jq -R . | jq -sc .)"
+  tmp="${1}.clanker-tmp"
+  # shellcheck disable=SC2016  # the literal $HOME is what the composer wrote
+  if jq --argjson names "$names" '
+      def kit_skill: (.command // "") as $c | any($names[]; . as $n | $c | contains("$HOME/.claude/skills/" + $n + "/"));
+      if (.hooks | type) == "object" then
+        .hooks |= (with_entries(.value |= (map(.hooks |= map(select(kit_skill | not))) | map(select(.hooks | length > 0))))
+                   | with_entries(select(.value | length > 0)))
+      else . end' "$1" > "$tmp" 2>/dev/null; then
+    mv -f "$tmp" "$1"; say "  dropped the deactivated skills' hook entries from ${1/#$HOME/~}"
+  else
+    rm -f "$tmp"; warn "  could not rewrite ${1/#$HOME/~} — check it for entries under ~/.claude/skills/"
+  fi
+}
+if [[ ${#DROPPED[@]} -gt 0 ]]; then
+  step "Hook wiring"
+  strip_skill_hooks "${HOME}/.claude/settings.json"
+  strip_skill_hooks "${HOME}/.codex/hooks.json"
+fi
 
 # `command` rows: offer to undo what setup installed (the chrome-devtools MCP). Fields joined on
 # the unit separator: @tsv would escape the backslashes inside the JSON argv strings.

@@ -1,0 +1,11 @@
+{
+  "description": "synthetic shared fragment with script hooks only, for the --own root cases",
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/shared-a.sh", "timeout": 5 } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/shared-b.sh", "timeout": 5 } ] }
+    ]
+  }
+}

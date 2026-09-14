@@ -17,6 +17,8 @@ jobs:
         run: shellcheck $(git ls-files '*.sh')
       - name: Lint the manifest
         run: bash .agents/lint-manifest.sh
+      - name: Run the hook fixtures
+        run: bash .agents/hooks/run-fixtures.sh
 
   smoke:
     strategy:
