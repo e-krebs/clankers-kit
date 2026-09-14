@@ -12,16 +12,17 @@ gathered first, then **one** offer authorizes the whole chain.
 ## Safety
 
 - No associated PR → exit silently, with no output. Ordinary pushes to PR-less branches stay quiet.
-- The triggering hook is permissive: it fires on any Bash command whose text mentions `git push` or
-  `gh pr create`, even one that pushed nothing. So resolve-or-exit (Step 0) is always the first
-  action; a missing, merged, or closed PR costs one quiet `gh pr view` and stops.
+- The triggering hook is permissive: it fires on any Bash command whose text mentions `git push`,
+  `gh pr create`, or `gh stack push` / `submit`, even one that pushed nothing. So resolve-or-exit
+  (Step 0) is always the first action; a missing, merged, or closed PR costs one quiet
+  `gh pr view` and stops.
 
 ## Profile
 
 Read the workflow profile rows from context — the session-start hook injects the resolved table.
 When they are absent from context, run
 `bash ~/.agents/skills/workflow-profile/scripts/resolve-profile.sh --rows` and read its table.
-Two rows decide the run:
+Four rows decide the run:
 
 - CI watcher naming a CI (CircleCI, GitHub Actions) → the watch runs. Both report through
   `gh pr checks`, so the row tells you which staged-job behaviour to expect, not which command to
@@ -29,12 +30,28 @@ Two rows decide the run:
 - CI watcher `none` → nothing to watch: confirm in one line that the push landed (branch, commits,
   and the PR link when one exists) and stop. No offer, no watch, no tracker move.
 - Ticket system `none` → no ticket question and no tracker move in this run.
+- PR shape carrying the clause `gh stack for a multi-PR change`, or the `gh-stack` spelling → the
+  push may have moved a whole stack, so Step 0 enumerates the members before resolving one PR.
+  Absence means one PR and this file as written. The clause never overrides CI watcher `none`.
+- Default branch → the trunk the stack path's PR walk measures a base and a head against.
 
-Done when the rows are in hand and the watch-or-stop branch is chosen.
+Done when the rows are in hand, the watch-or-stop branch is chosen, and, where the clause applies,
+the single-PR or stack enumeration is picked.
 
 ## Step 0 — Gather (read-only, no side effects)
 
 - Current branch: `git branch --show-current`.
+- The stack, only where PR shape carries the clause: `gh stack view --json`. Succeeding with more
+  than one member → run no further command until you have read
+  [references/gh-stack-followup.md](references/gh-stack-followup.md) in full, then follow it: it
+  replaces the PR resolve below, except where F1 sends you back to it, and Steps 2 and 3, and it
+  is the only source for `gh stack`
+  invocations and for the PR walk. Failing, or listing one member, → read that file in full too and
+  run its F1 PR walk first, because `gh stack link` builds a stack on GitHub and writes nothing
+  locally, which is exactly what a one-member answer looks like. A walk that finds no chain returns
+  here for the single-PR resolve. Skip the command inside a paused
+  cascade (`test -e "$(git rev-parse --git-common-dir)/gh-stack-rebase-state"`), where every read
+  fails with `not on any branch`, resolve the one PR below, and say the stack was unreadable.
 - Resolve the PR for it: `gh pr view --json
   number,state,isDraft,url,title,body,reviewDecision,latestReviews,reviewRequests,headRefName,statusCheckRollup`.
   No PR (the command errors or returns empty) → exit silently. A `MERGED` or `CLOSED` PR → exit
@@ -55,7 +72,8 @@ Done when the rows are in hand and the watch-or-stop branch is chosen.
   offer before Step 3, red goes to Step 4. No checks configured → treat as green.
 
 Done when the PR state, the reviewer set, the CI status, the tracker-move candidate, and the
-green-action are all resolved, or the silent exit fired.
+green-action are all resolved, and the stack read either enumerated its members or handed off to
+the path file, or the silent exit fired.
 
 ## Step 1 — Offer (the gate)
 
@@ -119,3 +137,6 @@ Done when the failures are reported and the question is asked; the next move is 
 - Several PRs for one branch → `gh pr view` resolves by head branch; use that one.
 - A headless or cron run has no tracker tooling: the best-effort contract skips the move and the
   PR still advances.
+- A stack `gh stack link` created has no local tracking, so `gh stack view --json` reads it as
+  not-a-stack. The path file's PR walk is what finds that one, and the walk runs on the resolved
+  PR's own base and head, not on the profile row.

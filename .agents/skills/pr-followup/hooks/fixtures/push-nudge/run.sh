@@ -79,6 +79,9 @@ rm -f /tmp/pn-syn-lib.$$ 2>/dev/null
 # --- fires ------------------------------------------------------------------
 fires "fires" "sample-posttooluse-shell.json"
 fires "fires-gh-pr-create" "gh-pr-create.json"
+# a stack submit or push republishes every member, so the watch owns all of them
+fires "fires-gh-stack-submit" "gh-stack-submit.json"
+fires "fires-gh-stack-push" "gh-stack-push.json"
 
 # --- silence ----------------------------------------------------------------
 silent "silent-pretooluse" "sample-pretooluse-shell.json"

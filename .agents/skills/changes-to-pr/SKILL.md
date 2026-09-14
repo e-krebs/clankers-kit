@@ -24,14 +24,21 @@ When they are absent from context, run
 `bash ~/.agents/skills/workflow-profile/scripts/resolve-profile.sh --rows` and read its table.
 These rows shape the run:
 
+- Git source — the forge, which decides whether a forge command runs at all.
 - Commit policy — `direct commits to main`: commit on the default branch and stop, no branch and
   no PR. `PRs, never direct`: branch, commits, PR.
 - Remote — `local-only`: stop at the commit, nothing is pushed.
 - Ticket system — `none`: no ticket question and no tracker move anywhere in this run.
 - Commit convention — the subject shape, and where a ticket reference may appear.
-- PR shape — how the PR opens: draft-first, squash, CODEOWNERS review.
+- PR shape — how the PR opens: draft-first, squash, CODEOWNERS review. A value carrying the clause
+  `gh stack for a multi-PR change`, or the `gh-stack` spelling, is the stack signal: a multi-PR
+  change lands as one stack, and Step 4's branch, push and PR-create items become
+  [references/gh-stack-path.md](references/gh-stack-path.md)'s. Read Git source, Commit policy and
+  Remote first, because the clause is inert on a non-GitHub source, under `direct commits to main`
+  and under `local-only`. A negated mention such as `no gh stack here` means no stacking.
 
-Done when the rows are in hand and the commit / branch / PR / ticket path is settled.
+Done when the rows are in hand, the commit / branch / PR / ticket path is settled, and the stack
+clause reads present or absent, with Git source, Commit policy and Remote read first.
 
 ## Step 0 — Inspect (no questions yet)
 
@@ -39,7 +46,10 @@ Run in parallel: the current branch (`git branch --show-current`); the base, fro
 Default branch cross-checked against `git symbolic-ref --quiet refs/remotes/origin/HEAD`; the
 changes (`git status --porcelain` → staged + unstaged + untracked, minus `.gitignore`); the full
 diff to commit (`git diff <base>` plus the contents of untracked files); and the branch lead
-(`git log --oneline <base>..HEAD`, the commits unique to the current branch).
+(`git log --oneline <base>..HEAD`, the commits unique to the current branch). `<base>` is the
+trunk and stays the trunk for the whole run: it is what the diff and the branch lead are measured
+against, not necessarily what a PR opens against. Gate 1 item 2 binds that separately, as
+`<pr-base>`.
 
 From the diff, analyze concerns (does the change span more than one separable concern?), env vars
 (`process.env.*`, `import.meta.env.*`, `ENV["…"]`, `.env*`), and dependency-manifest changes.
@@ -59,12 +69,25 @@ several PRs, read [references/split-path.md](references/split-path.md) for the p
    not the base: current branch · a new branch off it (stacked) · a new branch off `<base>`
    (independent, omitted when the changes depend on commits unique to the current branch, which
    branching off the base would drop). On the base branch no question is asked: a new branch off
-   `<base>` is created.
+   `<base>` is created. The answer binds `<pr-base>`. Where PR shape carries the stack clause the
+   stacked option is offered first and pre-selected. The question still stands, because an
+   independent branch off `<base>` is a legitimate answer under that row too, and it takes the
+   plain items below.
 3. Split — when several concerns were detected: one PR, or one branch + commits + PR per concern.
    Name the detected concerns in the question.
 4. Review — only when no review summary is in context and no plan prescribes one.
 
-Done when every applicable item has an answer.
+`<pr-base>` is both the branch a new branch is cut from and the base its PR opens against. It is
+per-branch, so under a split each concern binds its own.
+
+| Item 2's answer | `<pr-base>` |
+| --- | --- |
+| stacked | the current branch |
+| independent | `<base>` |
+| on the base branch, no question asked | `<base>` |
+| current branch | the existing PR's `baseRefName`, else `<base>` |
+
+Done when every applicable item has an answer and `<pr-base>` is bound.
 
 ## Step 2 — Build the plan
 
@@ -88,8 +111,17 @@ Done when every applicable item has an answer.
 - Tracker move, only with a tracker and a ticket in hand: follow the profile's `## Tracker rules`
   to resolve the move to the work-started state, carrying one outcome to Gate 2 — a matched
   transition, the picker candidates, or nothing applicable.
+- The stack, only where PR shape carries the stack clause and this run is a multi-PR change —
+  Gate 1 item 3 split it, or item 2 answered stacked. A lone branch is not a stack and takes the
+  plain items. Run no
+  further command until you have read
+  [references/gh-stack-path.md](references/gh-stack-path.md) in full, then run its P1 pre-flight,
+  which is read-only, and carry its route — `init`, `add` or degraded — plus the mutation set it
+  records into Gate 2. That file replaces Step 4's items 1, 4 and 5, and it is the only source for
+  `gh stack` invocations; treat any others you recall from memory as wrong.
 
-Done when the split and, where they apply, the branch name, description and move are drafted.
+Done when the split and, where they apply, the branch name, description, move and stack route are
+drafted.
 
 ## Step 3 — Gate 2 (one consolidated approval)
 
@@ -98,6 +130,12 @@ description where they apply. Self-check the drafted body first — save it to a
 `grep -nE '<!--|\bTODO\b|\.\.\.' <body-file>`; any hit is a placeholder to fix before the PR is
 created, while whether the what and why sections carry real content stays judgment, not grep. When
 an existing PR's body is non-template, warn that it would be replaced and let the user keep it.
+
+On the stack route the plan also names the stack it will create: the members bottom to top, the
+trunk they sit on, which branch each PR opens against, that every new PR opens as a draft under a
+draft-first shape, and that each PR carries temporary generated text until the title-and-body pass
+finishes. It names the whole mutation set too — each existing member, its unpushed commits and any
+base that will move — because one submit publishes all of it.
 
 When a tracker move applies, batch its own question into this same interaction: move `<TICKET>`
 (`<current>` → the work-started state)? — or the rules' picker plus Skip when no transition targets
@@ -110,8 +148,14 @@ Done when the user approves, or edits and approves.
 The tracker move goes first when it was approved: the work has started, so that state should not
 wait on the push or be blocked by it. Best-effort, per the rules.
 
+Where Step 2 picked a stack route, items 1, 4 and 5 are
+[references/gh-stack-path.md](references/gh-stack-path.md)'s from its P2 onwards, and item 2's
+commits are unchanged. The items as written still apply on that file's degraded route, under the
+independent Gate 1 answer, where the run creates no branch, under `direct commits to main`, and
+under a `local-only` Remote.
+
 1. Branch — only under `PRs, never direct`, and only when creating one:
-   `git checkout -b <name> <base-or-current>`, which carries the working tree over. Under
+   `git checkout -b <name> <pr-base>`, which carries the working tree over. Under
    `direct commits to main`, the current branch must be the Default branch; on any other branch,
    say so and stop before committing.
 2. Commits — `git reset` to unstage, then per planned commit `git add <files>` at file level, or
@@ -120,9 +164,12 @@ wait on the push or be blocked by it. Best-effort, per the rules.
 3. Stop here when Commit policy is `direct commits to main` (report the commits that landed on the
    default branch) or Remote is `local-only` (report that nothing was pushed).
 4. Push: `git push -u origin <branch>`.
-5. PR, per the PR shape row. No PR yet: `gh pr create --base <base> --title "<title>" --body-file -`
-   (heredoc the body), with `--draft` when the shape is draft-first. Existing PR: push the commits,
-   then `gh pr edit <n> --body-file -` only when the user approved replacing the body.
+5. PR, per the PR shape row. No PR yet:
+   `gh pr create --base <pr-base> --title "<title>" --body-file -` (heredoc the body), with
+   `--draft` when the shape is draft-first. `<pr-base>` is Gate 1 item 2's binding, so a stacked
+   branch opens against its parent rather than the trunk; passing `<base>` here puts the parent's
+   commits in this PR's own diff. Existing PR: push the commits, then
+   `gh pr edit <n> --body-file -` only when the user approved replacing the body.
 
 Close by naming what follows: with a CI watcher in the profile, a hook hands off to the CI watch;
 with `none`, say plainly that no CI watch follows and the PR is the user's to advance.
@@ -137,3 +184,5 @@ Done when the commits exist and, where the rows call for it, the PR is created o
   one per concern, in the order the user chose.
 - A ticket reference belongs only where the Commit convention row puts it; under "ticket ref in PR
   body only", a subject carrying an ID is a commit a gate hook blocks.
+- A stacked branch's PR opens against `<pr-base>`, its parent — never `<base>`. A PR whose diff
+  suddenly carries the parent branch's commits is that binding gone wrong.

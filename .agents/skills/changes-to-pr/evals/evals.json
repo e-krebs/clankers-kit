@@ -78,6 +78,52 @@
         "Never promotes the PR to ready, merges it, or watches CI itself, closing instead on the hand-off to the CI watch",
         "Aborts a hunk-level commit cleanly on a git apply --cached failure, pushing no partial result"
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher GitHub Actions, PR shape draft-first squash, Remote yes. I'm on feat/api-client, which has its own open PR against main. Open a PR for my changes — they build on that branch, so stack a new branch on top of it.",
+      "expected_output": "Binds <base> to main for the diff and the branch lead, and binds <pr-base> to feat/api-client from the Gate 1 stacked answer. Cuts the new branch off feat/api-client and opens its draft PR with --base feat/api-client, so the PR's diff is the new commits alone.",
+      "assertions": [
+        "Cuts the branch off feat/api-client, the Gate 1 answer, not off main",
+        "Passes --base feat/api-client to gh pr create, so <base> never reaches the PR-create command",
+        "Says the PR opens against its parent branch, and presents no diff that includes feat/api-client's own commits",
+        "Still measures the Step 0 diff and the branch lead against main, which is what <base> is for",
+        "Names the binding it used, so a reader can tell <pr-base> from <base>"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher GitHub Actions, PR shape 'draft-first, squash, gh stack for a multi-PR change, no required approval', Remote yes. I'm on main and the tree mixes a schema change and the endpoint that uses it. Ship them as two PRs.",
+      "expected_output": "Reads references/gh-stack-path.md in full before any gh stack command, runs its read-only P1 (paused cascade, linked worktree, version, remote, gh stack view --json which reports no stack, the mutation set), carries the init route into Gate 2, then cuts both branches and commits with plain git bottom to top, tracks them with one gh stack init --base main, submits with gh stack submit --auto, applies the Gate 2 titles and bodies with gh pr edit before anything else, and verifies both branches against their remotes.",
+      "assertions": [
+        "Reads references/gh-stack-path.md in full before running any gh stack command",
+        "A single-concern run under the same row would take Step 4's plain items instead, because one PR is not a multi-PR change",
+        "Runs gh stack view --json, never the bare gh stack view, which opens a TUI that never returns",
+        "Tests for a linked worktree before believing a 'not part of a stack' answer, and degrades rather than calling init from one",
+        "Creates both branches and their atomic commits with plain git before anything tracks the stack, so gh stack is never handed a dirty tree",
+        "Passes --base main to gh stack init and nowhere else on the path",
+        "Runs gh stack submit with --auto and without --open, because the PR shape row is draft-first",
+        "Passes no -A, -u or -m to gh stack add, which would collapse the split into one commit",
+        "Applies the Gate 2 title and body per PR with gh pr edit, because submit --auto invents both and has no --title or --body",
+        "Runs no git push -u of its own, since submit pushes the branches",
+        "Verifies every branch in the mutation set against its remote after the submit, the created ones and the existing members, because the push is not atomic",
+        "Closes on the hand-off to the CI watch, saying it watches every member and advances the bottom open one"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher GitHub Actions, PR shape 'squash, gh stack for a multi-PR change', Remote yes. I'm on feat/groundwork, which has no PR yet. Commit and PR this — the diff mixes a refactor, a feature that depends on it, and a doc update. Split them, stacked.",
+      "expected_output": "Detects three concerns, pre-selects the stacked answer because the row carries the clause, then builds each concern's branch and commits bottom to top with plain git, tracks the whole set with one gh stack init, submits once with gh stack submit --auto, applies the approved titles and bodies, and only then marks each created PR ready with gh pr ready rather than passing --open.",
+      "assertions": [
+        "The stacked option is offered first and pre-selected, and the question is still asked",
+        "Each concern's branch is cut from the concern below it, and its PR opens against that same branch, so the Nth PR's diff is the Nth concern alone",
+        "One gh stack init lists every created branch bottom to top, with feat/groundwork as the bottom member, rather than one init or add per concern",
+        "One gh stack submit covers the whole set, rather than one submit per concern",
+        "gh pr ready runs per created PR after the title-and-body pass, never submit --open, which would also promote an existing deliberately-draft member",
+        "All three per-concern plans are presented at a single Gate 2, which names the stack and the whole mutation set",
+        "gh stack view --json after the submit is what maps each branch to its PR number",
+        "The stack is tracked once and submitted once, rather than per concern"
+      ]
     }
   ]
 }
