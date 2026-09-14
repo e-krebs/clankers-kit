@@ -1,0 +1,8 @@
+{
+  "description": "Memory ask gate: denies the first Write that would create a file in a project memory store, so a new memory is the user's decision rather than a side effect, and lets the retry through. An existing memory file, the MEMORY.md index and anything outside a store all pass. Claude only (the path it gates is Claude Code's memory layout). Composed by compose-hooks.sh; every command is a ${CLAUDE_PLUGIN_ROOT}/ path.",
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Write", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/memory-ask-gate.sh", "timeout": 5 } ] }
+    ]
+  }
+}

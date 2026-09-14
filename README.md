@@ -99,9 +99,14 @@ gone — and leaves every other entry alone, so a hook you added by hand survive
 Codex, the composer also renames `Notification` to `PermissionRequest` (dropping the matcher)
 and caps `SessionEnd` timeouts at 3.
 
+A gate cannot see what the agent asked you, so one that needs an ask denies once and records it:
+`memory-ask-gate.sh` denies the first write that would create a memory file and lets the retry
+through, the same nudge-once shape `workflow-profile-nudge.sh` uses for its `.asked/` markers.
+
 The picker's `Hooks` group has one row per shared fragment (enforcement, notification sounds,
-commit subject gate, session cleanup, canonical memory) plus a `skill trigger hooks` toggle,
-**off by default**: turn it on to also compose the `hooks.json` of every active skill.
+commit subject gate, session cleanup, canonical memory, memory ask gate) plus a
+`skill trigger hooks` toggle, **off by default**: turn it on to also compose the `hooks.json` of
+every active skill.
 
 > [!WARNING]
 > **Codex hooks need a one-time trust step.** Codex hashes each hook definition and only runs a

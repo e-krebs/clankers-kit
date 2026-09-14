@@ -34,6 +34,7 @@
 
 - Plan-first: for non-trivial or ambiguous work, plan before starting
 - One concern per PR — split a change that mixes a refactor, a new feature, and a bugfix
+- Ask before writing a new memory, naming the fact and where it would live. A rule that belongs in a skill, a hook or this file goes there instead, because those enforce it while a memory only reminds, and every memory spends context in every later session. Updating or deleting an existing memory needs no ask. `memory-ask-gate.sh` denies the first write that would create one, and lets the retry through
 - A mechanical rule gets a hook, not prose: spec text alone doesn't hold, so enforceable rules go into hooks and this file keeps the judgment calls
 - Conventional commits with a scope: `feat(scope): …`, `fix(scope): …`, `chore(scope): …`; append a tracking-ticket id when there is one
 - Verify UI changes in a real browser before calling them done — for behavioral changes, check the network and console too, not just a screenshot

@@ -266,6 +266,15 @@
       "hooks": ".agents/hooks/canonical-memory.json"
     },
     {
+      "id": "memory-ask-gate",
+      "group": "hooks",
+      "kind": "hooks",
+      "label": "memory ask gate",
+      "description": "Denies the first write that would create a project memory file, so a new memory is your decision rather than a side effect, and lets the retry through. An existing memory, the index and everything outside the store pass.",
+      "agents": ["claude"],
+      "hooks": ".agents/hooks/memory-ask-gate.json"
+    },
+    {
       "id": "skill-hooks",
       "group": "hooks",
       "kind": "toggle",

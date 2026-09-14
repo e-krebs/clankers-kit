@@ -32,6 +32,7 @@
 ## Workflow habits
 
 - One concern per PR
+- Ask before writing a new memory, naming the fact and where it would live. A rule that belongs in a skill, a hook or this file goes there instead, because those enforce it while a memory only reminds, and every memory spends context in every later session. Updating or deleting an existing memory needs no ask
 - A mechanical rule gets a hook, not prose: spec text alone doesn't hold, so enforceable rules go into hooks and the instructions file keeps the judgment calls
 {{WORKFLOW}}
 <!-- plan-first? one-concern-per-PR? commit convention? how do you want changes verified before "done"? -->
