@@ -64,7 +64,7 @@ Objective, so no run talks itself out of the flow:
 
 | Size | Test | Reviewers |
 | --- | --- | --- |
-| small | Approach + Files lists at most 3 files, Steps has one commit, and no file is a hook, a skill or a config | 1 |
+| small | Approach + Files lists at most 3 files, the recommended commit split is one commit, and no file is a hook, a skill or a config | 1 |
 | medium | anything larger that stays routine | 2 |
 | large or risky | broad, coupled, or a mistake is expensive | every agent in the profile's Reviewers row |
 

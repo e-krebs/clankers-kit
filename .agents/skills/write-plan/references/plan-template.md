@@ -44,10 +44,11 @@ when none apply.>
 
 ## Steps + delegation
 
-<Ordered steps. Tag each `judge` (stays with the main agent) or `worker` (delegated, with the
-tier it runs at). Every worker that writes files or runs a gate gets its own worktree; parallel
-read-only workers share the tree. Name the skill each step invokes: `/<verify skill>`,
-`/<repo review skill>`.>
+<Ordered steps, each one a unit of work rather than a commit. Tag each `judge` (stays with the
+main agent) or `worker` (delegated, with the tier it runs at). Every worker that writes files or
+runs a gate gets its own worktree; parallel read-only workers share the tree. Name the skill each
+step invokes: `/<verify skill>`, `/<repo review skill>`. No step commits and no step pushes:
+execution ends with every edit in the working tree and nothing staged.>
 
 ## Verification
 
@@ -62,8 +63,9 @@ or a screenshot (visual). `n/a` when neither applies.>
 2. Review, <tier> tier x <count>: `/<review skill>` on the working tree, `/<repo review
    skill>` on the changed <language>. <Count comes from the size rule over the profile's
    Reviewers row.>
-3. Hand-off: `/<pr skill>`. Commit split: `<type>(<scope>): <subject>` for <files>;
-   `<type>(<scope>): <subject>` for <files>.
+3. Hand-off: `/<pr skill>`, which commits after the reviews. Recommended commit split, which
+   that skill reads rather than this plan performing it: `<type>(<scope>): <subject>` for
+   <files>; `<type>(<scope>): <subject>` for <files>.
 
 ## Plan review
 
@@ -76,6 +78,9 @@ plan after this review adds a line here once the plan is re-reviewed.>
 
 - Every step is written as a step. Nothing reads "default yes", and nothing is offered: the
   user deletes the steps they decline before approving.
+- The plan recommends a commit split and never performs it. A step phrased as a commit invites
+  committing before any reviewer has seen the work, so the split lives under Closing steps and the
+  PR skill applies it after the reviews.
 - The `/<...>` placeholders are filled from the skills installed in the session that writes the
   plan, by name, in every section. The template itself names none.
 - The tables in a plan keep a source line when their numbers come from somewhere — a command,
