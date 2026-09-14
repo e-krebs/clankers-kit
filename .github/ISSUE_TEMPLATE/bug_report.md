@@ -18,4 +18,6 @@ assignees: ''
 
 - OS (macOS / Linux / WSL):
 - bash / jq versions:
-- Ran `setup.sh` with which flags/components:
+- Agents wired (claude, codex):
+- Ran `setup.sh` with which flags / rows unchecked:
+- Does it reproduce with `./setup.sh --sandbox`?

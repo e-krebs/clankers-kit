@@ -2,16 +2,27 @@
 # Regenerate with:  vhs demo/demo.tape   (run from the repo root)
 #
 # The hidden block copies the repo into an isolated sandbox and points HOME at a throwaway
-# dir, so recording never touches a real ~/.claude and no personal paths appear on screen.
+# dir, so recording never touches a real ~/.claude and no personal paths appear on screen. It
+# also drops the AGENTS.md a fork already has, so the AGENTS.md questions show as on a first run.
+# The run names its agents (so the agents question, asked only when none is on PATH, never
+# shows), skips the privacy step (the copy has no remote) and the upstream skill (a network
+# install), so the recording is deterministic and offline. The tools on PATH still decide which
+# rows and prompts appear (the MCP row needs claude and npx, the interview offer needs claude),
+# so the key presses below assume every required tool is present.
 
 Output assets/setup-demo.gif
 
 Require bash
+Require git
+Require jq
+Require claude
+Require npx
+Require gh
 
 Set Shell "bash"
 Set FontSize 18
 Set Width 1200
-Set Height 940
+Set Height 1280
 Set Padding 24
 Set Theme "Dracula"
 
@@ -19,6 +30,8 @@ Hide
 Type 'rm -rf /tmp/clankers-demo && mkdir -p /tmp/clankers-demo/home /tmp/clankers-demo/clankers-kit'
 Enter
 Type 'cp -R "$PWD/." /tmp/clankers-demo/clankers-kit && rm -rf /tmp/clankers-demo/clankers-kit/.git'
+Enter
+Type 'rm -f /tmp/clankers-demo/clankers-kit/.agents/AGENTS.md'
 Enter
 Type 'export HOME=/tmp/clankers-demo/home'
 Enter
@@ -29,13 +42,59 @@ Enter
 Show
 
 Sleep 800ms
-Type "./setup.sh --name 'Ada Lovelace' --role 'Staff frontend engineer'"
+Type "./setup.sh --agents claude,codex --no-private --without writing-for-agents --name 'Ada Lovelace' --role 'Staff frontend engineer'"
 Sleep 600ms
 Enter
 Sleep 1800ms
 
-# "let Claude interview you and draft the whole file? [y/N]" — decline, to show the scripted
-# questions (accepting would launch a live, non-deterministic Claude session).
+# One grouped picker — an arrow-key checklist with section headers and a live detail pane.
+# The cursor starts on the locked core row: space on it shows the "stays on" note.
+Space
+Sleep 1200ms
+# Arrow through the layout, instructions and style rows so the descriptions are visible.
+Down
+Sleep 900ms
+Down
+Sleep 900ms
+Down
+Sleep 900ms
+Down
+Sleep 900ms
+Down
+Sleep 900ms
+Down
+Sleep 900ms
+# chrome-devtools MCP — uncheck it.
+Down
+Sleep 900ms
+Space
+Sleep 1000ms
+# workflow-profile — try to uncheck it: write-plan requires it, so the note says "kept".
+Down
+Sleep 900ms
+Space
+Sleep 1500ms
+# Down the workflow skills to show the descriptions; pr-merge and rebase-branch also show
+# their "Works better with" edges.
+Down
+Sleep 1200ms
+Down
+Sleep 1200ms
+Down
+Sleep 1000ms
+Down
+Sleep 1000ms
+Down
+Sleep 1000ms
+Down
+Sleep 1600ms
+Down
+Sleep 1600ms
+Enter
+Sleep 1500ms
+
+# AGENTS.md — name and role came from the flags. "let Claude interview you ...? [y/N]" — decline,
+# to show the scripted questions (accepting would launch a live, non-deterministic Claude session).
 Type "n"
 Enter
 Sleep 1000ms
@@ -47,41 +106,7 @@ Sleep 800ms
 Enter
 Sleep 1500ms
 
-# Settings presets — an arrow-key checklist with a live detail pane.
-Space
-Sleep 900ms
-Down
-Sleep 700ms
-Space
-Sleep 900ms
-Down
-Sleep 900ms
-Down
-Sleep 900ms
-Up
-Sleep 700ms
-Enter
-Sleep 1500ms
-
-# Skills — the same arrow-key checklist, now showing each skill's real description in the
-# detail pane. Arrow through a few so the descriptions are visible, then select a couple.
-Sleep 1000ms
-Down
-Sleep 1600ms
-Down
-Sleep 1600ms
-Space
-Sleep 1000ms
-Down
-Sleep 1600ms
-Down
-Sleep 1600ms
-Space
-Sleep 1200ms
-Enter
-Sleep 1500ms
-
-# The recap prints — now listing the chosen skills with a count. Pause to read it, then Proceed.
-Sleep 2500ms
+# The recap prints — every link, preset, skill and hook it will wire. Pause to read it, then Proceed.
+Sleep 3000ms
 Enter
 Sleep 5s
