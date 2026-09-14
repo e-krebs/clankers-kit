@@ -57,6 +57,9 @@ case "$event" in
     sweep_family "$tmpdir" "claude-style-*"
     sweep_family "$tmpdir" "claude-plan-gate-*"
     sweep_family "$tmpdir" "claude-plan-nudge-*"
+    # memory-ask-gate.sh's per-session, per-path markers: one flat dir, so the same maxdepth-1
+    # sweep reaches them. There is no SessionEnd delete, because a session leaves several.
+    sweep_family "$tmpdir/memory-ask-gate" "*"
     ;;
 esac
 

@@ -12,7 +12,7 @@ pass() { echo "smoke: ok — $*"; }
 
 # every default-on row except the upstream skill (a network install) and mcp (needs claude); a
 # --components list names the exact set, so this is the "everything" baseline
-ALL="memories,workflow-profiles,instructions,plain-style,output-style,allowlist,workflow-profile,write-plan,ticket-kickoff,verify,changes-to-pr,pr-followup,pr-merge,rebase-branch,review-changes,skill-review,hooks-review,memory-review,clankers-review,typescript-tips,enforcement,notification,commit-subject-gate,session-cleanup,canonical-memory"
+ALL="memories,workflow-profiles,instructions,plain-style,output-style,allowlist,workflow-profile,write-plan,ticket-kickoff,verify,changes-to-pr,pr-followup,pr-merge,rebase-branch,review-changes,skill-review,hooks-review,memory-review,clankers-review,typescript-tips,enforcement,notification,commit-subject-gate,session-cleanup,canonical-memory,memory-ask-gate"
 # the default runs skip the upstream row: it needs the network and lands outside the repo
 NOUP="--without writing-for-agents"
 
@@ -68,6 +68,7 @@ for s in workflow-profile write-plan pr-merge verify review-changes skill-review
 done
 [ ! -e "$H/.agents/skills/writing-for-agents" ] || fail "the upstream skill was installed despite --without"
 jq -e '[.hooks.PreToolUse[].hooks[].command] | any(contains("commit-subject-gate"))' "$H/.claude/settings.json" >/dev/null || fail "commit-subject-gate not composed"
+jq -e '[.hooks.PreToolUse[].hooks[].command] | any(contains("memory-ask-gate"))' "$H/.claude/settings.json" >/dev/null || fail "memory-ask-gate not composed"
 pass "default install for claude,codex"
 
 # --- 2. an identical re-run changes nothing --------------------------------------------------
