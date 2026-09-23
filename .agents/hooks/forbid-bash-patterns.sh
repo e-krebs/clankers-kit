@@ -5,6 +5,10 @@
 # seam for relaxing Codex later. The npx/npm/yarn bin/script and yarn --cwd rules fire only
 # when the repo root of the payload's cwd holds a yarn.lock.
 #
+# Six rules were dropped (cd, git/gh -C/-c, awk, sed/cat, shell loops, python): their denies
+# and retries cost more than they caught, and none of them guarded a write, a leak or a
+# prompt that auto mode still shows. What stays guards one of those three.
+#
 # Matching is TEXTUAL (line-oriented grep), not a shell parse: a forbidden token
 # in a quoted string / commit message / heredoc body can still trip a rule. That's
 # an accepted limitation — the goal is catching habitual real invocations, not
@@ -64,21 +68,7 @@ deny_yarn_scripts() { # 'yarn run <script>' (use bare 'yarn <script>'); $1 = scr
   done
 }
 
-# 1. cd in command position (start, or after ; & | or a subshell paren)
-if printf '%s' "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*cd([[:space:]]|$)'; then
-  deny "Don't use cd. git/gh/yarn and repo scripts already run in the working tree; /tmp is an additionalDirectory. Run the command without a cd prefix." "cd"
-fi
-
-# 2. git/gh -C/-c global flag in command position (-C <path> dir redirect, -c <k>=<v> inline config)
-#    right after the binary — NOT 'git log -C' / 'git show -c' (those follow a subcommand), and NOT
-#    a mention inside a quoted string.
-if printf '%s' "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*(git|gh)[[:space:]]+-[Cc]([[:space:]]|$)'; then
-  deny "Don't pass a git/gh global flag before the subcommand: no -C <path> (cwd is already in the repo) and no -c <key>=<val> inline config override. Run plain git/gh." "git-flag"
-fi
-
-# 3. forbidden CLI tools, grouped so each sublist keeps a targeted message
-deny_tools "awk" "\`awk\` is forbidden here — use the Read/Grep/Glob tools (or another allowed command) instead." "awk"
-deny_tools "sed cat"  "Use the Read tool (offset/limit for line ranges) or Grep for searching — not sed/cat. For in-place edits use the Edit tool." "sed-cat"
+# 3. forbidden CLI tools, grouped so each sublist keeps a targeted message.
 # npx/npm only make sense as a rule in a yarn repo (they're the point of comparison with yarn).
 if [ "$yarn_repo" -eq 1 ]; then
   deny_tools "npx"      "Don't use npx — run 'yarn <script>' or 'yarn run <bin>' instead." "npx"
@@ -88,7 +78,7 @@ fi
 # 4. echo must be a literal string. 'echo:*' is allowlisted, so this is the safety net: deny any echo
 #    that expands a variable/substitution ($VAR / ${V} / $(...) / `...`) — echo "$TOKEN" leaks secrets.
 #    Exception: the canonical $? sentinels (echo "$?" / echo $? / "exit=$?" / "exit: $?").
-if printf '%s' "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*echo[[:space:]][^;|&]*(\$|`)' \
+if printf '%s' "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*(do[[:space:]]+)?echo[[:space:]][^;|&]*(\$|`)' \
    && ! printf '%s' "$cmd" | grep -qE 'echo[[:space:]]+("\$\?"|\$\?|"exit=\$\?"|"exit: \$\?")'; then
   deny "echo must be a literal string here — don't expand variables or substitutions (echo \"\$VAR\" / \$(...) can leak secrets). The Bash tool already reports exit status; for an exit sentinel use the allowlisted echo \"\$?\" verbatim." "echo"
 fi
@@ -100,12 +90,6 @@ if [ "$yarn_repo" -eq 1 ]; then
   deny_yarn_bins "jest"   "Don't run bare 'yarn jest' — use 'yarn test' (script) or 'yarn run jest <paths>' (bin, for scoping)." "yarn-bin"
   deny_yarn_bins "eslint" "Don't run bare 'yarn eslint' — use 'yarn lint' (script) or 'yarn run eslint <paths>' (bin, for scoping)." "yarn-bin"
   deny_yarn_scripts "type-check test lint" "Don't run 'yarn run <script>' for a package.json script — use the bare form: 'yarn type-check' / 'yarn test' / 'yarn lint'." "yarn-script"
-fi
-
-# 6. shell loops (for/while/until) can't be allowlisted, so they always prompt. Command-position only,
-#    so 'git for-each-ref' / a quoted "for ..." / a path are not matched.
-if printf '%s' "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*(for|while|until)([[:space:]]|\()'; then
-  deny "Don't use for/while/until loops — they can't be allowlisted (so they always prompt). Run the command as separate Bash calls (issue it N times); label the runs in your message, not with echo." "loop"
 fi
 
 # 7. xargs runs an arbitrary command and bypasses the separator-anchored rules above (the inner
@@ -125,38 +109,13 @@ if printf '%s' "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*find([[:space:]]|$)' \
   deny "find here must be read-only — no -exec/-execdir/-ok/-okdir (runs a command), -delete (removes files), or -fprint/-fprintf/-fls (writes files). Use find for traversal only, or run the action as a separate explicit command." "find"
 fi
 
-# 9. yarn --cwd runs yarn in another directory — same cwd-redirect concern as rule 1 (cd) and
-#    rule 2 (git -C). Command-position yarn carrying a --cwd flag (--cwd <dir> or --cwd=<dir>).
+# 9. yarn --cwd runs yarn in another directory. Command-position yarn carrying a --cwd flag
+#    (--cwd <dir> or --cwd=<dir>).
 # Only relevant in a repo whose root holds a yarn.lock.
 if [ "$yarn_repo" -eq 1 ]; then
   if printf '%s' "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*yarn([[:space:]]|$)' \
      && printf '%s' "$cmd" | grep -qE '[[:space:]]--cwd([[:space:]]|=|$)'; then
     deny "Don't use 'yarn --cwd <dir>' to run yarn elsewhere — yarn already runs in the working tree. Run plain yarn from the directory you need (/tmp is an additionalDirectory)." "yarn-cwd"
-  fi
-fi
-
-# 9.5. python is forbidden EXCEPT to run a committed repo script. Inline code (-c), module runs
-#      (-m), stdin (-) and bare REPLs are denied; the carve-out requires every python invocation's
-#      first argument to be an existing, git-tracked *.py file (checked in that file's own repo,
-#      so scripts in other repos — e.g. internal-skills' gen-showcase.py — stay runnable).
-#      Not a deny_tools call: the carve-out needs the filesystem + git checks below, which the
-#      grep-only helpers can't express.
-if printf '%s' "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*python[23]?([[:space:]]|$)'; then
-  n_inv=$(printf '%s' "$cmd" | grep -oE '(^|[;&|(])[[:space:]]*python[23]?([[:space:]]|$)' | grep -c '')
-  n_ok=0
-  while IFS= read -r m; do
-    first=${m##*[[:space:]]}
-    first=${first%\"}; first=${first#\"}; first=${first%\'}; first=${first#\'}
-    case "$first" in
-      *.py)
-        if [ -f "$first" ] && git -C "$(dirname "$first")" ls-files --error-unmatch "$(basename "$first")" >/dev/null 2>&1; then
-          n_ok=$((n_ok+1))
-        fi
-        ;;
-    esac
-  done < <(printf '%s' "$cmd" | grep -oE '(^|[;&|(])[[:space:]]*python[23]?[[:space:]]+[^[:space:]]+')
-  if [ "$n_inv" -gt "$n_ok" ]; then
-    deny "python is forbidden here — no inline -c one-liners, -m module runs, or ad-hoc scripts. The only allowed form is 'python3 <path>.py' where the script is committed in its repo. Use jq/node or the dedicated tools instead." "python"
   fi
 fi
 

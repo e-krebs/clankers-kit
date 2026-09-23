@@ -100,8 +100,9 @@ Done when each reviewer finding is marked applied or declined-with-cause.
 
 - Test a hook change with fixture files piped from disk (`bash hook.sh < fixture.json`). A deny
   pattern typed inline in your own command trips the live hook on that call.
-- The session hooks deny `cd`, `cat`, `sed`, `awk`, loops and `xargs` (except grep, wc, ls) in
-  typed commands. Run the suites one call each, or delegate the sweep to a worker.
+- The session hooks deny `xargs` (except grep, wc, ls), `find` with an action, `sort -o` and an
+  `echo` that expands `$(...)` or an UPPERCASE variable in typed commands. Run every suite with
+  `bash .agents/hooks/run-fixtures.sh`, or delegate the sweep to a worker.
 - The hooks are symlinked live: an edit applies to the next tool call in every open session, so
   run the suite right after the edit, before anything else.
 - A worker in a worktree may branch from `origin/main`, not the local tip. Have it run
