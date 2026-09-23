@@ -22,6 +22,9 @@
 # skills a CLI installer copies into the shared dir; must stay after the skills allow rules
 .agents/skills/.system/
 .agents/skills/.system/**
+# Anthropic-bundled skills, synced into the shared dir by the harness itself
+.agents/skills/synced/
+.agents/skills/synced/**
 
 # --- .claude (Claude-only: ignore all, allow config + memories) ---
 .claude/*
