@@ -99,46 +99,47 @@ fi
 rm -f /tmp/fbp-syn.$$ 2>/dev/null
 
 # --- claude mode (default): deny, one per rule ------------------------------
-assert_deny "deny-cd"            "$fixtures_dir/deny-cd.json"
+assert_deny "deny-echo-var"      "$fixtures_dir/deny-echo-var.json"
 
-case_name="deny-cd-logs-rule"
+case_name="deny-echo-var-logs-rule"
 logged=$(tail -1 "$AGENTS_HOOK_LOG" 2>/dev/null)
 case "$logged" in
-  *" forbid-bash-patterns deny cd") pass "$case_name" ;;
+  *" forbid-bash-patterns deny echo") pass "$case_name" ;;
   *) fail_case "$case_name" "log tail: $logged" ;;
 esac
 
-assert_deny "deny-git-c"         "$fixtures_dir/deny-git-c.json"
-assert_deny "deny-awk"           "$fixtures_dir/deny-awk.json"
-assert_deny "deny-cat"           "$fixtures_dir/deny-cat.json"
-assert_deny "deny-echo-var"      "$fixtures_dir/deny-echo-var.json"
-assert_deny "deny-for-loop"      "$fixtures_dir/deny-for-loop.json"
+assert_deny "deny-echo-subst"    "$fixtures_dir/deny-echo-subst.json"
+assert_deny "deny-echo-loop"     "$fixtures_dir/deny-echo-loop.json"
 assert_deny "deny-xargs-rm"      "$fixtures_dir/deny-xargs-rm.json"
 assert_deny "deny-find-delete"   "$fixtures_dir/deny-find-delete.json"
-assert_deny "deny-python-c"      "$fixtures_dir/deny-python-c.json"
 assert_deny "deny-sort-o"        "$fixtures_dir/deny-sort-o.json"
 
 # --- claude mode: allow ------------------------------------------------------
+# The next seven cases cover the six dropped rules (sed and cat get one each); they stay as
+# allow cases so a re-added rule is a deliberate edit here too.
+assert_allow "allow-cd"         "$fixtures_dir/allow-cd.json"
+assert_allow "allow-git-c"      "$fixtures_dir/allow-git-c.json"
+assert_allow "allow-awk"        "$fixtures_dir/allow-awk.json"
+assert_allow "allow-cat"        "$fixtures_dir/allow-cat.json"
+assert_allow "allow-sed"        "$fixtures_dir/allow-sed.json"
+assert_allow "allow-for-loop"   "$fixtures_dir/allow-for-loop.json"
+assert_allow "allow-python-c"   "$fixtures_dir/allow-python-c.json"
 assert_allow "allow-git-status" "$fixtures_dir/allow-git-status.json"
 assert_allow "allow-xargs-grep" "$fixtures_dir/allow-xargs-grep.json"
 assert_allow "allow-xargs-wc"   "$fixtures_dir/allow-xargs-wc.json"
 assert_allow "allow-xargs-ls"   "$fixtures_dir/allow-xargs-ls.json"
 assert_allow "allow-echo-exit"  "$fixtures_dir/allow-echo-exit.json"
+assert_allow "allow-echo-lower"      "$fixtures_dir/allow-echo-lower.json"
+assert_allow "allow-echo-pipestatus" "$fixtures_dir/allow-echo-pipestatus.json"
 assert_allow "allow-yarn-test"  "$fixtures_dir/allow-yarn-test.json"
 assert_allow "allow-tree"       "$fixtures_dir/allow-tree.json"
 
 # --- codex mode: every rule still runs (the arg is a reserved seam, not a relaxation) ---
-assert_deny "codex-deny-cat"         "$fixtures_dir/deny-cat.json"        codex
-assert_deny "codex-deny-sed"         "$fixtures_dir/codex-allow-sed.json" codex
-assert_deny "codex-deny-awk"         "$fixtures_dir/deny-awk.json"        codex
-assert_deny "codex-deny-for-loop"    "$fixtures_dir/deny-for-loop.json"   codex
 assert_deny "codex-deny-xargs-rm"    "$fixtures_dir/deny-xargs-rm.json"    codex
 assert_deny "codex-deny-find-delete" "$fixtures_dir/deny-find-delete.json" codex
 assert_deny "codex-deny-echo-var"    "$fixtures_dir/deny-echo-var.json"    codex
 assert_deny "codex-deny-sort-o"      "$fixtures_dir/deny-sort-o.json"      codex
-assert_deny "codex-deny-cd"        "$fixtures_dir/deny-cd.json"        codex
-assert_deny "codex-deny-git-c"     "$fixtures_dir/deny-git-c.json"     codex
-assert_deny "codex-deny-python-c"  "$fixtures_dir/deny-python-c.json" codex
+assert_allow "codex-allow-cat"       "$fixtures_dir/allow-cat.json"        codex
 
 # --- yarn-repo-scoped rules: deny in a yarn repo (root and subdir), allow in a plain dir,
 #     in both claude and codex mode ------------------------------------------------------
@@ -163,6 +164,6 @@ else
 fi
 
 # --- unknown mode falls back to claude ---------------------------------------
-assert_deny "bogus-mode-deny-cat" "$fixtures_dir/deny-cat.json" bogus
+assert_deny "bogus-mode-deny-echo-var" "$fixtures_dir/deny-echo-var.json" bogus
 
 exit $overall

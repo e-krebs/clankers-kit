@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Sourced library for UserPromptSubmit hooks: the guards every prompt hook shares.
-# Defines functions only. No sed/cat/awk, so a hook body pasted into a session never trips the
-# Bash ban.
+# Defines functions only.
 
 # shellcheck source=hook-log.sh
 source "$(dirname "${BASH_SOURCE[0]}")/hook-log.sh"
