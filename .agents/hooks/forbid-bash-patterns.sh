@@ -75,12 +75,15 @@ if [ "$yarn_repo" -eq 1 ]; then
   deny_tools "npm"      "Don't use npm — this is a yarn project. Use yarn (e.g. 'yarn list', 'yarn add <pkg>', 'yarn install')." "npm"
 fi
 
-# 4. echo must be a literal string. 'echo:*' is allowlisted, so this is the safety net: deny any echo
-#    that expands a variable/substitution ($VAR / ${V} / $(...) / `...`) — echo "$TOKEN" leaks secrets.
-#    Exception: the canonical $? sentinels (echo "$?" / echo $? / "exit=$?" / "exit: $?").
-if printf '%s' "$cmd" | grep -qE '(^|[;&|(])[[:space:]]*(do[[:space:]]+)?echo[[:space:]][^;|&]*(\$|`)' \
-   && ! printf '%s' "$cmd" | grep -qE 'echo[[:space:]]+("\$\?"|\$\?|"exit=\$\?"|"exit: \$\?")'; then
-  deny "echo must be a literal string here — don't expand variables or substitutions (echo \"\$VAR\" / \$(...) can leak secrets). The Bash tool already reports exit status; for an exit sentinel use the allowlisted echo \"\$?\" verbatim." "echo"
+# 4. echo may not expand a secret. 'echo:*' is allowlisted, so this is the safety net: deny an echo
+#    whose segment (up to the next ; | &) holds a command substitution ($(...) / `...`) or an
+#    UPPERCASE variable of 3+ chars ($TOKEN / ${API_KEY}), the shape env-var secrets take. $?,
+#    ${PIPESTATUS[n]} and lowercase variables ($f, $code) pass: exit sentinels and loop labels
+#    are not a leak.
+echo_segs=$(printf '%s' "$cmd" | grep -oE '(^|[;&|(])[[:space:]]*(do[[:space:]]+)?echo[[:space:]][^;|&]*')
+if [ -n "$echo_segs" ] \
+   && printf '%s' "$echo_segs" | sed -E 's/\$\{PIPESTATUS\[[0-9]+\]\}//g' | grep -qE '\$\(|`|\$\{?[A-Z][A-Z0-9_]{2,}'; then
+  deny "echo may not expand a secret here — no \$(...) / backtick substitution and no UPPERCASE variable (echo \"\$TOKEN\" leaks it into the transcript). \$?, \${PIPESTATUS[n]} and lowercase variables are fine." "echo"
 fi
 
 # 5. bare 'yarn <bin>' for bins that must use 'yarn run <bin>' (allowed: 'yarn run jest' /

@@ -108,6 +108,7 @@ case "$logged" in
   *) fail_case "$case_name" "log tail: $logged" ;;
 esac
 
+assert_deny "deny-echo-subst"    "$fixtures_dir/deny-echo-subst.json"
 assert_deny "deny-echo-loop"     "$fixtures_dir/deny-echo-loop.json"
 assert_deny "deny-xargs-rm"      "$fixtures_dir/deny-xargs-rm.json"
 assert_deny "deny-find-delete"   "$fixtures_dir/deny-find-delete.json"
@@ -128,6 +129,8 @@ assert_allow "allow-xargs-grep" "$fixtures_dir/allow-xargs-grep.json"
 assert_allow "allow-xargs-wc"   "$fixtures_dir/allow-xargs-wc.json"
 assert_allow "allow-xargs-ls"   "$fixtures_dir/allow-xargs-ls.json"
 assert_allow "allow-echo-exit"  "$fixtures_dir/allow-echo-exit.json"
+assert_allow "allow-echo-lower"      "$fixtures_dir/allow-echo-lower.json"
+assert_allow "allow-echo-pipestatus" "$fixtures_dir/allow-echo-pipestatus.json"
 assert_allow "allow-yarn-test"  "$fixtures_dir/allow-yarn-test.json"
 assert_allow "allow-tree"       "$fixtures_dir/allow-tree.json"
 
