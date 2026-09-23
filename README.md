@@ -75,6 +75,11 @@ doing something you keep correcting, and a skill when you repeat the same multi-
 need a row in `kit.json`, a `bash .agents/lint-manifest.sh` run, and a `./setup.sh` re-run.
 [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
 
+## Talks
+
+[Reprenez le contrôle de votre agent](talks/reprenez-le-controle/index.html) is the French
+talk about this kit, given at the Node.js Paris meetup on 23 September 2026.
+
 ## License
 
 [MIT](LICENSE) © Emmanuel Krebs ([@e-krebs](https://github.com/e-krebs)).
