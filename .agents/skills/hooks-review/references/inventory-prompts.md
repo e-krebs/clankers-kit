@@ -1,8 +1,8 @@
 # Inventory prompts
 
 Three read-only worker packets, launched in one message. Each opens with the config repo
-root, the read-only rule, and the Bash constraints (no `cd`, `cat`, `sed`,
-`awk`, loops or `xargs`; the Read, Grep and Glob tools instead). Each closes with "return
+root, the read-only rule, and the Bash constraints (no `xargs` beyond grep, wc and ls, and no
+`echo` of `$(...)` or an UPPERCASE variable; the Read, Grep and Glob tools first). Each closes with "return
 file:line for every claim and an uncertainties list; propose no fixes". Adjust the file lists
 when the layout moves.
 

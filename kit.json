@@ -227,7 +227,7 @@
       "group": "hooks",
       "kind": "hooks",
       "label": "enforcement hooks",
-      "description": "Block cd, git -C, sed/cat/awk, secret-leaking echo, loops, xargs, destructive find/sort and ad-hoc python in Bash, and JSDoc / block comments added to TS/JS files (the comment rule is Claude-only).",
+      "description": "Block secret-leaking echo, xargs and destructive find/sort in Bash, and JSDoc / block comments added to TS/JS files (the comment rule is Claude-only).",
       "hooks": ".agents/hooks/enforcement.json"
     },
     {
