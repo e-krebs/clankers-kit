@@ -16,7 +16,7 @@ The user decides every flag and every candidate.
 | Prose owner | `AGENTS.md` restates a hook | keep both when Codex or Cursor read the prose |
 
 Silent rule applies only to the hooks that call `lib/hook-log.sh`: forbid-bash-patterns,
-forbid-narration, forbid-verbose-comments, commit-subject-gate, memory-ask-gate, plan-gate, the
+forbid-verbose-comments, commit-subject-gate, memory-ask-gate, plan-gate, the
 nudges that source `lib/prompt-guards.sh`, workflow-profile-nudge, push-nudge, campaign-pr-nudge
 and campaign-ticket-nudge. Read the
 log's earliest line first: under 30 days of log, the flag reads "no signal yet". The two campaign
