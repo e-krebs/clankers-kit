@@ -34,19 +34,15 @@ else
 fi
 rm -f /tmp/sc-syn.$$ 2>/dev/null
 
-make_four() {  # $1=sid $2=tmpdir — pre-creates the four files a session-cleanup family owns
+make_markers() {  # $1=sid $2=tmpdir — pre-creates the per-session files SessionEnd removes
   local sid="$1" td="$2"
-  : > "$td/claude-narration-$sid"
-  : > "$td/claude-style-$sid"
   : > "$td/claude-plan-gate-$sid"
   : > "$td/claude-plan-nudge-$sid"
 }
 
-four_files() {  # $1=sid $2=tmpdir — prints the four paths, one per line
+marker_files() {  # $1=sid $2=tmpdir — prints the marker paths, one per line
   local sid="$1" td="$2"
   printf '%s\n' \
-    "$td/claude-narration-$sid" \
-    "$td/claude-style-$sid" \
     "$td/claude-plan-gate-$sid" \
     "$td/claude-plan-nudge-$sid"
 }
@@ -55,7 +51,7 @@ all_gone() {  # $1=sid $2=tmpdir
   local f
   while IFS= read -r f; do
     [ -e "$f" ] && return 1
-  done < <(four_files "$1" "$2")
+  done < <(marker_files "$1" "$2")
   return 0
 }
 
@@ -63,21 +59,21 @@ all_present() {  # $1=sid $2=tmpdir
   local f
   while IFS= read -r f; do
     [ -e "$f" ] || return 1
-  done < <(four_files "$1" "$2")
+  done < <(marker_files "$1" "$2")
   return 0
 }
 
-# --- SessionEnd: removes exactly the four files for its sid, leaves another sid's alone -------
+# --- SessionEnd: removes exactly the markers for its sid, leaves another sid's alone ---------
 end_work=$(mktemp -d "${TMPDIR:-/tmp}/claude-sc-fixture-XXXXXX")
-make_four "$sid_a" "$end_work"
-make_four "$sid_b" "$end_work"
+make_markers "$sid_a" "$end_work"
+make_markers "$sid_b" "$end_work"
 
 TMPDIR="$end_work" bash "$hook" < "$fixtures_dir/session-end.json" >/dev/null 2>&1
 
 if all_gone "$sid_a" "$end_work"; then
-  pass "session-end-removes-its-four"
+  pass "session-end-removes-its-markers"
 else
-  fail_case "session-end-removes-its-four" "a file for $sid_a survived"
+  fail_case "session-end-removes-its-markers" "a file for $sid_a survived"
 fi
 
 if all_present "$sid_b" "$end_work"; then
@@ -88,8 +84,8 @@ fi
 
 # --- SessionStart: sweeps a 2-day-old file, keeps a fresh one ----------------------------------
 sweep_work=$(mktemp -d "${TMPDIR:-/tmp}/claude-sc-sweep-XXXXXX")
-old="$sweep_work/claude-narration-old"
-fresh="$sweep_work/claude-narration-fresh"
+old="$sweep_work/claude-plan-gate-old"
+fresh="$sweep_work/claude-plan-gate-fresh"
 : > "$old"
 : > "$fresh"
 touch -t "$(date -v-2d +%Y%m%d0000 2>/dev/null || date -d '2 days ago' +%Y%m%d0000)" "$old"
@@ -114,7 +110,7 @@ fi
 
 # --- agent_id: a subagent's SessionEnd never touches the files ---------------------------------
 agent_work=$(mktemp -d "${TMPDIR:-/tmp}/claude-sc-agent-XXXXXX")
-make_four "$sid_a" "$agent_work"
+make_markers "$sid_a" "$agent_work"
 TMPDIR="$agent_work" bash "$hook" < "$fixtures_dir/session-end-agent-id.json" >/dev/null 2>&1
 if all_present "$sid_a" "$agent_work"; then
   pass "agent-id-silence"

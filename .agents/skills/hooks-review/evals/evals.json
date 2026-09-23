@@ -18,7 +18,7 @@
       "expected_output": "Extracts user turns with the jq recipe, drops turns holding task-notification, SYSTEM NOTIFICATION, command-name, local-command, ide_selection, 'Stop hook feedback' or 'Base directory for this skill' markers, and counts only the remaining correction-shaped turns as evidence.",
       "assertions": [
         "Applies the seven-marker filter before the correction regex",
-        "Does not count the style-report hook's own text as a user correction",
+        "Does not count a hook's own feedback text as a user correction",
         "Reports the sampled turn count and the filtered count"
       ]
     },
