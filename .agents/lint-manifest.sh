@@ -2,11 +2,13 @@
 # Lint kit.json, the manifest setup.sh reads: ids unique and referenced groups declared, every
 # `requires` and `soft` edge resolves, no `requires` cycle, every declared path exists, and every
 # skill dir under .agents/skills is declared. Exit 1 with one line per finding.
+# A mutual `requires` pair (a and b require each other) is allowed; any longer cycle is not.
 # Usage: bash .agents/lint-manifest.sh   (from anywhere; the repo root is this script's parent)
+# KIT_ROOT and KIT_MANIFEST override the repo root and the manifest, for the lint's own test.
 set -euo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-manifest="${root}/kit.json"
+root="${KIT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)}"
+manifest="${KIT_MANIFEST:-${root}/kit.json}"
 fail=0
 finding() { echo "lint-manifest: $*" >&2; fail=1; }
 
@@ -37,10 +39,12 @@ while IFS= read -r line; do [ -n "$line" ] && finding "$line"; done < <(jq -r '
       (.components[] | .id as $id | (.links // [])[] | select(.agent != null and ((.agent | IN("claude","codex")) | not)) | "\($id): link agent must be claude or codex: \(.home)")
     ] | .[]' "$manifest")
 
-# --- requires must be acyclic -------------------------------------------------------------
+# --- requires must be acyclic, bar a mutual pair --------------------------------------------
+# the walk never steps straight back to the node it came from, so a 2-cycle is skipped and a
+# self-edge, a 3-cycle or a cycle that uses a mutual pair (a<->b with b->c->a) still fails
 cycle="$(jq -r '
   (.components | map({key: .id, value: (.requires // [])}) | from_entries) as $g
-  | def walk($n; $seen): if ($seen | index($n)) != null then [$n] else ($g[$n] // [])[] as $m | walk($m; $seen + [$n]) end;
+  | def walk($n; $seen): if ($seen | index($n)) != null then [$n] else ($g[$n] // [])[] as $m | select($m != ($seen[-1] // "")) | walk($m; $seen + [$n]) end;
   [ $g | keys[] as $n | walk($n; []) ] | .[0] // empty' "$manifest")"
 [ -z "$cycle" ] || finding "requires cycle through ${cycle}"
 

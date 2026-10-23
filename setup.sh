@@ -354,6 +354,15 @@ multiselect() {
 # re-checks itself when a checked row requires it, and checks its `requires` closure when turned
 # on. Reads the C_* manifest arrays and MS_ROW, which exist by the time a manifest picker runs.
 MS_ROW=()
+pair_still_needed() {                   # $1, $2 = a mutual pair: true when a checked row other than $2 needs either
+  local k row
+  for ((k = 0; k < N; k++)); do
+    row="${MS_ROW[k]:-}"; [[ -n "$row" && ${MS_ON[row]:-} == 1 ]] || continue
+    [[ $k -eq $2 ]] && continue
+    if csv_has "${C_REQ[k]}" "${C_ID[$1]}" || csv_has "${C_REQ[k]}" "${C_ID[$2]}"; then return 0; fi
+  done
+  return 1
+}
 toggle_row() {                      # $1 = row index
   local r="$1" ci="${MS_REF[$1]}" j k id row
   [[ "$ci" == "-1" ]] && return 0
@@ -365,7 +374,12 @@ toggle_row() {                      # $1 = row index
     MS_ON[r]=""; MS_NOTE=""
     for ((j = 0; j < N; j++)); do                           # a checked dependant re-checks it
       row="${MS_ROW[j]:-}"; [[ -n "$row" && ${MS_ON[row]:-} == 1 ]] || continue
-      if csv_has "${C_REQ[j]}" "${C_ID[ci]}"; then MS_ON[r]=1; MS_NOTE="kept: ${C_LABEL[j]} requires ${C_LABEL[ci]}"; return 0; fi
+      csv_has "${C_REQ[j]}" "${C_ID[ci]}" || continue
+      if csv_has "${C_REQ[ci]}" "${C_ID[j]}" && ! pair_still_needed "$ci" "$j"; then
+        MS_ON[row]=""; MS_NOTE="${C_LABEL[ci]} and ${C_LABEL[j]} are a pair: both off"
+        return 0
+      fi
+      MS_ON[r]=1; MS_NOTE="kept: ${C_LABEL[j]} requires ${C_LABEL[ci]}"; return 0
     done
   else
     MS_ON[r]=1; MS_NOTE=""
