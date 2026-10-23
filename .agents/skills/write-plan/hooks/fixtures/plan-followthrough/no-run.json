@@ -1,0 +1,1 @@
+{"session_id":"case-norun","hook_event_name":"PostToolUse","tool_name":"ExitPlanMode","tool_input":{},"tool_response":{"filePath":"/Users/e/.claude/plans/no-run.md","isAgent":false,"plan":"# Plan — no run\n\n## Summary\n\nNothing to run.\n\n## Run\n\ncoupled, but the fence is missing.\n\n## Plan review\n\n```\nExecute the plan at /Users/e/.claude/plans/wrong-section.md\n```\n"}}

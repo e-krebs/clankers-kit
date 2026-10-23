@@ -12,7 +12,7 @@ pass() { echo "smoke: ok — $*"; }
 
 # every default-on row except the upstream skill (a network install) and mcp (needs claude); a
 # --components list names the exact set, so this is the "everything" baseline
-ALL="memories,workflow-profiles,workflow-models,agents,instructions,plain-style,output-style,allowlist,workflow-profile,write-plan,ticket-kickoff,verify,changes-to-pr,pr-followup,pr-merge,rebase-branch,review-changes,skill-review,hooks-review,memory-review,clankers-review,typescript-tips,enforcement,notification,commit-subject-gate,session-cleanup,canonical-memory,memory-ask-gate"
+ALL="memories,workflow-profiles,workflow-models,agents,instructions,plain-style,output-style,allowlist,workflow-profile,write-plan,execute-plan,ticket-kickoff,verify,changes-to-pr,pr-followup,pr-merge,rebase-branch,review-changes,skill-review,hooks-review,memory-review,clankers-review,typescript-tips,enforcement,notification,commit-subject-gate,session-cleanup,canonical-memory,memory-ask-gate"
 # the default runs skip the upstream row: it needs the network and lands outside the repo
 NOUP="--without writing-for-agents,unslop"
 
@@ -63,7 +63,7 @@ jq -e '[.hooks[][].hooks[].command] | any(contains("skills/"))' "$H/.claude/sett
 [ -L "$H/.claude/output-styles" ] || fail ".claude/output-styles is not linked"
 [ -f "$H/.claude/output-styles/plain.md" ] || fail "the Plain style is not reachable through the link"
 jq -e '.outputStyle == "Plain"' "$H/.claude/settings.json" >/dev/null || fail "outputStyle was not set"
-for s in workflow-profile write-plan pr-merge verify review-changes skill-review hooks-review memory-review clankers-review; do
+for s in workflow-profile write-plan execute-plan pr-merge verify review-changes skill-review hooks-review memory-review clankers-review; do
   [ -L "$H/.agents/skills/$s" ] || fail ".agents/skills/$s missing"
 done
 [ ! -e "$H/.agents/skills/writing-for-agents" ] || fail "the upstream skill was installed despite --without"
@@ -149,6 +149,18 @@ HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --componen
 # the foreign skills/foo entry from case 3e stays; only the kit skills' entries must go
 jq -e '[.hooks[][].hooks[].command] | any(contains("skills/") and (contains("skills/foo/") | not))' "$H/.claude/settings.json" >/dev/null && fail "skill-hooks: turning the toggle off left a skill hook wired"
 pass "skill-hooks toggle"
+
+# --- 3g. the plan pair is a mutual requires: one member alone is kept on, both drop together ----
+# on the main home: a fresh one would drop the foreign skill hook from the composed settings
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without write-plan,writing-for-agents,unslop > "$tmp/pair.log" 2>&1 \
+  || { cat "$tmp/pair.log"; fail "pair install exited non-zero"; }
+[ -L "$H/.agents/skills/write-plan" ] || fail "--without write-plan alone dropped write-plan, but execute-plan requires it"
+[ -L "$H/.agents/skills/execute-plan" ] || fail "--without write-plan alone dropped execute-plan"
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without write-plan,execute-plan,ticket-kickoff,writing-for-agents,unslop > "$tmp/pair-off.log" 2>&1 \
+  || { cat "$tmp/pair-off.log"; fail "pair-off install exited non-zero"; }
+[ ! -e "$H/.agents/skills/write-plan" ] || fail "--without write-plan,execute-plan left write-plan"
+[ ! -e "$H/.agents/skills/execute-plan" ] || fail "--without write-plan,execute-plan left execute-plan"
+pass "plan pair: one member is kept on, both drop together"
 
 # --- 4. uninstall: no link resolves into the repo, real files remain ---------------------------
 HOME="$H" bash "$K/uninstall.sh" --yes

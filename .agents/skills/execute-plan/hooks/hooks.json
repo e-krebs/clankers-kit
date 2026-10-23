@@ -1,0 +1,7 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/execute-plan/hooks/plan-execute.sh", "timeout": 5 } ] }
+    ]
+  }
+}

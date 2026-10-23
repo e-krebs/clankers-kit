@@ -56,6 +56,7 @@ err=""
 [ "$rc1" -eq 0 ] || err="${err:+$err; }first run exit $rc1"
 [ "$rc2" -eq 0 ] || err="${err:+$err; }second run exit $rc2"
 contains "$ctx1" "write-plan" || err="${err:+$err; }first run missing write-plan mention: $ctx1"
+contains "$ctx1" "EnterPlanMode" && err="${err:+$err; }plan-mode run names EnterPlanMode: $ctx1"
 [ -z "$out2" ] || err="${err:+$err; }second run emitted output: $out2"
 if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
 rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-branch-a" 2>/dev/null
@@ -83,6 +84,15 @@ ctx=$(ctx_of "$HOOK_OUT")
 err=""
 [ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
 contains "$ctx" "write-plan" || err="${err:+$err; }missing write-plan mention: $ctx"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+
+# --- "let's work on" is a trigger phrase ---------------------------------------
+case_name="branch-b-work-on-fires"
+run_hook "$fixtures_dir/branch-b-work-on-fires.json"
+ctx=$(ctx_of "$HOOK_OUT")
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+contains "$ctx" "Ask whether to plan" || err="${err:+$err; }missing ask-first wording: $ctx"
 if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
 
 # --- negated phrasing: silent -----------------------------------------------------
@@ -180,5 +190,80 @@ err=""
 [ -z "$out2" ] || err="${err:+$err; }second run emitted output: $out2"
 if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
 rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-yield-merge" 2>/dev/null
+
+# --- an execute request yields to plan-execute: branch A silent -----------------
+case_name="execute-plan-mode-silent"
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-execute-plan-mode" 2>/dev/null
+run_hook "$fixtures_dir/execute-plan-mode-silent.json"
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+[ -z "$HOOK_OUT" ] || err="${err:+$err; }expected no output, got: $HOOK_OUT"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-execute-plan-mode" 2>/dev/null
+
+# --- an execute request holding a trigger phrase: branch B silent ---------------
+case_name="execute-trigger-phrase-silent"
+run_hook "$fixtures_dir/execute-trigger-phrase-silent.json"
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+[ -z "$HOOK_OUT" ] || err="${err:+$err; }expected no output, got: $HOOK_OUT"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+
+# --- branch A fires in default mode, interactive Claude Code session -----------
+case_name="branch-a-default-mode-fires"
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-default-fires" 2>/dev/null
+HOOK_OUT=$(CLAUDECODE=1 CLAUDE_CODE_ENTRYPOINT=cli bash "$hook" < "$fixtures_dir/branch-a-default-mode-fires.json" 2>/dev/null)
+HOOK_RC=$?
+ctx=$(ctx_of "$HOOK_OUT")
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+contains "$ctx" "write-plan" || err="${err:+$err; }missing write-plan mention: $ctx"
+contains "$ctx" "ToolSearch select:EnterPlanMode,ExitPlanMode" || err="${err:+$err; }missing EnterPlanMode hint: $ctx"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-default-fires" 2>/dev/null
+
+# --- branch A stays silent in default mode outside Claude Code (e.g. Codex) ----
+case_name="branch-a-default-mode-codex-silent"
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-default-codex" 2>/dev/null
+HOOK_OUT=$(env -u CLAUDECODE -u CLAUDE_CODE_ENTRYPOINT bash "$hook" < "$fixtures_dir/branch-a-default-mode-codex-silent.json" 2>/dev/null)
+HOOK_RC=$?
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+[ -z "$HOOK_OUT" ] || err="${err:+$err; }expected no output, got: $HOOK_OUT"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-default-codex" 2>/dev/null
+
+# --- branch A stays silent in default mode for an sdk entrypoint ---------------
+case_name="branch-a-default-mode-sdk-silent"
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-default-sdk" 2>/dev/null
+HOOK_OUT=$(CLAUDECODE=1 CLAUDE_CODE_ENTRYPOINT=sdk-cli bash "$hook" < "$fixtures_dir/branch-a-default-mode-sdk-silent.json" 2>/dev/null)
+HOOK_RC=$?
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+[ -z "$HOOK_OUT" ] || err="${err:+$err; }expected no output, got: $HOOK_OUT"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-default-sdk" 2>/dev/null
+
+# --- branch A stays silent in acceptEdits mode ----------------------------------
+case_name="branch-a-accept-edits-silent"
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-accept-edits" 2>/dev/null
+HOOK_OUT=$(CLAUDECODE=1 CLAUDE_CODE_ENTRYPOINT=cli bash "$hook" < "$fixtures_dir/branch-a-accept-edits-silent.json" 2>/dev/null)
+HOOK_RC=$?
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+[ -z "$HOOK_OUT" ] || err="${err:+$err; }expected no output, got: $HOOK_OUT"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-accept-edits" 2>/dev/null
+
+# --- branch A stays silent for --codex even with inherited Claude env vars -----
+case_name="branch-a-codex-arg-silent-with-claude-env-inherited"
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-codex-arg-inherited" 2>/dev/null
+HOOK_OUT=$(CLAUDECODE=1 CLAUDE_CODE_ENTRYPOINT=cli bash "$hook" --codex < "$fixtures_dir/branch-a-codex-arg-silent-with-claude-env-inherited.json" 2>/dev/null)
+HOOK_RC=$?
+err=""
+[ "$HOOK_RC" -eq 0 ] || err="exit $HOOK_RC"
+[ -z "$HOOK_OUT" ] || err="${err:+$err; }expected no output, got: $HOOK_OUT"
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
+rm -f "${TMPDIR:-/tmp}/claude-plan-nudge-case-codex-arg-inherited" 2>/dev/null
 
 exit $overall

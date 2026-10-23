@@ -1,0 +1,1 @@
+{"session_id":"case-execute-trigger","permission_mode":"default","hook_event_name":"UserPromptSubmit","prompt":"Execute the approved plan at ~/.claude/plans/sample-plan.md, then let's plan out the follow-up"}

@@ -1,0 +1,1 @@
+{"session_id":"case-old","hook_event_name":"PostToolUse","tool_name":"ExitPlanMode","tool_input":{},"tool_response":{"filePath":"/Users/e/.claude/plans/old.md","isAgent":false,"plan":"# Plan — old\n\n## Context\n\nOld plan.\n\n## Ticket\n\nn/a\n\n## Model pick\n\n```\n/model __MODEL__\n```\n\n## Steps + delegation\n\n1. Do it.\n\n## Verification\n\n```\nbash run.sh\n```\n"}}

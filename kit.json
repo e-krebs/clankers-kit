@@ -132,8 +132,16 @@
       "group": "workflow",
       "kind": "skill",
       "label": "write-plan",
-      "requires": ["workflow-profile"],
+      "requires": ["workflow-profile", "workflow-models", "agents", "execute-plan"],
       "skill": "write-plan"
+    },
+    {
+      "id": "execute-plan",
+      "group": "workflow",
+      "kind": "skill",
+      "label": "execute-plan",
+      "requires": ["workflow-profile", "workflow-models", "agents", "write-plan"],
+      "skill": "execute-plan"
     },
     {
       "id": "ticket-kickoff",

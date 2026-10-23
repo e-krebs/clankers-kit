@@ -1,0 +1,1 @@
+{"session_id":"case-execute-plan-mode","permission_mode":"plan","hook_event_name":"UserPromptSubmit","prompt":"Execute the plan at /Users/someone/.claude/plans/sample-plan.md and run every row it lists in order today"}

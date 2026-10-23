@@ -21,6 +21,8 @@ jobs:
         run: bash .agents/hooks/run-fixtures.sh
       - name: Test the manifest lint
         run: bash .agents/test-lint-manifest.sh
+      - name: Test set-state
+        run: bash .agents/skills/execute-plan/scripts/test-set-state.sh
 
   smoke:
     strategy:
