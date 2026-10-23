@@ -42,14 +42,14 @@
     },
     {
       "id": 4,
-      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, Commit convention conventional w/ scope + ticket ref in PR body only, CI watcher CircleCI, PR shape draft-first squash CODEOWNERS review, Remote yes, Reviewers claude and codex. The approved plan is in context: its Closing steps line reads 'review: judgment tier x 2' and it prescribes two commits. Cut the PR for ACME-2258.",
-      "expected_output": "It takes the tier and the count from the plan's Closing steps line, delegates to the review capability read-only, applies the findings it accepts itself and re-reads the diff, follows the plan's prescribed commit split, and asks the tracker move batched into Gate 2.",
+      "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, Commit convention conventional w/ scope + ticket ref in PR body only, CI watcher CircleCI, PR shape draft-first squash CODEOWNERS review, Remote yes, Reviewers claude and codex. The approved plan is in context: its Review row is still [ ] and its Task reads 'Review: <tier> tier × 2' with the tier picked by shape, and its Hand-off row's brief recommends two commits. Cut the PR for ACME-2258.",
+      "expected_output": "It takes the tier and the count from the plan's Review row, delegates to the review capability read-only, applies the findings it accepts itself and re-reads the diff, follows the commit split the Hand-off brief recommends, and asks the tracker move batched into Gate 2.",
       "assertions": [
-        "Reads the tier and reviewer count from the plan's Closing steps review line rather than offering its own",
+        "Reads the tier and reviewer count from the Task cell of the plan's Review row rather than offering its own",
         "Delegates to the review capability with exactly that tier and count",
         "Treats reviewers as read-only — the main agent applies the accepted findings and no reviewer edits the tree",
         "Re-reads the working-tree diff after applying the accepted fixes, before building the split and the description",
-        "Follows the commit split the plan prescribed instead of regrouping by its own analysis",
+        "Follows the commit split the Hand-off row's brief recommends instead of regrouping by its own analysis",
         "Batches the move of ACME-2258 to the work-started state into the Gate 2 interaction, best-effort on failure",
         "Adds an Agent review section to the PR body naming coverage, findings, verdict, and which findings were applied"
       ]
@@ -94,12 +94,12 @@
     {
       "id": 8,
       "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher GitHub Actions, PR shape 'draft-first, squash, gh stack for a multi-PR change, no required approval', Remote yes. I'm on main and the tree mixes a schema change and the endpoint that uses it. Ship them as two PRs.",
-      "expected_output": "Reads references/gh-stack-path.md in full before any gh stack command, runs its read-only P1 (paused cascade, linked worktree, version, remote, gh stack view --json which reports no stack, the mutation set), carries the init route into Gate 2, then cuts both branches and commits with plain git bottom to top, tracks them with one gh stack init --base main, submits with gh stack submit --auto, applies the Gate 2 titles and bodies with gh pr edit before anything else, and verifies both branches against their remotes.",
+      "expected_output": "Reads references/gh-stack-path.md in full before any gh stack command, runs its read-only P1 (paused cascade, the lookup which exits 3 by branch, the absolute-path linked-worktree test, version, remote, gh stack view --json which reports no stack, the mutation set), carries the init route into Gate 2, then cuts both branches and commits with plain git bottom to top, tracks them with one gh stack init --base main, submits with gh stack submit --auto, applies the Gate 2 titles and bodies with gh pr edit before anything else, and verifies both branches against their remotes.",
       "assertions": [
         "Reads references/gh-stack-path.md in full before running any gh stack command",
         "A single-concern run under the same row would take Step 4's plain items instead, because one PR is not a multi-PR change",
         "Runs gh stack view --json, never the bare gh stack view, which opens a TUI that never returns",
-        "Tests for a linked worktree before believing a 'not part of a stack' answer, and degrades rather than calling init from one",
+        "Runs the lookup, then tests for a linked worktree with --path-format=absolute on both flags before believing a 'not part of a stack' answer, and degrades rather than calling init from one",
         "Creates both branches and their atomic commits with plain git before anything tracks the stack, so gh stack is never handed a dirty tree",
         "Passes --base main to gh stack init and nowhere else on the path",
         "Runs gh stack submit with --auto and without --open, because the PR shape row is draft-first",
@@ -123,6 +123,170 @@
         "All three per-concern plans are presented at a single Gate 2, which names the stack and the whole mutation set",
         "gh stack view --json after the submit is what maps each branch to its PR number",
         "The stack is tracked once and submitted once, rather than per concern"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher GitHub Actions, PR shape 'draft-first, squash, gh stack for a multi-PR change', Remote yes. I'm in a linked worktree under .claude/worktrees/ on feat/api, which the .git/gh-stack file lists as the top of a stack, so the lookup exits 0. The diff mixes two concerns; ship them as two stacked PRs.",
+      "expected_output": "P1 runs the lookup first and records present. The absolute-path worktree test says linked, so instead of the degraded route the run records adopt-first for P3: stash, gh stack checkout on a still-open member's PR URL, stash apply, then the add route. Gate 2 names that checkout and says the sequence was observed from the main worktree. No gh pr create opens a PR outside the existing stack, and the gh stack link hint is not given.",
+      "assertions": [
+        "The lookup runs before the worktree test, and its exit 0 is what keeps the run off the degraded route",
+        "The worktree test uses --path-format=absolute on both --git-common-dir and --git-dir",
+        "Adopt-first is recorded for P3 and named at Gate 2, with the stash before the checkout",
+        "No gh pr create runs against a parent branch, because the PRs belong in the existing stack",
+        "The gh stack link hint is withheld, since it applies only after an absent lookup",
+        "A failing gh stack checkout stops and names the main worktree"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher GitHub Actions, PR shape 'draft-first, squash', Remote yes. I'm on feat/wip off main. The diff has three concerns: a logger fix, a new config flag, and a docs typo. The logger fix and the config flag both edit src/config.ts. Split into one PR per concern, independent branches off main.",
+      "expected_output": "Before cutting branches, the run lists each concern's files and finds src/config.ts shared by the logger fix and the config flag. Those two go on a stack: the second is cut from the first and its PR opens against it. The docs typo stays an independent branch off main. Gate 2 says which concern moved to a stack and names src/config.ts as the reason.",
+      "assertions": [
+        "The file-overlap check runs before any branch is cut",
+        "The two concerns sharing src/config.ts are stacked, the later one's <pr-base> being the earlier concern's branch",
+        "The docs typo concern is still cut from main and opens against main",
+        "Gate 2 names the moved concern and the shared file",
+        "No git checkout -b off main is attempted while the other overlapping concern's hunks sit uncommitted in src/config.ts"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Profile: Ticket system Jira (ACME), Git source GitHub (acme), Default branch develop, Commit policy PRs never direct, Commit convention conventional w/ scope + ticket ref in PR body only, CI watcher GitHub Actions, PR shape draft-first squash, Remote yes. I am on develop with uncommitted changes. The approved plan is in context: its Steps table has a Review row whose Task cell reads `<tier> tier × 2`, the tier picked by shape, already [x], and a Hand-off row that invokes this run with ACME-812 and a brief recommending one commit per concern. Open the PR.",
+      "expected_output": "The run offers and runs no review of its own, because the plan's Review row is [x] and the session that ran the plan already ran it and dispatched the fixes. Gate 1 asks to confirm ACME-812, read from the Hand-off invocation, rather than asking for an ID. Gate 2 still shows the commit split, the new branch name and the drafted PR body for approval before anything is committed or pushed. The PR body carries ACME-812, and no commit subject does.",
+      "assertions": [
+        "No reviewer is dispatched and no review item appears at Gate 1 or Gate 2",
+        "The ticket key ACME-812 is taken from the Hand-off invocation and confirmed, not asked for from scratch",
+        "Gate 2 presents the commit split, the branch name and the PR body, and nothing is committed or pushed before its approval",
+        "The drafted PR body contains ACME-812",
+        "No commit subject carries ACME-812, per the ticket-ref-in-PR-body-only convention"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape 'draft-first, squash, gh stack for a multi-PR change', Verify commands —, Remote yes. I'm on main in the main worktree with two concerns in the tree. Split into a stack of two PRs.",
+      "expected_output": "The stack route runs. Gate 2 says P3b is skipped because --verify-commands prints nothing (row —). After P2 the run skips the per-branch verify without asking anything and goes on to submit. The P6 report says the check was skipped.",
+      "assertions": [
+        "Gate 2 states that per-branch verification is skipped because the profile lists no Verify commands",
+        "The run does not stop or fail on the empty row and does not invent a command",
+        "No question is asked about verification at any point",
+        "The P6 report says the verify check was skipped",
+        "The push and submit still happen after approval"
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape 'draft-first, squash, gh stack for a multi-PR change', Verify commands `yarn test`, Remote yes. I'm on feat/a, an existing stack member and the top member, with its PR, with a new concern in the tree. Add it to the stack. The `yarn test` run fails on the new branch.",
+      "expected_output": "On the add route, one worker per branch runs yarn test on the branch this run created, not on the untouched existing member. The new branch fails, so the run stops before any push: it names the branch and the failing lines, restores HEAD to the branch recorded at P3b start (the new member), runs no gh stack submit, and says the commits live on the run's branches, to fix there, commit and run gh stack submit itself.",
+      "assertions": [
+        "Gate 2 states how each branch is verified before the push",
+        "Only the branch this run created or committed to is verified, not the untouched existing member",
+        "Verification is delegated to one worker per branch that returns failing lines only",
+        "The run stops before P4: no push and no gh stack submit",
+        "The report names the failing branch and the failing check lines",
+        "HEAD is restored to the branch recorded at P3b start, a stack member, not to feat/a",
+        "The run names no skill for the verification",
+        "The report does not advise deleting branches or unstacking"
+      ]
+    },
+    {
+      "id": 15,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape 'draft-first, squash, gh stack for a multi-PR change', Verify commands `web: yarn lint, yarn test`, Remote yes. I'm on main in the main worktree, with one untracked scratch.txt that Step 0 recorded and left out. Split into a stack of two PRs. During the check on the first branch, `yarn lint` (a `--fix` run) modifies the tracked file src/a.ts.",
+      "expected_output": "P3b has the session take `git status --porcelain -uall -z` before and after each branch check and compare to Step 0's record minus what was committed. scratch.txt is expected and ignored. After the first check, tracked src/a.ts is modified, which cleanup never touches, so the run stops without asking anything, pushes nothing and reports the file. The restore is refused because a check modified tracked files, so HEAD stays where it is and the report says where. It says the commits live only on the run's branches, so they are not to be deleted: git checkout the failing branch, fix and commit there, then run gh stack submit yourself. It says the run offers no resume and does not re-invoke the skill.",
+      "assertions": [
+        "scratch.txt, recorded at Step 0, does not stop the run",
+        "The modified tracked file src/a.ts stops P3b and is reported by name",
+        "The session, not the worker, takes the porcelain snapshots before and after each branch check",
+        "Cleanup deletes only paths that are `??` after but not before, never a tracked path, and git clean is never used",
+        "No question is asked about the dirty tree and nothing is stashed",
+        "No push and no gh stack submit happen",
+        "HEAD is left where it is because the restore was refused, and the report says where",
+        "The report says not to delete the branches, to git checkout the failing branch, fix and commit there, then (if it is not the top) gh stack rebase --upstack --no-trunk --remote <rem> and gh stack submit --auto --remote <rem>",
+        "The report says the run offers no resume and does not re-invoke the skill",
+        "The report does not advise gh stack unstack or deleting branches"
+      ]
+    },
+    {
+      "id": 16,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape 'draft-first, squash, gh stack for a multi-PR change', Verify commands `web: yarn lint, yarn test`, Remote yes. I'm on feat/base in the main worktree. feat/base is not part of any stack. Gate 1 answered independent, so feat/base is not the bottom. The plan is a stack of three PRs, with feat/base left out. Everything passes.",
+      "expected_output": "feat/base is not a stack member, so the init route runs (Gate 1 answered independent, so `<bottom>` is not named in the init: three created branches, the first opening against main and each later one against the previous branch). P3b records HEAD, a created member, and runs one worker per created branch, one at a time, bottom to top. Each splits the row on `, `, runs yarn lint and yarn test in web/ and returns failing lines only. HEAD is restored to the recorded member, then P4 submits. The P6 report states the result per branch.",
+      "assertions": [
+        "The init route runs because feat/base is not a stack member, with Gate 1 answered independent",
+        "gh stack init does not name feat/base as bottom and the three created branches are the whole mutation set",
+        "Workers run sequentially bottom to top, never in parallel",
+        "The commands come from the resolver's --verify-commands output, not hand-splitting. Each worker runs both commands in web/ because the dir field binds all of them",
+        "Workers return failing lines only and leave no untracked output that blocks the next checkout",
+        "HEAD is restored to the member recorded at P3b start before P4",
+        "The P6 report states the verify result per branch"
+      ]
+    },
+    {
+      "id": 17,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape 'draft-first, squash, gh stack for a multi-PR change', Verify commands `yarn test`, Remote yes. I'm on main in the main worktree, which is in no stack. Split into a stack of two PRs. Everything passes.",
+      "expected_output": "The init route runs from main. P3b records HEAD, the top created branch, verifies both branches and restores HEAD to that branch, a stack member. P4 then runs gh stack submit --auto --remote <rem> successfully, and P5 and P6 follow. The run names no skill.",
+      "assertions": [
+        "P3b records HEAD after P2, on a created branch, not main",
+        "HEAD is on that stack member after P3b and before P4",
+        "P4 runs gh stack submit --auto with the remote and does not fail for lack of a stack branch",
+        "No push happens before approval and verification",
+        "The run names no skill for verification"
+      ]
+    },
+    {
+      "id": 18,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape 'draft-first, squash, gh stack for a multi-PR change', Verify commands `if [ -f a ]; then yarn x $(cat a); fi, yarn type-check`, Remote yes. I'm on main in the main worktree, which is in no stack. Split into a stack of two PRs. Everything passes.",
+      "expected_output": "The commands come from the resolver's --verify-commands output as two lines: the whole `if ...; then ...; fi` with its `$(...)`, and `yarn type-check`. Each runs as one shell command, both always run, and failing lines only are reported.",
+      "assertions": [
+        "The run reads exactly two commands from --verify-commands and does not split the row itself",
+        "The if/then/fi command with its `;` and `$(...)` runs as one shell command, not split on `;`",
+        "yarn type-check runs even if the first command fails",
+        "Failing lines are reported per failing command only"
+      ]
+    },
+    {
+      "id": 19,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape 'draft-first, squash, gh stack for a multi-PR change', Verify commands `yarn test`, Remote yes. I'm on feat/a, an existing stack member and the top member, with a new concern in the tree. Add it to the stack. tmp.log, which Step 0 did not record, already exists before the check on the new branch and is untracked.",
+      "expected_output": "The add route runs and P3b verifies the branch this run created. The session's snapshots show tmp.log as `??` in both before and after, so cleanup leaves it and the dirt check finds it left, so the run stops without asking anything, pushes nothing, reports tmp.log by name, and restores HEAD to the branch recorded at P3b start. It does not stash, does not run gh stack submit, and says the commits live on the run's branches: fix there, commit, then run gh stack submit yourself.",
+      "assertions": [
+        "The add route runs, not init",
+        "tmp.log is reported by name as the stop reason",
+        "No question is asked about the dirty tree and nothing is stashed in P3b",
+        "No push and no gh stack submit happen",
+        "HEAD is restored to the branch recorded at P3b start",
+        "The report does not advise deleting branches or unstacking"
+      ]
+    },
+    {
+      "id": 20,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape 'draft-first, squash, gh stack for a multi-PR change', Verify commands `yarn test`, Remote yes. I'm on main in the main worktree, which is in no stack. Split into a stack of two PRs. On the first branch, yarn test runs past the 10-minute timeout and is killed.",
+      "expected_output": "The timeout counts as a failing check. P3b stops, names the first branch and the timed-out command, pushes nothing, restores HEAD to the branch recorded at P3b start, and gives the fix, checkout and submit advice. The report says the user can raise the timeout by running the commands themselves, then re-running the skill.",
+      "assertions": [
+        "The 10-minute timeout is treated as a failing check, not as a pass or a retry",
+        "The run stops before P4 with no push and no gh stack submit",
+        "The report names the branch and the timed-out command",
+        "HEAD is restored to the branch recorded at P3b start, a stack member",
+        "No question is asked and nothing is stashed"
+      ]
+    },
+    {
+      "id": 21,
+      "prompt": "I'm on main in the main worktree, which is in no stack. The workflow profile rows are absent from context and the profile resolver is missing. Split into a stack of two PRs.",
+      "expected_output": "The Profile step finds no rows and no resolver (exit 127), so the run stops there with the reason, before any change. Nothing is committed.",
+      "assertions": [
+        "The run stops at the Profile step and says the resolver is missing",
+        "The stop comes before any branch, commit or Gate 2 plan, and is not treated as Verify commands being absent",
+        "Nothing is committed, pushed or submitted"
+      ]
+    },
+    {
+      "id": 22,
+      "prompt": "Profile: Ticket system none, Git source GitHub (acme), Default branch main, Commit policy PRs never direct, Commit convention conventional w/ scope, CI watcher none, PR shape 'draft-first, squash, gh stack for a multi-PR change', Verify commands `yarn lint`; `VITE_API_MODE=real yarn build`; `yarn test`, Remote yes. I'm on main in the main worktree, which is in no stack. Split into a stack of two PRs. On the first branch, yarn lint and yarn test both fail.",
+      "expected_output": "The resolver's --verify-commands output holds three commands, one per backtick span, with no backticks. The worker runs all three, including the env-prefixed build, and reports both failures. P3b stops without pushing.",
+      "assertions": [
+        "The three commands come from --verify-commands, with no stray backticks passed to the shell",
+        "VITE_API_MODE=real yarn build runs as one shell command",
+        "All three commands run and both failures are reported, not just the first",
+        "The run stops before P4 with no push"
       ]
     }
   ]
