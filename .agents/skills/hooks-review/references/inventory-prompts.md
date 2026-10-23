@@ -1,12 +1,11 @@
 # Inventory prompts
 
-Three read-only worker packets, launched in one message. Each opens with the config repo
-root, the read-only rule, and the Bash constraints (no `xargs` beyond grep, wc and ls, and no
-`echo` of `$(...)` or an UPPERCASE variable; the Read, Grep and Glob tools first). Each closes with "return
-file:line for every claim and an uncertainties list; propose no fixes". Adjust the file lists
+Three read-only worker packets, launched in one message. Each worker reads this preamble and
+its own packet. Work from the clankers repo root, change no file, and return file:line for every
+claim, one line per field, plus an uncertainties list. Propose no fixes. Adjust the file lists
 when the layout moves.
 
-## Packet 1 — wiring and triggers
+## Packet 1: wiring and triggers
 
 Scope: every `.agents/hooks/*.sh`, `.agents/skills/*/hooks/*.sh`, `.agents/hooks/lib/*.sh`,
 every `hooks.json` fragment (`.agents/hooks/hooks.json`, `.agents/skills/*/hooks/hooks.json`),
@@ -27,7 +26,7 @@ Per script, report:
 Then the cross-hook overlaps: pairs on one event with overlapping triggers or competing
 directives, quoted with file:line. Then the inline entries with the same six fields.
 
-## Packet 2 — prose against hooks
+## Packet 2: prose against hooks
 
 Scope: `.agents/AGENTS.md`, `.claude/output-styles/*.md`, every `.agents/skills/*/SKILL.md` and
 `references/*.md`, `README.md`, against what the hooks enforce (read each hook's header and its
@@ -45,16 +44,16 @@ Report three lists, each item with file:line and the quoted line trimmed to 150 
 
 Then dead references: prose naming a hook, file, env var, path or skill that no longer exists.
 
-## Packet 3 — history and signals
+## Packet 3: history and signals
 
 Per hook script:
 
 1. First commit (date, subject) with `git log --follow --diff-filter=A`, and the last commit
    that changed its logic (ignore renames and wording-only commits). Run each `--follow` query
-   alone: a parallel batch cross-contaminates the output.
+   alone, because a parallel batch cross-contaminates the output.
 2. Commits whose subject names the hook.
-3. Its fixture suite result: run its `fixtures/<name>/run.sh` (under `.agents/hooks/` or the
-   owning skill's `hooks/`) as one call per suite and report the PASS and FAIL counts.
+3. Its fixture suite result, from one run of `bash .agents/hooks/run-fixtures.sh` (one PASS or
+   FAIL line per suite, plus the failing cases).
 
 Then the memory signals: lines in `.claude/projects/*/memory/*.md` (never the `.jsonl`
 transcripts) that name a hook, a deny message, or a workaround for one.

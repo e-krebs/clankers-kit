@@ -3,13 +3,68 @@
     {
       "name": "single-skill-gate-after-edit",
       "prompt": "I just edited the foo-bar skill. Run the hygiene gate on it.",
-      "expected_output": "Loads the conventions skill (or states the fallback), reviews foo-bar against the checklist quoting offending lines, greps for cross-skill references, runs the lint runner with .agents as the argument, proposes fixes via AskUserQuestion, applies approved ones, and reports before/after scores.",
+      "expected_output": "Loads the conventions skill (or states the fallback), reviews foo-bar against the checklist quoting offending lines, greps for cross-skill references, runs the lint runner on a temp dir holding only the target's symlink, proposes fixes through the harness's question tool, applies approved ones, and reports before/after scores.",
       "assertions": [
-        "Lint runner invoked with the parent of skills/, not .agents/skills",
+        "Lint runner invoked with the parent of skills/, on a temp dir holding only the target symlinks",
         "Run validity checked: the skills-checked count equals the target count, with per-skill symlink re-runs on a shortfall",
         "Findings quote the offending line",
-        "Fixes gated on AskUserQuestion approval",
+        "Fixes gated on user approval through the harness's question tool, or numbered questions where it has none",
         "Report shows before and after scores"
+      ]
+    },
+    {
+      "name": "prose-pass-single-finding",
+      "prompt": "Review the foo skill. Its SKILL.md and two references/ files are full of em-dash asides and bold emphasis.",
+      "expected_output": "Loads the prose rules from the installed skill found by its description, reports one 'prose pass over 3 files' finding with up to three quoted sample lines, and on approval rewrites the prose as its own edit set while every rule, number, path and command stays.",
+      "assertions": [
+        "Prose rules found by grepping skill descriptions, not by a hardcoded skill name",
+        "One prose-pass finding per skill, not one per line",
+        "At most three quoted sample lines",
+        "The fix keeps every rule, number, path, command and field name"
+      ]
+    },
+    {
+      "name": "prose-source-through-fan-out",
+      "prompt": "Audit all my skills. One installed skill's description leads with cutting AI writing tells.",
+      "expected_output": "The main agent looks up the prose rules by description, records that skill's path as the prose source, passes the path in every subagent prompt, and each subagent reads it and returns a prose-pass row naming it. The report states the prose source.",
+      "assertions": [
+        "Every subagent prompt carries the prose source as a path, not its contents",
+        "Every subagent return has a prose-pass row naming the source it applied",
+        "The report names the matched skill's path as the prose source, or 'fallback checklist' with the reason no match was found"
+      ]
+    },
+    {
+      "name": "context-cost-findings",
+      "prompt": "Review the foo skill. Its step 2 reads the whole 900-line registry.json to find one PR number, and step 3 pastes that file into a subagent prompt.",
+      "expected_output": "Flags a Load cost finding on the whole-file read where a grep answers, and a Self-contained brief finding on the contents passed to a subagent where the path would do, each quoting the offending line.",
+      "assertions": [
+        "Flags the whole-file read as Load cost and proposes a grep",
+        "Flags the pasted contents as Self-contained brief and proposes passing the path",
+        "Each finding quotes the offending line"
+      ]
+    },
+    {
+      "name": "delegation-findings",
+      "prompt": "Review the foo skill. Its step edits four files in the main thread and runs the lint and the tests repeatedly there, reading the output whole. It dispatches a general-purpose agent to review the change, pasting the diff into its prompt with no return shape or cap set. After the worker reports, its lead re-reads every file the worker changed.",
+      "expected_output": "Flags a Tier delegation finding on the main-thread edit-and-run step naming a tier, a finding that the general-purpose dispatch names no tier, a Report cap finding asking for a shape and a cap, a Load cost finding on the lint and test output read whole proposing save-to-file and grep, a Self-contained brief finding proposing the path over the pasted diff, and a Check by result finding on the routine re-read, each quoting the offending line.",
+      "assertions": [
+        "A Tier delegation finding naming the edit step with a tier",
+        "A finding that the general-purpose dispatch names no tier",
+        "A Report cap finding asking for a shape and a cap",
+        "A Load cost finding on the lint and test output read whole, proposing save-to-file and grep",
+        "A Self-contained brief finding proposing the path over the pasted diff",
+        "A Check by result finding on the routine re-read",
+        "Each finding quotes the offending line"
+      ]
+    },
+    {
+      "name": "delegation-clean",
+      "prompt": "Review the foo skill and the bar reference-only skill. foo dispatches a mid-scale worker agent with a path-only brief, a return shape (done or blocked, the check result, one line per finding, no diff or file body) and a 10-line cap. Its lead accepts the worker on its check result, reads the final diff once before gh pr create, and asks the user one question.",
+      "expected_output": "No delegation-rubric finding on foo, no Check by result finding on the final-diff read, and bar returns N/A for the rubric rather than a finding.",
+      "assertions": [
+        "No delegation-rubric finding on foo",
+        "No Check by result finding on the final-diff read",
+        "bar returns N/A for the rubric, not a finding"
       ]
     },
     {
@@ -24,22 +79,25 @@
     },
     {
       "name": "degrades-without-the-runner",
-      "prompt": "Review the foo skill on a machine without the internal-skills repo.",
-      "expected_output": "Falls back to the inline checklist as the gate, says so plainly in the report, and does not fabricate a lint score.",
+      "prompt": "Review the foo skill on a machine without the internal-skills repo and with no installed skill that cuts AI writing tells.",
+      "expected_output": "Falls back to the inline checklist as the gate and to the inline prose-tell list for the prose pass, says so plainly in the report, and does not fabricate a lint score.",
       "assertions": [
         "No fabricated score",
         "Fallback stated in the report",
-        "Checklist review still performed in full"
+        "Checklist review still performed in full",
+        "Prose pass runs on the inline fallback list"
       ]
     },
     {
       "name": "gather-stops-after-scoring",
       "prompt": "Run skill-review over every installed skill with the argument gather.",
-      "expected_output": "Runs steps 1 to 4, returns per skill the findings list and the lint score, and makes no AskUserQuestion call and no file change.",
+      "expected_output": "Runs steps 1 to 4, fans steps 1-3 out to one read-only subagent per skill, returns per skill the findings list and the lint score, and asks the user nothing and changes no file.",
       "assertions": [
-        "No AskUserQuestion call",
+        "No question to the user, through any tool or in prose",
         "No skill file is edited",
-        "Every target skill has a findings list and a score from a valid run"
+        "Every target skill has a findings list and a score from a valid run",
+        "One read-only subagent per target skill runs steps 1-3, and the main agent does not read the target bodies",
+        "Each subagent returns findings rows (section, quoted lines, flag, proposed fix) or one clean line"
       ]
     }
   ]

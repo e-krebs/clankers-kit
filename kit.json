@@ -205,6 +205,7 @@
       "group": "review",
       "kind": "skill",
       "label": "skill-review",
+      "requires": ["workflow-models"],
       "soft": ["writing-for-agents"],
       "skill": "skill-review"
     },
