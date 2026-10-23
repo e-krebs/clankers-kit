@@ -42,7 +42,7 @@
       "expected_output": "Detects the dirty tree in pre-flight and asks how to handle it (stash & restore, or commit & push first) before touching history, then proceeds with the rebase.",
       "assertions": [
         "Runs git status --porcelain and notices the working tree is dirty before rebasing",
-        "Asks the user how to handle uncommitted work (e.g. autostash vs commit & push) instead of silently discarding or blindly rewriting",
+        "Asks the user how to handle uncommitted work (e.g. stash vs commit & push) instead of silently discarding or blindly rewriting",
         "Does not start the rebase while uncommitted changes are unhandled",
         "After resolving the dirty tree, proceeds with base setup + backup ref + rebase"
       ]
@@ -64,7 +64,7 @@
       "expected_output": "Detects the stack metadata in pre-flight, reads references/gh-stack-cascade.md before running any gh stack command, then cascades the whole stack with gh stack rebase, verifies each moved branch with its own range-diff, and pushes with gh stack push.",
       "assertions": [
         "Reads references/gh-stack-cascade.md before running any gh stack command",
-        "Reads the stack with gh stack view --json, the only form that distinguishes 'not in a stack' from 'in several stacks'",
+        "Routes on the lookup's exit 0, reads the stack with gh stack view --json as S1's operational read, and would ask which stack when the lookup printed two lines",
         "Writes a backup ref per branch, plus each branch's remote tip captured before the delegated fetch, before anything moves",
         "Checks every branch for remote commits the local branch lacks before invoking the cascade",
         "Runs a per-branch range-diff loss check after the cascade and blocks the push on confirmed loss",
@@ -76,9 +76,9 @@
     {
       "id": 7,
       "prompt": "Rebase this branch onto main. (An ordinary repository: no gh-stack metadata anywhere.)",
-      "expected_output": "Reads references/plain-rebase.md and follows it: base setup, backup ref, rebase, loss gate, push. Stacked-PR handling never surfaces.",
+      "expected_output": "Runs the lookup by branch, which exits 4 because no metadata file exists, and follows references/plain-rebase.md: base setup, backup ref, rebase, loss gate, push. Stacked-PR handling never surfaces.",
       "assertions": [
-        "Tests for the metadata file's existence with --git-common-dir (not just that git rev-parse printed a path), finds none, and follows references/plain-rebase.md",
+        "Runs the lookup by branch, which uses --git-common-dir and exits 4 because no metadata file exists, and follows references/plain-rebase.md",
         "Never opens references/gh-stack-cascade.md",
         "Never mentions gh-stack, stacked PRs, or any gh stack command to the user",
         "Invokes gh zero times"
@@ -97,11 +97,11 @@
     },
     {
       "id": 9,
-      "prompt": "Rebase my branch onto main. (The repo uses gh-stack for another feature, but this branch isn't part of any stack. Its PR targets main, which is the default branch, and no open PR targets this branch.)",
-      "expected_output": "Finds the metadata file, consults the reference, learns from gh stack view --json that this branch is not part of a stack, then asks the PR graph before believing it. The --base query returns nothing and the --head query is skipped because this PR's base is the trunk, so there is no chain, and the run returns to the ordinary flow — handling the dirty-tree check it skipped on the way out.",
+      "prompt": "Rebase my branch onto main. (The repo uses gh-stack for another feature, so the metadata file exists, but this branch is not listed and the lookup exits 3. Its PR targets main, which is the default branch, and no open PR targets this branch.)",
+      "expected_output": "The lookup exits 3, so the run opens references/gh-stack-cascade.md at S1's PR-graph probe without running gh stack view, then asks the PR graph. The --base query returns nothing and the --head query is skipped because this PR's base is the trunk, so there is no chain, and the run returns to the ordinary flow — handling the dirty-tree check it skipped on the way out.",
       "assertions": [
         "Does not treat the mere presence of stack metadata as proof this branch is in a stack",
-        "Uses gh stack view --json to decide membership and recognises the 'not part of a stack' outcome",
+        "Uses the lookup's exit 3 to decide membership and skips gh stack view --json",
         "Does not treat that outcome as final either: it runs the PR-graph probe, finds no chain, and says so",
         "The --base query is filtered to this branch rather than listing the repository's open PRs",
         "The --head query is skipped, because its value would be the trunk and a standing trunk-to-release PR would read as a chain",
@@ -111,13 +111,14 @@
     },
     {
       "id": 10,
-      "prompt": "Update this branch — the repo has a gh-stack stack but I never installed the gh extension.",
+      "prompt": "Update this branch — the repo has a gh-stack stack but I never installed the gh extension. The metadata lists this branch, so the lookup exits 0.",
       "expected_output": "Warns that the repo has a stack and no tooling to cascade it, names the branches at risk only if the metadata parses unambiguously, and offers install / single-branch-anyway / abort rather than silently orphaning the branches above.",
       "assertions": [
         "Detects that gh stack is unavailable and does not fall through to a silent single-branch rebase",
         "Offers gh extension install github/gh-stack as an option",
         "If it proceeds single-branch, warns that the branches above will point at abandoned commits and need their own rebase",
-        "Does not invent branch names when the metadata shape is unclear"
+        "Does not invent branch names when the metadata shape is unclear",
+        "Takes the branches at risk from the lookup's line rather than hand-parsing the JSON"
       ]
     },
     {
@@ -188,11 +189,11 @@
     },
     {
       "id": 17,
-      "prompt": "Restack credentials/delete. (On acme/widgets, default branch develop. .git/gh-stack exists but tracks an older stack whose every member is merged, so gh stack view reports credentials/delete is not part of a stack. On GitHub: #30132 is open on credentials/delete with base credentials/list, #30129 is open on credentials/list with base credentials/read, and #30116 and #30096 on credentials/read and credentials/base are already merged. The stack was created with gh stack link, which writes no local tracking state. I have uncommitted changes, and when asked I choose stash.)",
-      "expected_output": "Refuses to accept the not-in-a-stack answer at face value. Resolves the trunk with gh repo view, then walks the PR chain in both directions until nothing new appears, finding #30129 and #30116's branch through the --head queries rather than stopping one level up. Carries that chain as the member list, stashes, adopts with gh stack checkout on a still-open member's PR URL, confirms every probed branch appears in the adopted view, and only then does the per-branch refs and divergence checks — because adoption is what fetched those branches. Cascades that adopted stack with gh stack sync --prune, having first checked the dirty tree, the divergence and the unpushed-work preconditions.",
+      "prompt": "Restack credentials/delete. (On acme/widgets, default branch develop. .git/gh-stack exists but tracks an older stack whose every member is merged, so the lookup exits 3 for credentials/delete. On GitHub: #30132 is open on credentials/delete with base credentials/list, #30129 is open on credentials/list with base credentials/read, and #30116 and #30096 on credentials/read and credentials/base are already merged. The stack was created with gh stack link, which writes no local tracking state. I have uncommitted changes, and when asked I choose stash.)",
+      "expected_output": "Enters the cascade file at S1's probe on the lookup's exit 3, without running gh stack view. Resolves the trunk with gh repo view, then walks the PR chain in both directions until nothing new appears, finding #30129 and #30116's branch through the --head queries rather than stopping one level up. Carries that chain as the member list, stashes, adopts with gh stack checkout on a still-open member's PR URL, confirms every probed branch appears in the adopted view, and only then does the per-branch refs and divergence checks — because adoption is what fetched those branches. Cascades that adopted stack with gh stack sync --prune, having first checked the dirty tree, the divergence and the unpushed-work preconditions.",
       "assertions": [
         "The metadata tracking a different, fully merged stack is not treated as proof this branch is in no stack",
-        "The trunk is resolved from gh repo view or the profile, since gh stack view — the usual source — is what failed",
+        "The trunk is resolved from gh repo view or the profile, since gh stack view was skipped",
         "The chain walk continues in both directions until nothing new appears, so a four-member stack is not read as two branches",
         "Adoption is confirmed by checking that every branch the probe found appears in the adopted view, and extra members are accepted rather than treated as a mismatch, because the probe queried --state open and cannot see a merged member",
         "The stash happens before adoption, because gh stack checkout moves the worktree and an uncommitted edit riding that checkout is unrecoverable",
@@ -216,7 +217,7 @@
     },
     {
       "id": 19,
-      "prompt": "Rebase this branch onto main. (The repo has gh-stack metadata for another feature. This branch's PR targets release/2.x, no open PR targets this branch, and no open PR has release/2.x as its head branch.)",
+      "prompt": "Rebase this branch. (The repo has gh-stack metadata for another feature, and the lookup exits 3 for this branch. This branch's PR targets release/2.x, no open PR targets this branch, and no open PR has release/2.x as its head branch.)",
       "expected_output": "The probe finds no chain: the --base query returns nothing, and the --head query on release/2.x also returns nothing. A base that merely differs from the trunk is not the test, so the run falls through to references/plain-rebase.md without adopting anything.",
       "assertions": [
         "A non-trunk base is not treated as evidence of a stack",
@@ -227,18 +228,20 @@
     },
     {
       "id": 20,
-      "prompt": "Restack this branch. (I'm in a linked worktree under .claude/worktrees/, and the repo has gh-stack metadata that does list this branch.)",
-      "expected_output": "Stops. From a linked worktree gh stack reports the current branch is not part of a stack even when the metadata lists it, so that answer is a known false negative. The worktree stop comes before the PR-graph probe, so the run does not spend an authenticated round trip on an answer it would have to discard.",
+      "prompt": "Restack this branch. (I'm in a linked worktree, and the repo has gh-stack metadata that lists this branch, so the lookup exits 0. The branch is not checked out in any other worktree.)",
+      "expected_output": "The lookup reads the shared metadata from the common dir, so membership is present even though gh stack view from a linked worktree would answer 'not part of a stack'. The run records the branch it started on, then adopts the stack from GitHub with gh stack checkout on a still-open member's PR URL and follows the adopted sync route, stating that the sequence was observed from the main worktree and is applied here by inference. A failing checkout stops and names the main worktree. gh stack unstack --local never runs on this route.",
       "assertions": [
-        "The linked-worktree condition is checked before the PR-graph probe runs",
-        "The not-in-a-stack answer from a worktree is named as a known false negative rather than acted on",
-        "No probe query, no adoption and no cascade runs",
-        "The run says the repo has a stack and stops, rather than falling through to the plain path"
+        "The linked-worktree test compares git rev-parse --path-format=absolute --git-common-dir with --git-dir under the same flag",
+        "Membership comes from the lookup, and gh stack view's 'not part of a stack' from a worktree is named as the known false negative",
+        "Adoption runs through gh stack checkout <pr-url>, not through the PR-graph probe, because the lookup already lists the stack",
+        "A target branch already checked out in another worktree would stop the run before adoption",
+        "gh stack unstack --local is never run when the post-adoption view fails",
+        "A failing checkout stops and names the main worktree"
       ]
     },
     {
       "id": 21,
-      "prompt": "Restack this branch. (A busy monorepo with roughly 400 open PRs and gh-stack metadata for another feature. gh stack view says this branch is not part of a stack. This branch's PR is #30132 with base credentials/list, and #30129 is open on credentials/list.)",
+      "prompt": "Restack this branch. (A busy monorepo with roughly 400 open PRs and gh-stack metadata for another feature. the lookup exits 3 for this branch. This branch's PR is #30132 with base credentials/list, and #30129 is open on credentials/list.)",
       "expected_output": "The filtered --head query on credentials/list finds #30129 regardless of how many PRs the repo has open, because the filter narrows the listing at the server. An unfiltered gh pr list would have returned only its first 30 items and missed the chain, reproducing the original fail-open.",
       "assertions": [
         "The probe uses --base and --head filters rather than listing the repository's open PRs and searching them locally",

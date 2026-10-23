@@ -89,4 +89,30 @@ silent "silent-help" "sample-posttooluse-help.json"
 silent "silent-dry-run" "dry-run.json"
 silent "silent-malformed" "malformed.json"
 
+# --- stack-submit hold ------------------------------------------------------
+# with_cwd <fixture> <dir>: a copy of the fixture whose cwd points at dir, for the hold cases
+with_cwd() {
+  jq -c --arg d "$2" '.cwd = $d' "$fixtures_dir/$1" > "$work/in.json"
+  printf '%s' "$work/in.json"
+}
+repo="$work/repo"
+git init -q "$repo" && git -C "$repo" commit -q --allow-empty -m init 2>/dev/null
+hold="$repo/.git/push-nudge-hold"
+
+: > "$hold"
+fires_at() { local f; f=$(with_cwd "$2" "$3"); fixtures_dir="$work" fires "$1" "$(basename "$f")"; }
+silent_at() { local f; f=$(with_cwd "$2" "$3"); fixtures_dir="$work" silent "$1" "$(basename "$f")"; }
+silent_at "silent-hold-fresh" "gh-stack-submit.json" "$repo"
+mkdir -p "$repo/sub"
+silent_at "silent-hold-fresh-subdir" "gh-pr-create.json" "$repo/sub"
+
+git -C "$repo" worktree add -q "$work/wt" -b wt 2>/dev/null
+silent_at "silent-hold-linked-worktree" "gh-stack-push.json" "$work/wt"
+
+touch -t 202001010000 "$hold"
+fires_at "fires-hold-stale" "gh-stack-submit.json" "$repo"
+if [ -e "$hold" ]; then fail_case "hold-stale-removed" "stale hold still present"; else pass "hold-stale-removed"; fi
+
+fires_at "fires-no-hold" "gh-stack-submit.json" "$repo"
+
 exit $overall

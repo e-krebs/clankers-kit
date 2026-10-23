@@ -3,9 +3,10 @@
     {
       "name": "green-approved-pr-squash-delete-and-done-move",
       "prompt": "Merge the PR for this branch. The session context carries the acme workflow profile: Ticket system Jira (ACME), Commit policy 'PRs, never direct', PR shape 'draft-first, squash, CODEOWNERS review', Default branch main. The PR is #29725 in acme/widgets, open, not a draft, reviewDecision APPROVED, mergeable MERGEABLE, mergeStateStatus CLEAN, every check green, head branch feat/acme-2738-facet-order, base main, body referencing ACME-2738. No open PR targets that head branch, and no other open PR references ACME-2738.",
-      "expected_output": "Reads the three rows from context without re-reading the profile files, gathers PR state read-only with one gh pr view including baseRefName, runs one gh pr list --base on the head branch which comes back empty, judges the PR clear, then makes ONE declinable offer: merge with --squash --delete-branch, plus a separate question for moving ACME-2738 to Done. On acceptance it runs gh pr merge <n> --squash --delete-branch, transitions the ticket per the profile's ## Tracker rules section, and reports the merge SHA, the deleted branch and the ticket's new state.",
+      "expected_output": "Reads the three rows from context without re-reading the profile files, gathers PR state read-only with one gh pr view including baseRefName, runs the lookup by PR number which exits 3 or 4, then runs one gh pr list --base on the head branch which comes back empty, judges the PR clear, then makes ONE declinable offer: merge with --squash --delete-branch, plus a separate question for moving ACME-2738 to Done. On acceptance it runs gh pr merge <n> --squash --delete-branch, transitions the ticket per the profile's ## Tracker rules section, and reports the merge SHA, the deleted branch and the ticket's new state.",
       "assertions": [
         "Profile rows come from context; the files are read only when context lacks them",
+        "The lookup runs by PR number right after gh pr view and exits 3 or 4, which is what allows the --base query to settle the path",
         "PR state is gathered read-only before any offer, and baseRefName is among the fields",
         "One gh pr list --state open --base <headRefName> runs, and its empty result picks the lone-PR path",
         "references/gh-stack-merge.md is never opened",
@@ -137,12 +138,12 @@
     },
     {
       "name": "untracked-stack-with-a-grandchild-offers-the-rebase",
-      "prompt": "Merge PR 30116. Acme profile, Default branch develop, Ticket system Jira (ACME). #30116 is open, approved, green, head branch credentials/read, base develop, linked to ACME-2200. #30129 is open on credentials/list with base credentials/read, and #30132 is open on credentials/delete with base credentials/list. Neither #30129 nor #30132 references any ACME key. The repository's .git/gh-stack file exists but tracks a different, fully merged stack, so gh stack view reports credentials/read is not part of a stack.",
+      "prompt": "Merge PR 30116. Acme profile, Default branch develop, Ticket system Jira (ACME). #30116 is open, approved, green, head branch credentials/read, base develop, linked to ACME-2200. #30129 is open on credentials/list with base credentials/read, and #30132 is open on credentials/delete with base credentials/list. Neither #30129 nor #30132 references any ACME key. The repository's .git/gh-stack file exists but tracks a different, fully merged stack, so the lookup exits 3 for #30116.",
       "expected_output": "The dependant query finds #30129, so the run reads references/gh-stack-merge.md and walks the chain upward until nothing new appears, capturing #30132 as well because it is a grandchild. Names both in the gate offer since the merge moves their base. Records membership absent — the metadata file's existence proves nothing — merges with gh pr merge 30116 --squash --delete-branch, then offers the rebase and runs the rebase skill, the installed skill that rebases a branch or restacks a stack, on a yes, saying to start from develop and to adopt through a still-open dependant's PR URL.",
       "assertions": [
         "The dependant query is repeated per newly found head branch until nothing new appears, so #30132 is captured as well as #30129",
         "The capture happens before the merge, because GitHub retargets the dependants about two seconds after the parent lands",
-        "Membership is read from gh stack view listing this PR's head branch, never from the metadata file merely existing",
+        "Membership is read from the lookup keyed by PR number, which exits 3 here, never from the metadata file merely existing",
         "Both dependant PRs are named in the gate offer",
         "The route is gh pr merge --squash --delete-branch, and no local git branch -D follows, because -d already removed the local branch",
         "The restack step offers the rebase and runs the rebase skill on a yes, rather than running gh stack sync with no membership",
@@ -152,7 +153,7 @@
     },
     {
       "name": "late-refusal-re-gates-the-merge-set",
-      "prompt": "Merge PR 30129. Acme profile: Ticket system Jira (ACME), PR shape 'draft-first, squash, CODEOWNERS review', Default branch develop. #30129 is open, approved, green, head credentials/list, base credentials/read, linked to ACME-2201. #30132 is open on credentials/delete above it. #30116 is open on credentials/read with base develop, approved, linked to ACME-2200, but its build-and-test check is FAILING. The .git/gh-stack file does not exist, so membership is absent and the route starts as gh pr merge. That command is refused with 'GraphQL: This pull request is part of a stack and must be merged using the asynchronous merge REST API'.",
+      "prompt": "Merge PR 30129. Acme profile: Ticket system Jira (ACME), PR shape 'draft-first, squash, CODEOWNERS review', Default branch develop. #30129 is open, approved, green, head credentials/list, base credentials/read, linked to ACME-2201. #30132 is open on credentials/delete above it. #30116 is open on credentials/read with base develop, approved, linked to ACME-2200, but its build-and-test check is FAILING. The .git/gh-stack file does not exist, so the lookup exits 4 and membership is absent and the route starts as gh pr merge. That command is refused with 'GraphQL: This pull request is part of a stack and must be merged using the asynchronous merge REST API'.",
       "expected_output": "The first gate judges #30129 alone, because gh pr merge touches only #30129. The refusal then switches the route to gh stack merge, which lands #30116 as well, so the run goes back through the gate over the walked merge set before merging anything. #30116's failing check blocks the set: one line names it and the run stops, with no adoption, no gh stack merge and no ticket moved.",
       "assertions": [
         "The first gate judges only the named PR, because the gh pr merge route touches only that PR",
@@ -166,10 +167,10 @@
     {
       "name": "paused-cascade-stops-the-merge",
       "prompt": "Merge PR 30129. Acme profile, Default branch develop. #30132 is open on credentials/delete above it. A gh stack rebase from yesterday is still paused: .git/gh-stack-rebase-state exists.",
-      "expected_output": "The dependant query finds #30132 and the run reads references/gh-stack-merge.md, whose first capture step tests for the paused cascade and finds it. It stops and reports: every gh stack read fails with 'not on any branch' while HEAD is detached, so membership cannot be established, and retargeting PRs on top of a half-rebased stack is not something to guess at. The user resolves that cascade first.",
+      "expected_output": "The dependant query finds #30132 and the run reads references/gh-stack-merge.md, whose first capture step tests for the paused cascade and finds it. The lookup by PR number still reads the file — a PR-keyed read needs no branch — so membership can be known, but retargeting PRs on top of a half-rebased stack is not something to guess at, and every gh stack command fails with 'not on any branch'. It stops and reports that the user must resolve that cascade first.",
       "assertions": [
         "The gh-stack-rebase-state file is tested before any gh stack command runs",
-        "Its existence stops the run rather than being read as 'this stack is not tracked'",
+        "Its existence stops the run even though the lookup can still read membership by PR number",
         "No merge runs, no adoption runs and no sync runs",
         "The report says why a paused cascade blocks the merge and what the user must do first"
       ]
@@ -225,17 +226,42 @@
     },
     {
       "name": "non-trunk-base-routes-past-an-empty-dependant-query",
-      "prompt": "Merge PR 30116. Acme profile: Ticket system Jira (ACME), Commit policy 'PRs, never direct', PR shape 'draft-first, squash, CODEOWNERS review', Default branch develop. #30116 is open, approved, green, head credentials/read, base credentials/base, linked to ACME-2200. #30096 is open on credentials/base with base develop, approved, but its build-and-test check is still PENDING. No open PR targets credentials/read. gh-stack tracks the stack and lists credentials/base and credentials/read. Current branch credentials/read, main worktree, no cascade paused.",
-      "expected_output": "The dependant query comes back empty, but #30116's base is credentials/base rather than develop, so the run reads references/gh-stack-merge.md in full and follows it from M1 with an empty restack set. The merge set walks down to #30096, whose pending check blocks the whole set, and one line names it.",
+      "prompt": "Merge PR 30116. Acme profile: Ticket system Jira (ACME), Commit policy 'PRs, never direct', PR shape 'draft-first, squash, CODEOWNERS review', Default branch develop. #30116 is open, approved, green, head credentials/read, base credentials/base, linked to ACME-2200. #30096 is open on credentials/base with base develop, approved, but its build-and-test check is still PENDING. No open PR targets credentials/read. The stack was built with gh stack link, so the .git/gh-stack file lists neither branch and the lookup exits 3. Current branch credentials/read, main worktree, no cascade paused. gh pr merge 30116 is refused with 'GraphQL: This pull request is part of a stack and must be merged using the asynchronous merge REST API'.",
+      "expected_output": "The dependant query comes back empty, but #30116's base is credentials/base rather than develop, and the --head query proves a chain, so the run reads references/gh-stack-merge.md in full and follows it from M1 with an empty restack set. The merge set walks down to #30096. Membership is absent, so M2 judges #30116 alone and finds it clear, and M3 attempts gh pr merge 30116 --squash --delete-branch. GitHub refuses it, the refusal re-runs M2 over the merge set, and #30096's pending check blocks it: one line names #30096 and the run stops before any gh stack merge.",
       "assertions": [
         "The empty --base query is not the end of the question, because gh stack merge lands every member below the PR named",
         "A baseRefName that is not the Default branch is what routes the run, not a profile row",
         "references/gh-stack-merge.md is read in full before any further command, and entered at M1",
         "The merge set is walked downward to develop and every member is judged by the same blocker rules",
-        "#30096's pending check blocks the set even though #30116 is clear, and the blocker line names #30096",
+        "#30096's pending check blocks the set at the re-gate after the refusal, even though #30116 is clear, and the blocker line names #30096",
         "The restack set is empty, so the restack step takes its nothing-above exit",
-        "No merge runs and no ticket is transitioned",
-        "The second query, on --head credentials/base, is what proves a chain runs below"
+        "The lone gh pr merge attempt is refused, no gh stack merge runs and no ticket is transitioned",
+        "The second query, on --head credentials/base, is what proves a chain runs below",
+        "M2 judges #30116 alone on the way in, because membership is absent and gh pr merge touches only that PR"
+      ]
+    },
+    {
+      "name": "top-member-after-merged-parents-is-caught-by-the-lookup",
+      "prompt": "Merge PR 30132. Acme profile: Ticket system Jira (ACME), Commit policy 'PRs, never direct', PR shape 'draft-first, squash, CODEOWNERS review', Default branch develop. #30132 is open, approved, green, head credentials/delete, base develop, linked to ACME-2202. Its three parents #30096, #30116 and #30129 merged earlier today, which retargeted #30132 onto develop. No open PR targets credentials/delete. The .git/gh-stack file lists stack 30118 with all four branches, the three parents flagged merged. Current branch develop, main worktree, clean tree, no cascade paused.",
+      "expected_output": "The --base query is empty and the base equals the trunk, so both GitHub signals read lone. The lookup by PR number exits 0 and lists stack 30118, so the run reads references/gh-stack-merge.md in full and enters M1 with membership present and the member list from the lookup's line. The merge set below #30132 is walked and found merged, the gate judges #30132, and on acceptance the run adopts with gh stack checkout on #30132's URL and lands it with gh stack merge 30132 --squash --yes. gh pr merge never runs.",
+      "assertions": [
+        "The lookup runs before the --base query is interpreted, and its exit 0 picks the stacked route",
+        "Neither the empty --base query nor the trunk baseRefName is allowed to declare the PR lone once the lookup lists it",
+        "gh pr merge is never attempted, so GitHub's async-merge refusal is never the detector",
+        "The member list comes from the lookup's line, and each member's state is re-read with gh pr view rather than trusted from the (merged) suffix",
+        "The route is gh stack checkout <pr-url> then gh stack merge 30132 --squash --yes",
+        "The restack step takes its nothing-above exit, because nothing sits above the top member"
+      ]
+    },
+    {
+      "name": "unparsable-metadata-asks-before-merging",
+      "prompt": "Merge PR 30129. Acme profile, Default branch develop. #30129 is open, approved, green, head credentials/list, base develop. No open PR targets credentials/list. The .git/gh-stack file exists but is truncated and does not parse, so the lookup exits 5.",
+      "expected_output": "Membership is unknown, not absent: the file proves the repo uses gh stack. The run says the metadata did not parse and asks before any gh pr merge, offering to proceed with the lone merge or to stop so the user can repair or remove the file. It does not fall through to gh pr merge on its own.",
+      "assertions": [
+        "Exit 5 is reported as unknown membership, never as absent",
+        "A question is asked before gh pr merge runs, because the unparsable file proves gh stack is in use here",
+        "No gh stack command runs on an unknown state",
+        "On a decline nothing merges and the file's path is named"
       ]
     }
   ]

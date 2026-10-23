@@ -41,9 +41,9 @@
     {
       "id": 4,
       "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, CI watcher CircleCI, Remote yes. CI failed on my PR after the push. What now?",
-      "expected_output": "Reports the failing checks, summarizes the failing logs, gives a short root-cause read, then stops and asks whether to investigate — with no tracker move on red.",
+      "expected_output": "Reports the failing checks, links the failing CircleCI checks, gives a short root-cause read, then stops and asks whether to investigate — with no tracker move on red.",
       "assertions": [
-        "Reports which checks failed and summarizes the failing logs via gh run view --log-failed",
+        "Reports which checks failed and, since the CI is CircleCI, gives each failing check's URL rather than running gh run view (which only reads GitHub Actions logs)",
         "Gives a short root-cause read",
         "Stops and asks before doing anything — no auto-fix and no re-push",
         "Performs no tracker move on red",
@@ -77,9 +77,9 @@
     {
       "id": 7,
       "prompt": "Profile: Ticket system Jira (ACME), Git source GitHub (acme), Default branch main, CI watcher GitHub Actions, PR shape 'draft-first, squash, gh stack for a multi-PR change, no required approval', Remote yes. I just ran gh stack submit. The stack is feat/base (PR #11, draft, ACME-3001), feat/api (PR #12, draft, ACME-3002) and feat/ui (PR #13, draft, ACME-3003), and I'm standing on feat/ui.",
-      "expected_output": "Reads references/gh-stack-followup.md in full, enumerates all three members from gh stack view --json plus one gh pr view each, offers one gate naming the whole stack, watches all three PRs' checks, and on green advances only #11 — marks it ready, reports the reviewers the forge assigned, and moves ACME-3001 alone — reporting #12 and #13 by number with why they wait.",
+      "expected_output": "Reads references/gh-stack-followup.md in full, enumerates all three members from the lookup's line (exit 0 by current branch) plus one gh pr view each, offers one gate naming the whole stack, watches all three PRs' checks, and on green advances only #11 — marks it ready, reports the reviewers the forge assigned, and moves ACME-3001 alone — reporting #12 and #13 by number with why they wait.",
       "assertions": [
-        "Enumerates the members with gh stack view --json before resolving any single PR",
+        "Enumerates the members from the lookup before resolving any single PR, and runs no gh stack command",
         "Does not resolve only the current branch's PR, even though the user is standing on feat/ui",
         "Watches every live member's checks, not just the current branch's, because a stack push republishes every branch",
         "Applies the staged-CI re-gather per member and treats a pending check as blocking, not as green",
@@ -91,14 +91,14 @@
     },
     {
       "id": 8,
-      "prompt": "Profile: Ticket system Jira (ACME), Git source GitHub (acme), Default branch main, CI watcher GitHub Actions, PR shape 'draft-first, squash, gh stack for a multi-PR change', Remote yes. I just pushed feat/solo, whose PR targets main. gh stack view reports it is not part of a stack, and no open PR targets feat/solo.",
+      "prompt": "Profile: Ticket system Jira (ACME), Git source GitHub (acme), Default branch main, CI watcher GitHub Actions, PR shape 'draft-first, squash, gh stack for a multi-PR change', Remote yes. I just pushed feat/solo, whose PR targets main. The metadata lists no stack for feat/solo, so the lookup exits 3, and no open PR targets feat/solo.",
       "expected_output": "The row says the repo stacks; the command says this branch does not. The PR walk runs the --base query anyway, because a bottom-of-stack PR also targets the trunk, finds no children, and the run then takes the ordinary single-PR path without mentioning stacks to the user.",
       "assertions": [
         "The PR shape row alone does not make the run treat one branch as a stack",
         "The --base query still runs even though the PR's base is the Default branch, because that is the bottom-of-stack case",
         "Finding no children closes the path file and takes Step 0's single-PR path",
         "Exactly one gh pr checks --watch runs, for the one PR",
-        "No gh stack command other than the single gh stack view --json is issued"
+        "No gh stack command is issued at all"
       ]
     }
   ]
