@@ -10,6 +10,11 @@ lands as a stack. The PR-stage skills read that clause, and there is no separate
 replaces the whole cell, so a repo that keeps its own `PR shape` must repeat the clause to keep the
 habit.
 
+The `Stack review` row says how pr-followup advances a stack. `bottom-up` advances only the bottom
+open PR, because the stack is reviewed one PR at a time. `all at once` advances every live member
+once all are green, because the whole stack merges together. An unset row reads as `all at once`.
+It matters only where `PR shape` carries the stack clause.
+
 The resolver every consumer shares is `~/.agents/skills/workflow-profile/scripts/resolve-profile.sh`:
 hooks source it, and `bash … --rows` prints the merged table for anything else.
 

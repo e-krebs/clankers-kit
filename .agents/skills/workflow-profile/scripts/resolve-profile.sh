@@ -82,6 +82,12 @@ resolve_profile() {
   return 0
 }
 
+# _profile_table <file> — prints the "| Field | Value |" table only, so another table in the
+# file (e.g. under Tracker rules) never leaks rows.
+_profile_table() {
+  awk '/^\| Field \| Value \|$/ { t = 1 } t && !/^\|/ { exit } t' "$1" 2>/dev/null
+}
+
 # profile_field <Field> — prints the repo override's value when present and not "—", else the
 # org file's value when present and not "—", else nothing (and no trailing newline).
 profile_field() {
@@ -89,7 +95,7 @@ profile_field() {
   prefix="| $target |"
   for file in "$PROFILE_REPO_FILE" "$PROFILE_ORG_FILE"; do
     [ -f "$file" ] || continue
-    line=$(grep -Fm1 -- "$prefix" "$file" 2>/dev/null)
+    line=$(_profile_table "$file" | grep -Fm1 -- "$prefix")
     [ -n "$line" ] || continue
     val="${line#"$prefix"}"
     [ "$val" != "$line" ] || continue          # grep hit but not anchored at line start
@@ -146,7 +152,7 @@ profile_rows() {
         fields+=("$_RF")
         values+=("$_RV")
       fi
-    done < "$file"
+    done < <(_profile_table "$file")
   done
 
   printf '| Field | Value |\n| --- | --- |\n'
@@ -160,7 +166,39 @@ profile_resolved() {
   [ -n "$PROFILE_ORG_FILE" ] || [ -n "$PROFILE_REPO_FILE" ]
 }
 
-# CLI: `bash resolve-profile.sh [--rows|--field <Field>|--files] [cwd]` — the same resolution the hooks
+# profile_verify_commands — prints the Verify commands row as `<dir>\t<command>` lines (dir empty
+# when the row has no `<dir>:` prefix). Owns the row grammar: optional `<dir>: ` prefix, one outer
+# backtick pair stripped, then backtick spans split on `; ` / `, `, else a plain split on `, `.
+# Prints nothing for `—` or an absent row.
+# shellcheck disable=SC2016  # literal backticks
+profile_verify_commands() {
+  local val="" dir="" nl=$'\n' cmd
+  local line
+  while IFS= read -r line; do
+    _parse_table_line "$line" && [ "$_RF" = "Verify commands" ] && val="$_RV"   # not profile_field: it cuts at |
+  done < <(profile_rows)
+  [ -n "$val" ] && [ "$val" != "—" ] || return 0
+  if [[ "$val" =~ ^([A-Za-z0-9_./-]+):\ (.*)$ ]]; then
+    dir="${BASH_REMATCH[1]}"
+    val="${BASH_REMATCH[2]}"
+  fi
+  case "$val" in
+    \`*\`) val="${val#\`}"; val="${val%\`}" ;;
+  esac
+  case "$val" in
+    *'`; `'* | *'`, `'*)
+      val="${val//'`; `'/$nl}"
+      val="${val//'`, `'/$nl}"
+      ;;
+    *) val="${val//, /$nl}" ;;
+  esac
+  while IFS= read -r cmd; do
+    [ -n "$cmd" ] && printf '%s\t%s\n' "$dir" "$cmd"
+  done <<<"$val"
+  return 0
+}
+
+# CLI: `bash resolve-profile.sh [--rows|--field <Field>|--verify-commands|--files] [cwd]` — the same resolution the hooks
 # use, for a skill that finds no profile rows in context. Sourcing the file runs none of this.
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   mode="${1:---rows}"
@@ -176,7 +214,8 @@ if [ "${BASH_SOURCE[0]}" = "$0" ]; then
   case "$mode" in
     --rows) profile_rows ;;
     --field) profile_field "$field"; printf '\n' ;;
+    --verify-commands) profile_verify_commands ;;
     --files) printf '%s\n%s\n' "${PROFILE_ORG_FILE:-none}" "${PROFILE_REPO_FILE:-none}" ;;
-    *) printf 'usage: resolve-profile.sh [--rows|--field <Field>|--files] [cwd]\n' >&2; exit 2 ;;
+    *) printf 'usage: resolve-profile.sh [--rows|--field <Field>|--verify-commands|--files] [cwd]\n' >&2; exit 2 ;;
   esac
 fi

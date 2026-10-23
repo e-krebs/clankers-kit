@@ -15,7 +15,8 @@ which is a symlink into a dotfiles repo. Two files resolve for one repo: `<owner
 the org template, `repos/<repo>.md` overrides the rows that differ. This skill inspects what
 is there, proposes the rest, asks about the deltas in one round, and writes the tables. The
 resolver every consumer shares is [scripts/resolve-profile.sh](scripts/resolve-profile.sh):
-hooks source it, and a skill with no rows in context runs it with `--rows`. When the user asks
+hooks source it, and a skill with no rows in context runs it with `--rows`; `--verify-commands`
+prints the Verify commands row as one command per line. When the user asks
 how the workflow skills fit together, or which stage to enter, load
 [references/workflow-map.md](references/workflow-map.md): the map of the composable set, its
 stages, and the hooks that glue them, with the diagram in `workflow-map.html` beside it.
@@ -88,6 +89,9 @@ which applies to every command in that cell.
   stack. They read the clause, not a bare mention, so a negated one such as `no gh stack here`
   means no stacking. Git source, Commit policy and Remote outrank it, because a non-GitHub source,
   `direct commits to main` and `local-only` each leave no stack to build.
+- [scripts/gh-stack-lookup.sh](scripts/gh-stack-lookup.sh) `--pr <n>` or `--branch <name>` prints
+  the stack a PR or branch belongs to, read from gh stack's metadata in the git common dir. Exit 3
+  means no match, 4 no stack file, 5 an unreadable one.
 - Write through the real path that `readlink` returns: a guard hook can refuse a write through
   the `~/.agents/workflow-profiles` symlink.
 - The `.asked/` markers belong to the session-start hook, which writes them to nudge once.

@@ -2,8 +2,8 @@
   "evals": [
     {
       "name": "fresh-remote-repo-proposes-org-template",
-      "prompt": "Set up the workflow profile for this repo. Its origin is git@github.com:acme/hotkey.git and no profile file exists yet.",
-      "expected_output": "Resolves the real profiles directory with readlink, reports that neither acme.md nor repos/hotkey.md exists, and proposes a full twelve-row org template with Git source 'GitHub (acme)', Default branch from origin/HEAD (else main), Ticket system none, CI watcher none, PR shape n/a, Remote yes, the three repo facts as —, and Reviewers listing only the review agents actually installed. Asks about the deltas in a single batched question call before writing anything.",
+      "prompt": "Set up the workflow profile for this repo. Its origin is git@github.com:acme/widgets.git and no profile file exists yet.",
+      "expected_output": "Resolves the real profiles directory with readlink, reports that neither acme.md nor repos/widgets.md exists, and proposes a full twelve-row org template with Git source 'GitHub (acme)', Default branch from origin/HEAD (else main), Ticket system none, CI watcher none, PR shape n/a, Remote yes, the three repo facts as —, and Reviewers listing only the review agents actually installed. Asks about the deltas in a single batched question call before writing anything.",
       "assertions": [
         "Parses owner and repo from the ssh remote form",
         "Resolves the profiles directory via readlink and writes through the real path",
@@ -15,7 +15,7 @@
     },
     {
       "name": "stack-answer-adds-only-the-clause",
-      "prompt": "Refresh the workflow profile for this repo. Its origin is git@github.com:acme/hotkey.git, acme.md has PR shape 'draft-first, squash, CODEOWNERS review', and I confirm a multi-PR change should land as a stack.",
+      "prompt": "Refresh the workflow profile for this repo. Its origin is git@github.com:acme/widgets.git, acme.md has PR shape 'draft-first, squash, CODEOWNERS review', and I confirm a multi-PR change should land as a stack.",
       "expected_output": "Writes PR shape as 'draft-first, squash, gh stack for a multi-PR change, CODEOWNERS review' — the existing habits kept verbatim, the clause added inside the same cell — and touches no other row. The report shows that single row as old → new.",
       "assertions": [
         "The clause is added inside the PR shape cell, not as a new row",
