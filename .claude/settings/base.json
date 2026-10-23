@@ -1,5 +1,8 @@
 {
   "permissions": {
-    "allow": []
+    "allow": [
+      "Read(~/.claude/plans/**)",
+      "Edit(~/.claude/plans/**)"
+    ]
   }
 }

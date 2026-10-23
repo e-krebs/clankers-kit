@@ -55,6 +55,8 @@ Then open `.agents/AGENTS.md` and write how you work, and restart Claude Code.
 | `.agents/skills/`            | The [skill catalog](.agents/skills/README.md): a workflow family, a review family, TypeScript tips.                    |
 | `.agents/hooks/`             | The shared hook scripts, their `hooks.json` fragments, the composer, the fixtures. See [docs/hooks.md](docs/hooks.md). |
 | `.agents/workflow-profiles/` | Per-org and per-repo tables the workflow skills read: ticket system, commit policy, CI watcher, verify commands.       |
+| `.agents/workflow-models/`   | The model tiers the workflow skills pick from, with the Claude and Codex model mappings.                               |
+| `.claude/agents/`           | The Claude tier agent definitions, linked into `~/.claude/agents`.                                                     |
 | `.claude/settings/`          | Opt-in setting presets, merged additively: the safe-command allowlist, the Plain-by-default style, `base.json`.        |
 | `.claude/output-styles/`     | The Plain output style: Simplified Technical English, five units per reply, no bold.                                   |
 | `.claude/projects/`          | Where the per-project memory is tracked.                                                                               |

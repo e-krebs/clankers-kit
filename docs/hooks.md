@@ -11,6 +11,9 @@ subject gate, session cleanup, canonical memory, and the memory ask gate. It als
 `skill trigger hooks` toggle, off by default. Turn that one on to compose the `hooks.json` of
 every active skill too.
 
+The notification sounds stay silent when `CLANKERS_SILENT` is set, and when the event comes from
+a subagent (its input carries `agent_id`), since a subagent has no visible turn.
+
 ## Fragments
 
 A fragment is plugin `hooks.json` content. It holds the usual events and matchers, but every
@@ -20,8 +23,9 @@ A fragment is plugin `hooks.json` content. It holds the usual events and matcher
 - `${CLAUDE_PLUGIN_ROOT}/skills/<name>/hooks/<script>.sh` for a skill's own.
 
 An argument goes in the script's header instead. That header is one line, `# codex: yes`,
-`# codex: no`, or `# codex: yes args=<string>`. `no` drops the hook from the Codex wiring, and
-the composer appends `args` to the Codex command only.
+`# codex: no`, `# codex: only`, or `# codex: yes args=<string>` (`only args=<string>` too). `no`
+drops the hook from the Codex wiring, `only` drops it from the Claude wiring, and the composer
+appends `args` to the Codex command only.
 
 ## The composer
 

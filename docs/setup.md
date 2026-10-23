@@ -62,8 +62,10 @@ disk, and lets you activate more rows.
 
 ## Layout
 
-- `~/.claude` holds the Claude-only config: `settings.json` and the project memories.
-- `~/.agents` holds what the agents share: the skills and the workflow profiles.
+- `~/.claude` holds the Claude-only config: `settings.json`, the project memories and the tier
+  agents in `agents/`.
+- `~/.agents` holds what the agents share: the skills, the workflow profiles and the model tiers
+  in `workflow-models/`.
 - `~/.codex` holds the Codex-only config: the hook wiring and the `AGENTS.md` link.
 
 One source file, `.agents/AGENTS.md` in the repo, is linked per agent, as `~/.claude/CLAUDE.md`
