@@ -14,7 +14,7 @@ pass() { echo "smoke: ok — $*"; }
 # --components list names the exact set, so this is the "everything" baseline
 ALL="memories,workflow-profiles,instructions,plain-style,output-style,allowlist,workflow-profile,write-plan,ticket-kickoff,verify,changes-to-pr,pr-followup,pr-merge,rebase-branch,review-changes,skill-review,hooks-review,memory-review,clankers-review,typescript-tips,enforcement,notification,commit-subject-gate,session-cleanup,canonical-memory,memory-ask-gate"
 # the default runs skip the upstream row: it needs the network and lands outside the repo
-NOUP="--without writing-for-agents"
+NOUP="--without writing-for-agents,unslop"
 
 copy_repo() {                       # $1 = destination; a copy without .git, like --sandbox makes
   cp -R "$repo" "$1"
@@ -82,7 +82,7 @@ grep -q 'settings    unchanged' "$tmp/rerun.log" || { cat "$tmp/rerun.log" >&2; 
 pass "identical re-run"
 
 # --- 3. --without drops a row and deactivates its skill ------------------------------------------
-HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without typescript-tips,writing-for-agents > /dev/null
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without typescript-tips,writing-for-agents,unslop > /dev/null
 [ ! -e "$H/.claude/skills/typescript-tips" ] || fail "--without left ~/.claude/skills/typescript-tips"
 [ ! -e "$H/.agents/skills/typescript-tips" ] || fail "--without left ~/.agents/skills/typescript-tips"
 [ -L "$H/.claude/skills/rebase-branch" ] || fail "--without dropped an unrelated skill"
@@ -90,10 +90,10 @@ pass "--without deactivates a skill"
 
 # --- 3b. --without on a link row restores a real copy ----------------------------------------
 # canonical-memory requires memories, so dropping memories alone re-checks it: both go
-HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without memories,writing-for-agents > "$tmp/without-mem.log" 2>&1
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without memories,writing-for-agents,unslop > "$tmp/without-mem.log" 2>&1
 grep -q 'kept on.*memories (required by' "$tmp/without-mem.log" || fail "--without memories alone should be re-checked by its dependants"
 [ -L "$H/.claude/projects" ] || fail "--without memories alone unlinked a required row"
-HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without memories,canonical-memory,memory-review,clankers-review,writing-for-agents > /dev/null 2>&1
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without memories,canonical-memory,memory-review,clankers-review,writing-for-agents,unslop > /dev/null 2>&1
 jq -e '[.hooks[][].hooks[].command] | any(contains("canonical-memory"))' "$H/.claude/settings.json" >/dev/null && fail "--without canonical-memory left its hook wired"
 { [ ! -L "$H/.claude/projects" ] && [ -d "$H/.claude/projects" ]; } || fail "--without memories left the link"
 [ -f "$H/.claude/projects/README.md" ] || fail "--without memories lost the content"
@@ -123,7 +123,7 @@ jq -e '[.hooks[][].hooks[].command] | any(contains("play-sound"))' "$H/.codex/ho
 pass "codex wiring recomposed on a claude-only run"
 
 # --- 3c. --without on a hooks row drops its entries from both wiring files ---------------------
-HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without notification,writing-for-agents > /dev/null
+HOME="$H" bash "$K/setup.sh" --yes --no-private --agents claude,codex --without notification,writing-for-agents,unslop > /dev/null
 jq -e '[.hooks[][].hooks[].command] | any(contains("play-sound"))' "$H/.claude/settings.json" >/dev/null && fail "--without notification left play-sound in settings.json"
 jq -e '[.hooks[][].hooks[].command] | any(contains("play-sound"))' "$H/.codex/hooks.json" >/dev/null && fail "--without notification left play-sound in the Codex wiring"
 jq -e '[.hooks[][].hooks[].command] | any(contains("forbid-bash-patterns"))' "$H/.claude/settings.json" >/dev/null || fail "--without notification dropped an unrelated hook"

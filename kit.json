@@ -218,9 +218,18 @@
       "group": "other",
       "kind": "upstream",
       "label": "writing-for-agents",
-      "description": "Matt Pocock's guide to writing documents for agents (skills, AGENTS.md); skill-review reads it when present. Installed with the skills CLI (npx skills add mattpocock/skills) into ~/.agents/skills, not tracked in this repo. It was named writing-great-skills before its v1.1.",
+      "description": "Matt Pocock's guide to writing documents for agents (skills, AGENTS.md); skill-review reads it when present. Installed with the skills CLI (npx skills add mattpocock/skills) into ~/.agents/skills, not tracked in this repo.",
       "needs": ["npx"],
       "upstream": { "source": "mattpocock/skills", "skill": "writing-for-agents" }
+    },
+    {
+      "id": "unslop",
+      "group": "other",
+      "kind": "upstream",
+      "label": "unslop",
+      "description": "Cut AI tells from any writing (the pstack skill from cursor/plugins). Installed with the skills CLI (npx skills add cursor/plugins --skill unslop) into ~/.agents/skills, not tracked in this repo.",
+      "needs": ["npx"],
+      "upstream": { "source": "cursor/plugins", "skill": "unslop" }
     },
     {
       "id": "enforcement",

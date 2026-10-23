@@ -42,6 +42,7 @@ lives in [workflow-profile/references/workflow-map.md](workflow-profile/referenc
 | --- | --- |
 | [`typescript-tips`](typescript-tips/) | TypeScript best-practice conventions to apply to the `.ts`/`.tsx` you write, edit or review. |
 | `writing-for-agents` | Matt Pocock's guide to writing documents for agents; `skill-review` reads it when present. Not tracked here: `setup.sh` installs it with `npx skills add mattpocock/skills --skill writing-for-agents` into `~/.agents/skills/`. |
+| `unslop` | Cut AI tells from any writing. Not tracked here: `setup.sh` installs it with `npx skills add cursor/plugins --skill unslop` into `~/.agents/skills/`. |
 
 ## Skill hooks
 
