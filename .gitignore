@@ -11,6 +11,8 @@
 !.agents/hooks/**
 !.agents/workflow-profiles/
 !.agents/workflow-profiles/**
+!.agents/workflow-models/
+!.agents/workflow-models/**
 # per-machine nudge markers
 .agents/workflow-profiles/.asked/*
 !.agents/workflow-profiles/.asked/.gitkeep
@@ -31,6 +33,8 @@
 !.claude/settings.json
 !.claude/settings/
 !.claude/settings/**
+!.claude/agents/
+!.claude/agents/**
 !.claude/output-styles/
 !.claude/output-styles/**
 !.claude/projects/

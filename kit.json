@@ -46,6 +46,27 @@
       ]
     },
     {
+      "id": "workflow-models",
+      "group": "layout",
+      "kind": "links",
+      "label": "model tiers",
+      "description": "~/.agents/workflow-models into the repo: tier definitions and model mappings for Claude and Codex.",
+      "links": [
+        { "home": ".agents/workflow-models", "repo": ".agents/workflow-models", "type": "dir" }
+      ]
+    },
+    {
+      "id": "agents",
+      "group": "layout",
+      "kind": "links",
+      "label": "tier agents",
+      "description": "Claude tier agent definitions linked into the repo at ~/.claude/agents.",
+      "agents": ["claude"],
+      "links": [
+        { "home": ".claude/agents", "repo": ".claude/agents", "type": "dir" }
+      ]
+    },
+    {
       "id": "instructions",
       "group": "instructions",
       "kind": "links",
