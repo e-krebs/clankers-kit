@@ -85,6 +85,14 @@ else
   fail_case "$case_name" "expected true for <command-name>"
 fi
 
+case_name="notification-subagent-handback"
+if prompt_is_notification '<agent-message from="a123">
+[Subagent hand-back] The report quotes "pick up the next ticket" and "merge the PR".'; then
+  pass "$case_name"
+else
+  fail_case "$case_name" "expected true for a subagent hand-back"
+fi
+
 case_name="notification-plain-prompt-false"
 if prompt_is_notification "just a normal prompt"; then
   fail_case "$case_name" "expected false for a plain prompt"
@@ -133,5 +141,16 @@ if prompt_matches_sibling_nudge "create a jira ticket for this"; then
 else
   pass "$case_name"
 fi
+
+# --- plan execution request regex ------------------------------------------------
+case_name="nudge-execute-re"
+err=""
+for p in "Execute the plan at /a/b/plan.md" "execute the approved plan at ~/.claude/plans/x.md." "Execute the plan at /a/plan.md then go"; do
+  [[ $p =~ $NUDGE_EXECUTE_RE ]] || err="${err:+$err; }no match: $p"
+done
+for p in "Execute the plan at plans/x.md" "Execute the plan at /a/plan.txt" "Execute the plan at /a/plan.mdx" "please Execute the plan at /a/plan.md" "EXECUTE THE PLAN AT /a/plan.md"; do
+  [[ $p =~ $NUDGE_EXECUTE_RE ]] && err="${err:+$err; }unexpected match: $p"
+done
+if [ -z "$err" ]; then pass "$case_name"; else fail_case "$case_name" "$err"; fi
 
 exit $overall

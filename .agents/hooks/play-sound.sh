@@ -4,11 +4,14 @@
 # the "notify" sound; Stop plays the "stop" sound; anything else is silent. Silent no-op when no
 # audio player is available. This is the ONE place to edit sounds / OS support.
 # Wired from .agents/hooks/notification.json; PLAY_SOUND_DRY_RUN=1 prints the sound kind instead
-# of playing it, which is what the fixture asserts on.
+# of playing it, which is what the fixture asserts on. CLANKERS_SILENT=1 mutes it, and a subagent
+# firing (its input carries agent_id) is silent too, since it has no visible turn.
 # codex: yes
 set -u
 
+[ -n "${CLANKERS_SILENT:-}" ] && exit 0
 input=$(cat 2>/dev/null) || exit 0
+[ -n "$(printf '%s' "$input" | jq -r '.agent_id // empty' 2>/dev/null)" ] && exit 0
 event=$(printf '%s' "$input" | jq -r '.hook_event_name // empty' 2>/dev/null)
 case "$event" in
   Notification|PermissionRequest) kind=notify ;;

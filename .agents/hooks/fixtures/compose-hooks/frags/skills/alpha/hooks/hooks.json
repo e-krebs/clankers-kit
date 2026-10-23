@@ -2,6 +2,10 @@
   "hooks": {
     "UserPromptSubmit": [
       { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/alpha/hooks/alpha-nudge.sh", "timeout": 5 } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/alpha/hooks/alpha-only.sh", "timeout": 5 } ] },
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/alpha/hooks/alpha-only-args.sh", "timeout": 5 } ] }
     ]
   }
 }

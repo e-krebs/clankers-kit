@@ -3,10 +3,11 @@
 # one per skill under skills/<name>/hooks/. A fragment is plugin hooks.json content whose script
 # commands read "${CLAUDE_PLUGIN_ROOT}/<path>"; the composer substitutes --root, wraps the path in
 # bash "...", and passes any other command through untouched (inline hooks). Each script must
-# exist under the local root and carry a header line "# codex: yes", "# codex: no" or
-# "# codex: yes args=<string>": "no" drops it from the Codex output, args are appended to the
-# Codex command only. The Codex output also renames Notification to PermissionRequest (no
-# matcher) and caps SessionEnd timeouts at 3. Only the .hooks key of each output changes.
+# exist under the local root and carry a header line "# codex: yes|no|only", optionally followed
+# by " args=<string>" after yes or only: "no" drops it from the Codex output, "only" drops it from
+# the Claude output, args are appended to the Codex command only. The Codex output also renames
+# Notification to PermissionRequest (no matcher) and caps SessionEnd timeouts at 3. Only the
+# .hooks key of each output changes.
 #
 # Usage: compose-hooks.sh --root <install root> --own all|skills|root --claude <settings.json>
 #        [--codex <hooks.json>] [--local <checkout root>] [<fragment>...]
@@ -53,7 +54,7 @@ local_root="$(CDPATH='' cd -P "$local_root" && pwd)"
 root="${root%/}"
 
 # --- validate fragments and collect script metadata -----------------------------------------
-# meta: {"<rel path>": {"codex": "yes|no", "args": "<string>"}}
+# meta: {"<rel path>": {"codex": "yes|no|only", "args": "<string>"}}
 meta='{}'
 for frag in ${frags[@]+"${frags[@]}"}; do
   [ -f "$frag" ] || { echo "compose-hooks: fragment not found: $frag" >&2; exit 1; }
@@ -90,12 +91,13 @@ for frag in ${frags[@]+"${frags[@]}"}; do
     esac
     script="$local_root/$rel"
     [ -f "$script" ] || { echo "compose-hooks: $frag: script not found: $script" >&2; exit 1; }
-    header=$(grep -m1 -E '^# codex: (yes|no)( args=.+)?$' "$script" || true)
-    [ -n "$header" ] || { echo "compose-hooks: $script: missing '# codex: yes|no' header line" >&2; exit 1; }
+    header=$(grep -m1 -E '^# codex: (yes|no|only)( args=.+)?$' "$script" || true)
+    [ -n "$header" ] || { echo "compose-hooks: $script: missing '# codex: yes|no|only' header line" >&2; exit 1; }
     mode="${header#\# codex: }"
     args=""
     case "$mode" in
       "yes args="*) args="${mode#yes args=}"; mode=yes ;;
+      "only args="*) args="${mode#only args=}"; mode=only ;;
     esac
     meta=$(jq -c --arg rel "$rel" --arg mode "$mode" --arg args "$args" '.[$rel] = {codex: $mode, args: $args}' <<< "$meta")
   done < <(jq -r '.hooks[][]?.hooks[]?.command // empty' "$frag")
@@ -109,7 +111,7 @@ def rewrite_hook:
   if ((.command // "") | startswith("${CLAUDE_PLUGIN_ROOT}/")) then
     (.command | ltrimstr("${CLAUDE_PLUGIN_ROOT}/")) as $rel
     | $meta[$rel] as $m
-    | if $agent == "codex" and $m.codex == "no" then empty
+    | if ($agent == "codex" and $m.codex == "no") or ($agent == "claude" and $m.codex == "only") then empty
       else .command = "bash \"" + $root + "/" + $rel + "\"" + (if $agent == "codex" and $m.args != "" then " " + $m.args else "" end)
       end
   else . end;

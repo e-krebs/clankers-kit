@@ -9,6 +9,10 @@
   "PermissionRequest": [
     { "hooks": [ { "type": "command", "command": "afplay /S/x.aiff >/dev/null 2>&1 &", "timeout": 5 } ] }
   ],
+  "Stop": [
+    { "hooks": [ { "type": "command", "command": "bash \"/R/skills/alpha/hooks/alpha-only.sh\"", "timeout": 5 } ] },
+    { "hooks": [ { "type": "command", "command": "bash \"/R/skills/alpha/hooks/alpha-only-args.sh\" x", "timeout": 5 } ] }
+  ],
   "PreToolUse": [
     { "matcher": "Bash", "hooks": [ { "type": "command", "command": "bash \"/R/hooks/shared-c.sh\" codex", "timeout": 5 } ] }
   ],

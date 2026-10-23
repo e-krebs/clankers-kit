@@ -6,11 +6,12 @@
 source "$(dirname "${BASH_SOURCE[0]}")/hook-log.sh"
 
 # prompt_is_notification <prompt> — true for text an agent or the harness produced, not the
-# user: a task notification, a system notification, or a typed slash command expansion. A hook
-# that keys on user phrasing exits 0 on these, so a quoted phrase in a report never fires it.
+# user: a task notification, a system notification, a subagent's hand-back message, or a typed
+# slash command expansion. A hook that keys on user phrasing exits 0 on these, so a quoted phrase
+# in a report never fires it.
 prompt_is_notification() {
   case "$1" in
-    *'<task-notification>'*|*'[SYSTEM NOTIFICATION'*|*'<command-name>'*) return 0 ;;
+    *'<task-notification>'*|*'[SYSTEM NOTIFICATION'*|*'<command-name>'*|*'<agent-message from='*|*'[Subagent hand-back]'*) return 0 ;;
   esac
   return 1
 }
@@ -42,6 +43,11 @@ emit_context() {
 # Shared regexes for the sibling nudges plan-nudge branch A yields to.
 NUDGE_MERGE_RE="merge (the |this |my |that )?(pr|pull request)([^[:alnum:]]|$)"
 NUDGE_PICKUP_RE='pick[[:space:]]?up[[:space:]]+((the|my|a|your|our)[[:space:]]+)?next[[:space:]]+(pr|ticket|task|issue|story)'
+
+# A plan execution request: match it against the whole trimmed prompt with [[ =~ ]], so ^ anchors
+# to the prompt start, not to any line. plan-execute routes it and plan-nudge yields to it.
+# shellcheck disable=SC2034
+NUDGE_EXECUTE_RE='^[Ee]xecute the (approved )?plan at (/|~/)[^[:space:]]*\.md([^[:alnum:]]|$)'
 
 # prompt_matches_sibling_nudge <prompt> — true when the prompt would also fire merge-nudge or
 # pick-up-next-ticket. plan-nudge branch A yields to these; create-ticket-nudge is not listed

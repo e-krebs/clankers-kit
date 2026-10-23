@@ -52,6 +52,12 @@ case "$x_cmd" in *'shared-c.sh" codex') x_ok=1 ;; *) x_ok=0 ;; esac
 case "$c_cmd" in *'shared-c.sh"') c_ok=1 ;; *) c_ok=0 ;; esac
 if [ "$x_ok" = 1 ] && [ "$c_ok" = 1 ]; then pass codex-arg-asymmetry; else fail_case codex-arg-asymmetry "claude: $c_cmd / codex: $x_cmd"; fi
 
+# --- a "# codex: only" script lands on Codex alone, its args on the Codex command ----------------
+if grep -q 'alpha-only' "$work/c.json"; then fail_case codex-only-absent-from-claude "$(grep 'alpha-only' "$work/c.json")"
+else pass codex-only-absent-from-claude; fi
+if grep -qF 'alpha-only.sh\"",' "$work/x.json"; then pass codex-only-on-codex; else fail_case codex-only-on-codex "alpha-only.sh missing or carries an arg"; fi
+if grep -qF 'alpha-only-args.sh\" x"' "$work/x.json"; then pass codex-only-args-on-codex; else fail_case codex-only-args-on-codex "alpha-only-args.sh missing or lacks its arg"; fi
+
 # --- a second run changes nothing and says so --------------------------------------------------
 before=$(cat "$work/c.json" "$work/x.json")
 out=$(compose "$work/c.json" "$work/x.json" all "${good_frags[@]}" 2>&1)
@@ -217,14 +223,24 @@ if [ ${#skill_frags[@]} -gt 0 ] && [ -f "$hooks_dir/hooks.json" ] && [ -n "$inst
   n_codex=$(script_paths "$codex_json" | wc -l | tr -d ' ')
   if [ "$n_codex" -gt 0 ] && [ "$n_codex" = "$(script_hooks "$codex_json")" ]; then pass selector-covers-scripts
   else fail_case selector-covers-scripts "matched $n_codex of $(script_hooks "$codex_json")"; fi
-  missing=$(comm -23 <(script_paths "$codex_json") <(script_paths "$claude_json"))
+  local_of() { printf '%s\n' "$root/.agents/${1#"$install_root"/}"; }
+  # every Codex script outside the Codex-only set also runs under Claude
+  missing=""
+  while IFS= read -r p; do
+    grep -qE '^# codex: only' "$(local_of "$p")" 2>/dev/null || missing="$missing $p"
+  done < <(comm -23 <(script_paths "$codex_json") <(script_paths "$claude_json"))
   if [ -z "$missing" ]; then pass scripts-subset-of-claude; else fail_case scripts-subset-of-claude "$missing"; fi
+
+  only_in_claude=""
+  while IFS= read -r p; do
+    grep -qE '^# codex: only' "$(local_of "$p")" 2>/dev/null && only_in_claude="$only_in_claude $p"
+  done < <(script_paths "$claude_json")
+  if [ -z "$only_in_claude" ]; then pass no-codex-only-scripts-in-claude; else fail_case no-codex-only-scripts-in-claude "$only_in_claude"; fi
 
   # every script Codex runs says so in its header; every Claude-only one stays out
   leaked=""
   while IFS= read -r p; do
-    local_path="$root/.agents/${p#"$install_root"/}"
-    grep -qE '^# codex: yes' "$local_path" || leaked="$leaked $p"
+    grep -qE '^# codex: (yes|only)' "$(local_of "$p")" || leaked="$leaked $p"
   done < <(script_paths "$codex_json")
   if [ -z "$leaked" ]; then pass no-claude-only-scripts; else fail_case no-claude-only-scripts "$leaked"; fi
 
@@ -274,14 +290,24 @@ if [ ${#skill_frags[@]} -gt 0 ] && [ -f "$hooks_dir/hooks.json" ] && [ -n "$inst
   fbp=$(jq -r '.hooks.PreToolUse[].hooks[].command | select(test("forbid-bash-patterns"))' "$codex_json")
   case "$fbp" in *'forbid-bash-patterns.sh" codex') pass codex-arg-on-forbid-bash-patterns ;; *) fail_case codex-arg-on-forbid-bash-patterns "$fbp" ;; esac
 
-  # every referenced script exists and parses in this checkout
+  # each real `# codex: only` script is wired on Codex and absent from Claude
+  only_bad=""
+  for s in "$root"/.agents/hooks/*.sh "$root"/.agents/skills/*/hooks/*.sh; do
+    grep -qE '^# codex: only' "$s" || continue
+    rel=${s#"$root/.agents/"}
+    jq -e --arg r "$rel" '[.hooks[][].hooks[].command | select(contains($r))] | length > 0' "$codex_json" >/dev/null || only_bad="$only_bad missing-on-codex:$rel"
+    jq -e --arg r "$rel" '[.hooks[][].hooks[].command | select(contains($r))] | length == 0' "$claude_json" >/dev/null || only_bad="$only_bad on-claude:$rel"
+  done
+  if [ -z "$only_bad" ]; then pass codex-only-scripts-wired-on-codex-only; else fail_case codex-only-scripts-wired-on-codex-only "$only_bad"; fi
+
+  # every referenced script, from either wiring, exists and parses in this checkout
   syntax_ok=1
   while IFS= read -r p; do
-    local_path="$root/.agents/${p#"$install_root"/}"
+    local_path=$(local_of "$p")
     if ! { [ -f "$local_path" ] && bash -n "$local_path" 2>/dev/null; }; then
       syntax_ok=0; fail_case "exists+parses $p" "missing or bash -n failed"
     fi
-  done < <(script_paths "$claude_json")
+  done < <(sort -u <(script_paths "$claude_json") <(script_paths "$codex_json"))
   [ "$syntax_ok" = 1 ] && pass scripts-exist-and-parse
 
   # a moved nudge finds the shared library on its own, from a bare checkout, with the env unset
