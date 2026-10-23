@@ -17,7 +17,7 @@ here they run in `gather` mode, then in `apply` mode with the approved verdicts.
 ## Phase 1 — gate 1: sub-topics
 
 Create the scratch dir `${TMPDIR:-/tmp}/clankers-review-<date>/` and record `git rev-parse HEAD`
-in the config repo root and today's date in its `findings.md`. Then ask one multi-select
+in the clankers repo root and today's date in its `findings.md`. Then ask one multi-select
 `AskUserQuestion`: which sub-topics this pass gathers. Options: memories
 (the per-project memory store), hooks (the hook scripts, wiring and the new-hook suggestions),
 skills (the authoring hygiene of every installed skill), AGENTS.md (the global instructions).
@@ -117,9 +117,8 @@ one landed. Done when every row of the table shows one of the five outcomes.
   and writes nothing outside the scratch dir; `apply <path>` asks nothing, reads only its own
   sub-topic's rows, and skips the chain.
 - The skill-review dependency is a user-granted exception to the no-cross-reference rule. When
-  that skill is absent, the skills sub-topic falls back to the lint runner named by
-  `SKILL_LINT_RUNNER` when that variable is set (for example `bash "$SKILL_LINT_RUNNER" .agents`)
-  and the repo's authoring conventions, and says so. If the runner is absent, the checklist is
-  the gate.
+  that skill is absent, the skills sub-topic falls back to the skill lint runner when one is
+  installed, and the repo's authoring conventions, and says so. If no runner is installed, the
+  checklist is the gate.
 - A sub-topic the user did not pick is not gathered, even when a worker would be cheap.
 - At runtime you may name any skill freely in questions and reports.

@@ -4,14 +4,14 @@
     {
       "id": 1,
       "prompt": "Profile: Ticket system Jira (ACME), Git source GitHub (acme), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, Remote yes. Kick off ACME-1234 for me.",
-      "expected_output": "Reads the injected profile rows, sees a tracker, follows the profile's Tracker rules section for the id/transition mechanics, reads ACME-1234 into a digest with an acceptance-criteria checklist plus any directly linked spec page, resolves the work-started move without performing it, and hands off to the planning capability.",
+      "expected_output": "Reads the injected profile rows, sees a tracker, follows the profile's Tracker rules section for the id/transition mechanics, reads ACME-1234 into a digest with an acceptance-criteria checklist plus any directly linked spec page, checks the status and moves the ticket to the work-started state best-effort, and hands off to the planning capability.",
       "assertions": [
         "Reads the workflow profile rows from context before touching the tracker",
         "Points at the profile's Tracker rules section for cloudId, transition-by-target-status and best-effort handling instead of restating those mechanics",
         "Produces a digest of ACME-1234 including an acceptance-criteria checklist",
         "Pulls a directly linked PRD/RFC spec page when one is linked, and skips it silently when the doc space is unreachable",
-        "Performs no tracker mutation during the kickoff — the work-started move is deferred",
-        "Ends by handing off to the planning capability, which writes the plan file and carries the deferred lines in its section 6",
+        "Checks the status first, then runs the work-started move at the end of Step 0, best-effort, or hands it to planning for row S0 when plan mode refuses the write",
+        "Ends by handing the digest and the outcomes to the planning capability, which writes the plan file",
         "Names no other skill anywhere in the run"
       ]
     },
@@ -22,21 +22,21 @@
       "assertions": [
         "States in one line that the repo has no ticket system, then goes straight to planning",
         "Makes no tracker call and asks no ticket question, including no offer to create one",
-        "Queues no tracker move in the plan's deferred actions",
+        "Hands no tracker write to planning, so the plan's row S0 holds at most the base refresh",
         "Hands the work to the planning capability rather than starting to edit files"
       ]
     },
     {
       "id": 3,
       "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, Remote yes. There's no ticket for this yet — I need a rate-limit guard on the rules API. Kick it off.",
-      "expected_output": "Takes the no-ticket branch: offers to create one, drafts a title and description for confirmation, gathers epic / sprint / assignee, prefers an available ticket-creation capability with an inline best-effort fallback, and defers the create to plan approval.",
+      "expected_output": "Takes the no-ticket branch: offers to create one, drafts a title and description for confirmation, gathers epic / sprint / assignee, prefers an available ticket-creation capability with an inline best-effort fallback, and runs the confirmed create at once, best-effort, or hands it to planning for row S0 when plan mode refuses it.",
       "assertions": [
         "Asks whether to create a ticket and drafts a title + description for confirm/edit",
         "Gathers the parent/epic, current-sprint and assignee fields before the create",
         "Prefers an available ticket-creation capability, with an inline best-effort create as the fallback",
         "Names no specific skill for the creation — describes it as an available capability",
-        "Defers the create to plan approval rather than creating during the kickoff",
-        "On a declined create, keeps the drafted ticket in the plan file and queues no tracker move"
+        "Runs a confirmed create at once, best-effort, and hands it to planning for row S0 only when the harness refuses it in plan mode",
+        "On a declined create, keeps the drafted ticket in the plan file and makes no tracker write"
       ]
     },
     {
@@ -53,23 +53,23 @@
     {
       "id": 5,
       "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, Remote yes. Kick off ACME-1500 — my board has no transition to In Progress from its current status, and ACME-2201 is already In Progress.",
-      "expected_output": "Neither case blocks: with no transition to the work-started state it offers the picker the Tracker rules prescribe plus Skip, and an already-started ticket is a silent skip; both outcomes ride into the plan's deferred actions.",
+      "expected_output": "Neither case blocks: with no transition to the work-started state it offers the picker the Tracker rules prescribe plus Skip, and an already-started ticket is a silent skip; both outcomes ride to the planning capability with the digest.",
       "assertions": [
         "Determines that no transition targets the work-started state and offers a picker plus Skip instead of erroring",
         "Treats an already-started ticket as a silent skip with no transition attempted",
-        "Carries the picker candidates or the skip into the plan's deferred kickoff actions",
+        "Hands the picker outcome or the skip to the planning capability, and a move refused in plan mode to row S0",
         "Treats any tracker error as best-effort — reports and continues, never blocking the work"
       ]
     },
     {
       "id": 6,
       "prompt": "Profile: Ticket system Jira (ACME), Default branch develop, Commit policy PRs never direct, CI watcher CircleCI, Remote yes. Kick off ACME-3010. My local develop is probably behind origin.",
-      "expected_output": "Reads the ticket, then hands off: the base-refresh question belongs to the planning capability, and the refresh appears as a deferred-actions line in the plan rather than a question asked during the kickoff.",
+      "expected_output": "Reads the ticket, then hands off: the base-refresh question belongs to the planning capability, and the refresh appears as the plan's row S0 rather than a question asked during the kickoff.",
       "assertions": [
         "Does not ask the refresh-the-base question itself — the planning capability owns it",
         "Runs no git fetch or base refresh during the kickoff",
-        "Expects the base refresh as a line in the plan's section 6 deferred kickoff actions, targeting the profile's Default branch develop",
-        "States that the deferred actions run on plan approval in the order the plan lists them, best-effort on the tracker move"
+        "Expects the base refresh in the plan's row S0, targeting the profile's Default branch develop",
+        "Runs the work-started move during the kickoff, best-effort, and hands planning only the outcomes, never a list of actions to run later"
       ]
     }
   ]

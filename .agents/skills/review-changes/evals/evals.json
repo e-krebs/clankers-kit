@@ -3,43 +3,43 @@
   "evals": [
     {
       "name": "working-tree-with-plan-in-context",
-      "prompt": "Profile: acme (Reviewers: claude, codex; Default branch main). The approved plan is in context and its Closing steps read \"verify → review (judgment tier × 2) → hand off to the PR capability\". The implementation is done and uncommitted. Run the review.",
-      "expected_output": "Targets the uncommitted diff, reads judgment × 2 from the plan's review line, launches a Claude subagent on Opus and codex on Astra in one parallel message, both read-only in the shared tree, then triages into one report.",
+      "prompt": "Profile: acme (Reviewers: claude, codex; Default branch main). The approved plan is in context and its Steps table ends with the Review, Gates, Approval and Hand-off rows, the Review row's Task reading \"Review: <tier> tier × 2\", the tier picked by shape. The implementation is done and uncommitted. Run the review.",
+      "expected_output": "Targets the uncommitted diff, reads <tier> × 2 from the plan's Review row, plans a claude subagent (subagent_type set to that tier) and a codex exec with the model and effort read from the tier's provider file, both in one message, read-only in the shared tree, each given the target line and the absolute path of references/review-prompt.md, then triages into one report.",
       "assertions": [
         "Target is the working tree, named with its diff command, not a branch range",
-        "Tier and count come from the plan's Closing steps review line, not from a question to the user",
-        "Two reviewers launched in one message: a claude subagent at Opus and codex at the judgment-tier model",
+        "Tier and count come from the Task cell of the plan's Review row, not from a question to the user",
+        "The dispatch (the launch calls, or the plan of them when the runner has no subagent tool) holds two reviewers in one message: a claude subagent with subagent_type set to the tier picked from ~/.agents/workflow-models/tiers.md by the shape of the work, and a codex command using that tier's model and effort from the provider file; each prompt carries the target line and the absolute path of references/review-prompt.md, not its pasted text",
         "Codex invoked as `codex exec --sandbox read-only` with stdin from /dev/null",
         "No worktree created and no file edited",
-        "One report: severity counts, findings P1 down with file:line and a fix, ruled-out list, per-reviewer counts"
+        "The report, or its skeleton when a reviewer could not run, has: a count per severity, findings from P1 down each with file:line, impact and fix, a ruled-out list, per-reviewer counts, and the static-review-only line; a missing reviewer shows as a named shortfall, not a clean result"
       ]
     },
     {
       "name": "pr-target-without-a-plan",
-      "prompt": "Profile: acme (Reviewers: claude, codex). Review PR 4821 for bugs. No plan file exists for this work.",
-      "expected_output": "Reads the PR diff through gh, falls back to one judgment-tier reviewer because neither a plan nor the caller supplied tier and count, and reports the fallback it applied.",
+      "prompt": "Profile: acme (Reviewers: claude, codex). Review PR 4821 for bugs. No plan file exists for this work, in a Claude Code session.",
+      "expected_output": "Reads the PR diff through gh, falls back to one reviewer because neither a plan nor the caller supplied tier and count, and reports the fallback it applied.",
       "assertions": [
         "PR read through `gh pr diff` / `gh pr view` rather than a checkout, unless a checkout is needed and then only after asking",
-        "Falls back to one reviewer at the judgment tier and states that fallback",
-        "The first Reviewers entry is the one that runs",
+        "Falls back to one reviewer at a tier picked from tiers.md by the shape of the work and states that fallback",
+        "codex, the first entry from another provider, is the one that runs",
         "No fix applied to the PR branch"
       ]
     },
     {
       "name": "plan-file-target-contract-gaps",
-      "prompt": "Profile: acme (Reviewers: claude, codex; Commit policy: direct commits to main). Review ~/.claude/plans/new-cache-layer.md before I approve it — it has no Verification heading and its Steps mention two files that Approach + Files never lists.",
-      "expected_output": "Reviews the plan text against the ten-heading contract, returns the missing Verification heading and the two unlisted files as ranked findings, and applies no edit to the plan.",
+      "prompt": "Profile: acme (Reviewers: claude, codex; Commit policy: direct commits to main). Review ~/.claude/plans/new-cache-layer.md before I approve it — it has no Run heading and its S2 brief edits two files that the S2 row's Files column never lists.",
+      "expected_output": "Reviews the plan text against the six-section contract, returns the missing Run heading and the two unlisted files as ranked findings, and applies no edit to the plan.",
       "assertions": [
         "Target kind is a plan file and reviewers read the plan text, not a code diff",
-        "Findings check the ten headings in order and flag the missing Verification section",
-        "Steps naming files absent from Approach + Files reported as a contradiction",
+        "Findings check the six headings in order (Summary, Decisions, Steps, Run, Plan review, Briefs) and flag the missing Run section",
+        "Files the brief edits but the row's Files column lacks reported as a finding",
         "Findings ranked P1-P3 and quote headings instead of file:line",
         "The plan file is not edited or completed by this skill"
       ]
     },
     {
       "name": "single-installed-reviewer-under-count-two",
-      "prompt": "Profile: a fixture org template whose Reviewers row reads `claude` only. The plan's review line reads \"judgment tier × 2\". Review the working tree.",
+      "prompt": "Profile: a fixture org template whose Reviewers row reads `claude` only. The plan's Review row reads \"<tier> tier × 2\". Review the working tree.",
       "expected_output": "Runs the one installed reviewer, and the report states that a count of 2 yielded one reviewer because the Reviewers row lists only claude.",
       "assertions": [
         "Exactly one reviewer runs; codex is not invoked",
@@ -50,13 +50,13 @@
     },
     {
       "name": "codex-stdin-and-tier-mapping",
-      "prompt": "Profile: acme. Review this branch against main with codex at the fast tier.",
-      "expected_output": "Runs the branch range against main, maps the fast tier to the codex Luna model, and invokes codex read-only with stdin redirected from /dev/null so the call cannot hang.",
+      "prompt": "Profile: acme. Review this branch against main with codex at a mid-scale worker tier.",
+      "expected_output": "Runs the branch range against main, maps that worker tier to its codex gpt-6-luna model at high effort, and invokes codex read-only with stdin redirected from /dev/null so the call cannot hang.",
       "assertions": [
         "Branch range computed from `git merge-base` against the profile's Default branch",
         "Tier and reviewer taken from the caller's words, no plan consulted",
         "`< /dev/null` present on the codex invocation",
-        "Model codename mapped from the tiers table, and the actual reviewing model recorded if codex rejects the codename"
+        "Model codename mapped from the tiers file, and the actual reviewing model recorded if codex rejects the codename"
       ]
     },
     {

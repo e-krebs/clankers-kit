@@ -1,10 +1,10 @@
 # Hook brief template
 
-One file per approved candidate at `~/.claude/plans/hook-<slug>.md`. It is self-contained: a
-later planning session reads it with no transcript. Six headings, in this order.
+One file per approved candidate at `~/.claude/plans/hook-<slug>.md`. It must stand alone,
+because a later planning session reads it with no transcript. Six headings, in this order.
 
 ```markdown
-# Hook brief — <rule in one clause>
+# Hook brief: <rule in one clause>
 
 ## Problem
 
