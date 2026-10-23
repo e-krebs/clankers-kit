@@ -12,7 +12,7 @@ pass() { echo "smoke: ok — $*"; }
 
 # every default-on row except the upstream skill (a network install) and mcp (needs claude); a
 # --components list names the exact set, so this is the "everything" baseline
-ALL="memories,workflow-profiles,instructions,plain-style,output-style,allowlist,workflow-profile,write-plan,ticket-kickoff,verify,changes-to-pr,pr-followup,pr-merge,rebase-branch,review-changes,skill-review,hooks-review,memory-review,clankers-review,typescript-tips,enforcement,notification,commit-subject-gate,session-cleanup,canonical-memory,memory-ask-gate"
+ALL="memories,workflow-profiles,workflow-models,agents,instructions,plain-style,output-style,allowlist,workflow-profile,write-plan,ticket-kickoff,verify,changes-to-pr,pr-followup,pr-merge,rebase-branch,review-changes,skill-review,hooks-review,memory-review,clankers-review,typescript-tips,enforcement,notification,commit-subject-gate,session-cleanup,canonical-memory,memory-ask-gate"
 # the default runs skip the upstream row: it needs the network and lands outside the repo
 NOUP="--without writing-for-agents,unslop"
 
@@ -39,7 +39,7 @@ cat "$tmp/install.log"
 grep -q 'play-sound.sh is shadowed' "$tmp/install.log" || fail "the colliding hook was not reported as shadowed"
 [ -f "$K/.agents/hooks/mine.sh" ] || fail "the user's own hook was not merged into the repo"
 grep -q 'a different play-sound' "$K/.agents/hooks/play-sound.sh" && fail "the kit's play-sound.sh was overwritten"
-for l in .claude/settings.json .claude/CLAUDE.md .claude/hooks .claude/projects .agents/workflow-profiles .codex/AGENTS.md .codex/hooks.json; do
+for l in .claude/settings.json .claude/CLAUDE.md .claude/hooks .claude/projects .agents/workflow-profiles .agents/workflow-models .claude/agents .codex/AGENTS.md .codex/hooks.json; do
   [ -L "$H/$l" ] || fail "$l is not a symlink"
 done
 [ "$(readlink "$H/.claude/hooks")" = "$K/.agents/hooks" ] || fail ".claude/hooks points at $(readlink "$H/.claude/hooks")"
