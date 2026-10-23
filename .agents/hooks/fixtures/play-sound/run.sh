@@ -27,5 +27,9 @@ expect "permission-request-plays-notify" permission-request.json notify
 expect "stop-plays-stop"                 stop.json               stop
 expect "other-event-is-silent"           other-event.json        ""
 expect "malformed-is-silent"             malformed.json          ""
+expect "subagent-stop-is-silent"         subagent-stop.json      ""
+
+muted=$(CLANKERS_SILENT=1 PLAY_SOUND_DRY_RUN=1 bash "$hook" < "$fixtures_dir/stop.json" 2>/dev/null)
+if [ -z "$muted" ]; then pass "clankers-silent-is-silent"; else fail_case "clankers-silent-is-silent" "out='$muted'"; fi
 
 exit $overall
