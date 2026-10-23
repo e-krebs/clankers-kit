@@ -1,13 +1,20 @@
 {
   "hooks": {
     "PreToolUse": [
-      { "matcher": "ExitPlanMode", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-gate.sh", "timeout": 10 } ] }
+      { "matcher": "ExitPlanMode", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-gate.sh", "timeout": 10 } ] },
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-approved-guard.sh", "timeout": 5 } ] }
     ],
     "UserPromptSubmit": [
-      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-nudge.sh", "timeout": 5 } ] }
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-nudge.sh", "timeout": 5 } ] },
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-followthrough-codex.sh", "timeout": 5 } ] },
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-approved-guard.sh", "timeout": 5 } ] }
     ],
     "PostToolUse": [
       { "matcher": "ExitPlanMode", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-followthrough.sh", "timeout": 5 } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-gate-codex.sh", "timeout": 10 } ] },
+      { "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/write-plan/hooks/plan-approved-guard.sh", "timeout": 5 } ] }
     ]
   }
 }

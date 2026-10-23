@@ -1,0 +1,1 @@
+{"session_id":"case-filepath","hook_event_name":"PostToolUse","tool_name":"ExitPlanMode","tool_input":{},"tool_response":{"filePath":"__FIXTURES__/plans/run-block.md","isAgent":false}}

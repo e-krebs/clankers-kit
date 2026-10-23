@@ -1,30 +1,71 @@
-## Context
-Why we need this, what prompted it, and the intended outcome.
+# Plan — stop the widget importer from dropping empty rows
+
+Source: the request in one line. The user picked the lighter fix.
+Ticket: none, because the acme profile names no ticket system.
+Repo: /Users/example/widgets.
+Size: small.
+
+## Summary
+
+The importer drops a row whose cells are all empty, so the counts drift. The fix keeps the row and marks it empty. One worker edits the importer and its test.
 
 ## Decisions
-Use the lighter approach; the user picked it over the heavier alternative.
 
-## Ticket
-n/a
+- Keep the empty row and mark it, because the export expects the same count (agent).
 
-## Approach + Files
-The one recommended approach touches two files.
+<details><summary>Your decisions (1)</summary>
 
-## Model pick
-Tier: everyday. Claude: Sonnet. Codex: Sol. Rationale: TBD. Switch: TBD.
+- Use the lighter fix, because the heavier one rewrites the parser (you).
 
-## Deferred kickoff actions
-n/a
+</details>
 
-## Steps + delegation
-1. Do the thing (worker).
-2. Check the thing (judge).
+## Steps
 
-## Verification
-Run `yarn test`.
+| State | # | Task | Tier | After | Done when | Files |
+| --- | --- | --- | --- | --- | --- | --- |
+| ➖ | S0 | Refresh the base | __TIER_FIRST__ | — | `git merge-base --is-ancestor origin/main HEAD` | — |
+| ➖ | S1 | Keep empty rows | __TIER_B__ | S0 | `yarn test` | `src/import.ts`, `src/import.test.ts` |
+| ➖ | S2 | Review: the review skill, __TIER_A__ tier × 1 | __RUN_TIER__ | S1 | `test -s /Users/example/.claude/plans/widget-import.briefs/S2.report.md` | working tree |
+| ➖ | S3 | Gates: run the checks | __TIER_A__ | S2 | `yarn verify` | — |
+| ➖ | S4 | Approval: the user reviews the working tree | __RUN_TIER__ | S3 | the user's go-ahead | — |
+| ➖ | S5 | Hand-off: the PR skill | __RUN_TIER__ | S4 | the PR skill ran | — |
 
-## Closing steps
-1. Verify, then review (judgment tier x1), then hand off to the PR capability.
+## Run
+
+Session tier: __MODEL__ at TBD effort, because the __RUN_TIER__ only dispatches and triages. Open a new terminal and run:
+
+```
+claude --agent __RUN_TIER__ "/execute-plan /Users/example/.claude/plans/widget-import.md"
+```
+
+Run rules: `/Users/example/.agents/skills/execute-plan/references/run-rules.md`. The __RUN_TIER__ reads that file before the first row.
 
 ## Plan review
-Codex (read-only) reviewed this plan and found no issues.
+
+- claude, __TIER_A__ tier subagent: 2 findings, both folded.
+
+## Briefs
+
+<details><summary>S0 Refresh the base</summary>
+
+### S0 Refresh the base
+
+Fetch origin main and fast-forward when behind. Return at most 3 lines.
+
+</details>
+
+<details><summary>S1 Keep empty rows</summary>
+
+### S1 Keep empty rows
+
+Edit `src/import.ts` so an all-empty row is kept and marked. Add a test case. Done when `yarn test` passes.
+
+</details>
+
+<details><summary>S3 Gates</summary>
+
+### S3 Gates
+
+Run the checks the profile names. Return PASS or FAIL per check.
+
+</details>

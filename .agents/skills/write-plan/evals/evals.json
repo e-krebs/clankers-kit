@@ -1,70 +1,328 @@
 {
   "evals": [
     {
-      "name": "small-plan-one-reviewer",
+      "name": "small-plan-running-session-self-check",
       "prompt": "/write-plan add a --quiet flag to the changelog script. The profile is acme (no tracker, direct commits to main, Reviewers: claude, codex).",
-      "expected_output": "Recognises a small plan (two files, one commit, no hook, skill or config), asks only what the codebase could not settle with a recommended answer per question, and writes all ten headings in order. The Closing steps review line names one reviewer, and Plan review records that reviewer's findings before ExitPlanMode.",
+      "expected_output": "Recognises a small plan (two files in the Files column, one commit, no hook, skill or config), asks only what the codebase could not settle with a recommended answer per question, and writes the six headings in order. The Review row names a concrete tier picked from tiers.md for judging a diff, as `<tier> tier × 1`. No plan reviewer runs: the running session re-reads the plan once, and Plan review names the running session's model before ExitPlanMode.",
       "assertions": [
         "Questions carry a recommended answer and none asks a fact the repo holds",
-        "All ten headings present, in the contract order, Decisions after Context",
-        "Review line names one reviewer, not two",
-        "Plan review names the agent that reviewed and what changed",
+        "The six headings are present in the contract order: Summary, Decisions, Steps, Run, Plan review, Briefs",
+        "The Review row names one reviewer, not two",
+        "No plan reviewer is dispatched at size small",
+        "Plan review names the running session's model as the self-check and what changed",
         "ExitPlanMode is called only after Plan review is filled"
       ]
     },
     {
-      "name": "medium-plan-two-reviewer-line",
+      "name": "medium-plan-cross-provider-reviewer",
       "prompt": "/write-plan restructure the hooks directory: four hooks, a shared lib, settings.json wiring, three commits. The profile is acme with Reviewers: claude, codex.",
-      "expected_output": "Classifies the plan as medium — over the small limits (files, commits, a hook and a config among them) yet routine — so the review line reads judgment tier x 2 and names both agents from the profile's Reviewers row, each with its target and the skill that runs it.",
+      "expected_output": "Classifies the plan as medium, over the small limits of the Files column (a hook and a config among them) yet simple. The Review row's Task names a concrete tier picked from tiers.md for judging a diff, as `<tier> tier × 1` and names the review skill, and one plan reviewer runs, the first Reviewers entry from a provider other than the session's (codex in a Claude Code session).",
       "assertions": [
-        "Size is medium: over the small limits but routine, so the review line reads judgment tier x 2",
-        "Review line names both claude and codex with the judgment tier and the review skill by name",
-        "Reviewer count comes from the profile's Reviewers row, not from a fixed number",
-        "Writers and gate-runners in Steps + delegation are tagged with worktree isolation",
+        "Size is medium: over the small limits but simple, so the Review row names a concrete tier picked from tiers.md for judging a diff, as `<tier> tier × 1`",
+        "The Review row names the review skill by name, and the brief or Task names one agent",
+        "The reviewer count comes from the Size rule, not from a fixed number",
+        "The one plan reviewer is codex when the session runs Claude Code",
+        "Rows that are ready together never share a file in the Files column",
         "Every interview decision appears as a line under Decisions"
       ]
     },
     {
-      "name": "no-tracker-ticket-is-na",
+      "name": "no-tracker-ticket-is-none",
       "prompt": "/write-plan add a dark-mode toggle to my personal site. The profile's Ticket system is none.",
-      "expected_output": "Writes 'n/a' under Ticket rather than drafting a ticket or inventing a key, keeps the other required sections filled, and leaves Deferred kickoff actions without a tracker move.",
+      "expected_output": "The header's Ticket line reads none with the reason, rather than drafting a ticket or inventing a key. No row moves a ticket, and the Hand-off row passes no key.",
       "assertions": [
-        "Ticket reads n/a and no ticket is drafted",
-        "No tracker move appears in Deferred kickoff actions",
-        "The seven required sections carry content",
+        "The Ticket line reads none, with a reason, and no ticket is drafted",
+        "No row holds a tracker move",
+        "The six sections carry content",
         "No question asks the user for a ticket key"
       ]
     },
     {
-      "name": "html-becomes-the-plan-for-a-team-audience",
+      "name": "markdown-stays-the-plan-copy-is-an-attachment",
       "prompt": "/write-plan the Q4 migration of the search index; I need to share this plan with the platform team before we start.",
-      "expected_output": "Notes that the plan has readers beyond the author and the agent, offers the HTML rendering in one line, and on acceptance renders <plan>.html from the scaffold with the ten <h2> headings, Context as the lede and Plan review as the colophon, then shrinks the markdown file to the stub with a Source: line and ten pointer sections.",
+      "expected_output": "Notes that the plan has readers beyond the user and the agent, and offers the shareable copy in one line. On a yes, a worker picked from tiers.md for a self-contained build builds <plan>-<slug>.html from the blueprint before the plan review: Summary as the lede, then Decisions, Steps, Run, Briefs as a list of links to the brief files, with no fold, and Plan review as the colophon. The markdown file stays the full plan, and its Attachments line links the copy with an absolute path.",
       "assertions": [
         "The offer cites the readers-beyond-the-author criterion",
         "The offer is one line and declinable, made before ExitPlanMode",
-        "The HTML holds the ten contract headings as <h2> texts, spelled exactly",
-        "The markdown file becomes a stub with a Source: line, not a second copy of the plan"
+        "A fix worker builds the copy, not the session that writes the plan, and before the plan review",
+        "The markdown keeps all six sections and is still the plan; the HTML is an attachment linked with an absolute path"
       ]
     },
     {
-      "name": "waits-for-the-model-switch",
-      "prompt": "/write-plan the auth refactor. It is judgment-heavy, and after approval I will run the build in this session.",
-      "expected_output": "Model pick names the judgment tier, the model for the running provider and the switch command. After the plan is approved, the agent states that command on one line and stops, starting no step until the user confirms they ran it.",
+      "name": "approval-ends-the-turn-on-the-run-block",
+      "prompt": "/write-plan the auth refactor. It is judgment-heavy, and after approval I will run the build.",
+      "expected_output": "Run names the tier tiers.md marks as the one that runs the plan and a one-line fence: claude --agent <that tier> \"/execute-plan <absolute plan path>\" (the Codex launch line on Codex). After approval the turn ends on the Run block, and no step runs.",
       "assertions": [
-        "Model pick names a model from the tiers table plus the exact switch command",
-        "No placeholder such as TBD or <model> survives in Model pick",
-        "After approval the command is stated in one line",
-        "No step of the plan runs before the user confirms the switch"
+        "Run names the tier tiers.md marks as the one that runs the plan",
+        "The fence holds the one line claude --agent <the tier tiers.md marks as the one that runs the plan> \"/execute-plan <path>\" with the plan's absolute path, and no /model or /effort line",
+        "No placeholder such as TBD or <path> survives in Run",
+        "After approval the turn ends on the Run block and no step of the plan runs"
       ]
     },
     {
       "name": "edited-plan-is-re-reviewed",
-      "prompt": "The plan is written and reviewed. I just changed the approach in Approach + Files to reuse the existing worker pool. Continue.",
+      "prompt": "The plan is written and reviewed. I just changed row S2 in Steps to reuse the existing worker pool, and updated its brief. Continue.",
       "expected_output": "Treats the edit as a change to a reviewed plan: re-runs the plan review for consistency across sections, folds the findings, and appends a line to Plan review naming the re-review before calling ExitPlanMode.",
       "assertions": [
         "The plan review runs again after the edit",
         "Plan review gains a line for the re-review",
         "ExitPlanMode waits for the re-review"
+      ]
+    },
+    {
+      "name": "ticket-moved-at-start",
+      "prompt": "/write-plan ACME-412. The profile is acme with Ticket system Jira and Tracker rules that name In Progress as the started state.",
+      "expected_output": "Moves ACME-412 to In Progress inline before exploring, unless it is there already. When plan mode refuses the write, row S0 carries it at the tier tiers.md marks as the one that runs the plan. The header's Ticket line links ACME-412 with an absolute URL. Plan mode is entered right after the move, not before it.",
+      "assertions": [
+        "The started move happens before any explore worker is dispatched",
+        "The status is checked first, so a ticket already in progress is not moved again",
+        "A refused write lands in row S0 with the tier tiers.md marks as the one that runs the plan, not in a deferred section",
+        "The Ticket line links the key with an absolute URL"
+      ]
+    },
+    {
+      "name": "every-delegated-row-has-a-brief",
+      "prompt": "/write-plan add retry logic to the three API clients and update their tests. The profile is acme with Reviewers: claude.",
+      "expected_output": "The plan's Briefs section holds the Briefs: pointer line. Every row whose Tier is not the tier tiers.md marks as the one that runs the plan has a brief file S<n>.md in the briefs folder beside the plan. Each brief file stands alone: paths, the rules that apply, one Done-when command and the four-line report, with no lean on chat-only context. The file is at most 25 lines and holds no ### S<n> heading and no fold.",
+      "assertions": [
+        "Every row not at the tier of the running session has a file S<n>.md in the briefs folder, and the Briefs section holds the Briefs: pointer line with no <details> fold",
+        "Each brief file is at most 25 lines, and its first line gives the reason for the row's tier",
+        "Each brief names its paths, one backticked Done-when command and the four-line report format",
+        "No brief relies on context only the conversation held",
+        "A spec that two or more briefs share sits in a linked md attachment, not repeated in each brief",
+        "The Briefs section lists each brief file as a markdown link with an absolute path, one bullet per delegated row, after the pointer line"
+      ]
+    },
+    {
+      "name": "inline-briefs-in-codex-plan-mode",
+      "prompt": "/write-plan add retry logic to the three API clients and update their tests, in Codex Plan mode, which forbids writes. The profile is acme with Reviewers: claude, codex.",
+      "expected_output": "Plan mode refuses the brief files, so the plan's Briefs section keeps the inline form: one ### S<n> heading per delegated row, each inside a <details> fold, and no Briefs: pointer line. Every brief keeps its paths, its Done-when command and the four-line report, and the plan keeps its six headings in order.",
+      "assertions": [
+        "The Briefs section holds ### S<n> headings inside <details> folds, with no Briefs: pointer line",
+        "No brief file is written under a briefs folder",
+        "Each inline brief names its Done-when command and the four-line report format",
+        "The plan keeps its six headings in order"
+      ]
+    },
+    {
+      "name": "running-session-rows-only-for-the-external-test",
+      "prompt": "/write-plan migrate the config loader, post the rollout note to the team channel, and fan out a review of every caller. The profile is acme.",
+      "expected_output": "Tags the tier of the running session only on the rows that are an external write, a subagent fan-out or a user errand, and sends every other row to a tier agent. The Review and Approval rows stay on the tier of the running session, and the code edits go to worker tiers.",
+      "assertions": [
+        "The channel post and the caller fan-out rows carry the tier of the running session",
+        "Every code edit row has a worker tier, a tier name from tiers.md",
+        "No row carries the tier of the running session only because it is delicate",
+        "The Run line names the tier tiers.md marks as the one that runs the plan and picks no other tier"
+      ]
+    },
+    {
+      "name": "plan-ends-on-approval-and-hand-off",
+      "prompt": "/write-plan ACME-88, rename the billing module. The profile is acme with Ticket system Jira and a PR-based commit policy.",
+      "expected_output": "Steps ends with the Review, Gates, Approval and Hand-off rows in that order, so review fixes land before the one Gates run. No row commits or pushes. The Hand-off row invokes the PR skill with ACME-88, and its brief carries the commit split as a hint.",
+      "assertions": [
+        "The last four rows are Review, Gates, Approval and Hand-off, in that order",
+        "No row commits or pushes",
+        "The Hand-off row passes the ticket key ACME-88 to the PR skill",
+        "The commit split sits in the Hand-off brief as a hint, not as a row"
+      ]
+    },
+    {
+      "name": "plan-mode-entered-after-ticket-move",
+      "prompt": "/write-plan ACME-415, add pagination to the orders endpoint. The session is in default mode in Claude Code. The profile is acme with Ticket system Jira.",
+      "expected_output": "Moves ACME-415 to its started state first, then loads the deferred tools with ToolSearch select:EnterPlanMode,ExitPlanMode and calls EnterPlanMode before exploring. Approval goes through ExitPlanMode, not the no-plan-mode fallback.",
+      "assertions": [
+        "The ticket move happens before EnterPlanMode",
+        "ToolSearch loads EnterPlanMode and ExitPlanMode before the call",
+        "EnterPlanMode is called before any explore worker is dispatched",
+        "Approval uses ExitPlanMode, not a chat question about the saved path"
+      ]
+    },
+    {
+      "name": "tiers-fit-the-work-both-ways",
+      "prompt": "/write-plan rename the Logger export in one file, and rework the cache invalidation shared by the query and mutation layers. The profile is acme.",
+      "expected_output": "Picks each row's tier from the shape of its work: the rename is a list of exact edits and goes down to the lowest tier or the one above it, the interlinked cache rework goes up to the highest worker tier. Each brief's first line gives the reason for its tier, and the tier of the running session follows its own work rather than a default of a mid worker tier.",
+      "assertions": [
+        "The rename row sits at the lowest tier or the one above it, with a mechanical-brief reason",
+        "The cache rework row sits at the highest worker tier, with an interlinked-work reason",
+        "Every brief's first line states why its row's tier fits (a row at the running session's tier needs no brief)",
+        "The Run line names the tier tiers.md marks as the one that runs the plan, not a tier chosen from the running session's work"
+      ]
+    },
+    {
+      "name": "run-rules-by-link",
+      "prompt": "/write-plan add a --dry-run flag to the deploy script. The profile is acme.",
+      "expected_output": "The Run section holds no copy of the rules for the running session. Its last line names the absolute path of execute-plan's references/run-rules.md, and the plan has no Run rules fold.",
+      "assertions": [
+        "No <details> Run rules fold appears in the plan",
+        "Run names execute-plan/references/run-rules.md by an absolute path",
+        "The rest of Run keeps the tier line and the one-line launch fence"
+      ]
+    },
+    {
+      "name": "approval-feedback-reruns-gates-only",
+      "prompt": "Execute the plan at ~/.claude/plans/quiet-flag.md. At the Approval row I say: rename the flag's help text from 'silence' to 'quiet'.",
+      "expected_output": "The running session reads the rules file the Run section names, inserts one fix row for the feedback before Review and adds it to the After cells of Review and Gates, resets Gates and Approval, and keeps Review done because the fix is under 20 lines. Gates runs once more, then Approval asks again.",
+      "assertions": [
+        "The running session reads the run-rules.md path named in Run before the first row",
+        "The fix row has the feedback as its Task and no brief",
+        "Gates and Approval reset to ➖ and Review stays ✅",
+        "Review re-runs only when the fixes change more than 20 lines"
+      ]
+    },
+    {
+      "name": "small-workers-read-only-their-brief",
+      "prompt": "Execute the plan at ~/.claude/plans/changelog-quiet.md. Its S1 row is at a tier for a self-contained check and its Gates row at a tier for a bare command.",
+      "expected_output": "The dispatch prompt for the self-contained-check and bare-command rows names only the row's brief file S<n>.md, not Summary or Decisions. The Gates worker returns only the failing lines, never a full log.",
+      "assertions": [
+        "The self-contained-check and bare-command prompts name the brief file S<n>.md and no other plan section",
+        "A cross-component-change or diff-judging row's prompt also names Summary and Decisions",
+        "The Gates report holds only failing lines or a pass"
+      ]
+    },
+    {
+      "name": "pinned-provider-line-is-kept",
+      "prompt": "/write-plan add CSV export to the orders, invoices and refunds pages, one component each, plus a shared column-format helper. Pin the invoices row to codex. The session runs Claude Code and codex is installed. The profile is acme with Reviewers: claude, codex.",
+      "expected_output": "Writes no provider balance. Only the invoices row carries `Provider: codex` as the user's pin, on its brief's first line next to the tier reason. No other row gets a Provider line to balance the set. The Tier cells stay one word. Bare-command rows, S0, Review, Gates, Approval and Hand-off carry no Provider line, and the Review row and plan review still prefer codex as before.",
+      "assertions": [
+        "Only the user-pinned invoices row carries a Provider line, on its brief's first line beside the tier reason",
+        "No row is given a provider to balance the set across providers",
+        "Every Tier cell is a single word, a tier name from tiers.md",
+        "No bare-command, S0, running-session-tier, Review, Gates, Approval or Hand-off row carries a Provider line"
+      ]
+    },
+    {
+      "name": "running-session-dispatches-codex-rows-with-codex-exec",
+      "prompt": "Execute the plan at ~/.claude/plans/csv-export.md. S1 and S2 run in parallel; S2's brief file S2.md starts with `Provider: codex`, and S2's Done-when check then fails once.",
+      "expected_output": "The running session dispatches S1 as a tier subagent and S2 in the background as `codex exec --sandbox workspace-write` with the model and effort of S2's tier from codex.md, the same prompt and the same four-line report. The fix worker for S2's failed check runs on the session's provider, not codex. Without codex installed, S2 goes to the claude subagent of its tier.",
+      "assertions": [
+        "S2 runs as codex exec --sandbox workspace-write with -m and model_reasoning_effort from codex.md for its tier",
+        "S2 runs in the background while S1 runs",
+        "The codex prompt matches the subagent prompt and asks for the four-line report",
+        "The fix worker after the failed check is a claude subagent, not codex"
+      ]
+    },
+    {
+      "name": "gates-done-when-multi-command-profile",
+      "prompt": "/write-plan add a lint rule for unused exports. The profile is acme with Verify commands: `web: yarn lint, yarn test, yarn typecheck`.",
+      "expected_output": "The Gates row's Done when is not a hand-picked or comma-joined cell. The resolver's --verify-commands output gives three commands with dir web. They go in a script file under the plan's briefs folder that runs each inside `(cd <absolute Repo>/web && ...)`, and Done when is one backticked `bash <absolute script path>` with no `|`, the path absolute because the plan's directory is not the run cwd.",
+      "assertions": [
+        "Gates Done when is a single backticked command with no `|`",
+        "The commands are in a script file beside the briefs, not in the Done when cell",
+        "The leading `web:` prefix binds every command, so the script runs each inside `(cd <absolute Repo>/web && ...)`",
+        "Every command of the --verify-commands output is in the script, none hand-picked",
+        "The script exits non-zero when a command fails inside the cd: each runs as `(cd <absolute Repo>/web && <cmd>) || rc=1`, the `||` outside the parentheses"
+      ]
+    },
+    {
+      "name": "gates-done-when-no-verify-commands",
+      "prompt": "/write-plan rename the changelog script. The profile is acme with Verify commands: —.",
+      "expected_output": "The Gates row stays in place. Its Done when is `test -f <absolute plan path>`, which passes in every mode, inline briefs included. It is not `test -s` on the row's own report: the session writes that report after the worker returns, and the worker cannot write it. The brief tells the worker to report that the profile lists no checks. No command is invented.",
+      "assertions": [
+        "The Gates row is present as the second of the closing four rows",
+        "Done when is a `test -f` on the plan file, not a brief file, and not a `test -s` on S<n>.report.md, because the report does not exist when the worker runs the check (run rule 5 writes it after)",
+        "No verify command is invented or guessed from package.json",
+        "The Gates brief says the profile lists no checks"
+      ]
+    },
+    {
+      "name": "gates-done-when-semicolon-row",
+      "prompt": "/write-plan bump the date helper. The profile is acme with Verify commands: `yarn lint; yarn test`.",
+      "expected_output": "The row is not one command, so it goes in a script file under the plan's briefs folder, written in step 8 with the Gates row. Done when is one backticked `bash <script path>`. The `;` command runs as `bash -ec '<cmd>' || rc=1`, so a failing first part makes the script exit non-zero.",
+      "assertions": [
+        "Gates Done when is `bash <absolute plan stem>.briefs/gates.sh`, not the `;` row",
+        "The `;` command is wrapped so that a failing first part is not hidden, for example `bash -ec 'yarn lint; yarn test' || rc=1`",
+        "The script exits non-zero when the first part fails, even if the last part passes",
+        "The script file is written in step 8 with the Gates row",
+        "The Gates row's Task cell does not name a skill, and its brief says the Done when is the check"
+      ]
+    },
+    {
+      "name": "gates-script-exits-non-zero-on-failure",
+      "prompt": "/write-plan add a lint rule. The profile is acme with Verify commands: `web: yarn lint, yarn typecheck`.",
+      "expected_output": "The gates script runs every command and exits non-zero when any failed, so a failing first command is not hidden by a passing last one. Both commands run inside `(cd <absolute Repo>/web && ...)`, since the leading `web:` binds every command.",
+      "assertions": [
+        "The script runs every command even after one fails",
+        "The script exits non-zero if any command failed, not only the last one",
+        "Both commands run inside `(cd <absolute Repo>/web && ...)`, not only the last",
+        "The script exits non-zero when a command fails inside the cd: each runs as `(cd <absolute Repo>/web && <cmd>) || rc=1`, the `||` outside the parentheses"
+      ]
+    },
+    {
+      "name": "gates-codex-plan-mode-script",
+      "prompt": "/write-plan bump the date helper, on Codex Plan mode. The profile is acme with Verify commands: `yarn lint, yarn test`.",
+      "expected_output": "Plan mode cannot write gates.sh, and a script inline in the Done when would hold `|` or `||`. The plan adds a build row before Review, so the last four rows stay Review, Gates, Approval and Hand-off, whose inline brief holds the script text and whose Done when is `test -s <absolute plan stem>.briefs/gates.sh`. Gates lists it in After.",
+      "assertions": [
+        "A worker build row for gates.sh sits before Review, and the last four rows stay Review, Gates, Approval, Hand-off",
+        "Its inline brief holds the script text",
+        "Gates After names the build row",
+        "No Done when cell holds `|`"
+      ]
+    },
+    {
+      "name": "gates-dir-prefix-and-backticks",
+      "prompt": "/write-plan fix the list page. The profile is acme with Verify commands: `web: `yarn lint`, `yarn test``, and the session cwd is the repo's web directory.",
+      "expected_output": "The dir is relative to the repo root, and a later session runs the plan from the repo root, so the script always wraps each command in `(cd <absolute Repo>/web && ...)`, even when the session cwd is web. The markdown backticks wrapping each whole command are stripped.",
+      "assertions": [
+        "The script runs `yarn lint` and `yarn test` each inside `(cd <absolute Repo>/web && ...)`, with the cd kept despite the cwd",
+        "No backtick appears around a command in the script"
+      ]
+    },
+    {
+      "name": "gates-lire-style-backticked-semicolons",
+      "prompt": "/write-plan tweak the build. The profile is lire with Verify commands: `yarn lint`; `yarn typecheck`; `VITE_API_MODE=real yarn build`.",
+      "expected_output": "The resolver's --verify-commands output already holds three commands without backticks. Three commands, so the row goes to a gates script that runs each as `<cmd> || rc=1`, with no bare `set -e` over the script, so every command runs and failures are all reported. Done when is one backticked `bash \"<absolute script path>\"`.",
+      "assertions": [
+        "The script holds `yarn lint`, `yarn typecheck` and `VITE_API_MODE=real yarn build` as three commands, with no backtick left around any of them",
+        "The script does not stop at the first failure: no bare `set -e` over the whole script",
+        "The script ends by exiting non-zero when any command failed",
+        "Gates Done when is a single backticked `bash` command with no `|`"
+      ]
+    },
+    {
+      "name": "gates-whole-row-backtick-wrapper",
+      "prompt": "/write-plan tweak the build. The profile is acme with Verify commands: `yarn lint && yarn test`.",
+      "expected_output": "The resolver's --verify-commands prints one command, `yarn lint && yarn test`, with the wrapper already stripped. The row is one command, so the Gates Done when is that command verbatim in one backtick pair, never a doubled pair.",
+      "assertions": [
+        "Gates Done when is exactly one backticked `yarn lint && yarn test`",
+        "No doubled backtick appears in the cell",
+        "The command is taken from --verify-commands output, not split or unwrapped by the plan itself"
+      ]
+    },
+    {
+      "name": "gates-profile-in-context-skips-resolver",
+      "prompt": "/write-plan rename a helper. The session-start hook already put the profile rows in context, with Verify commands: `yarn test`.",
+      "expected_output": "The Browser check row is read from context and --rows is not called. Verify commands still come from the resolver's --verify-commands. Gates Done when is `yarn test`.",
+      "assertions": [
+        "The resolver runs with --verify-commands only, not --rows",
+        "Gates Done when is `yarn test`"
+      ]
+    },
+    {
+      "name": "gates-resolver-no-profile-asks",
+      "prompt": "/write-plan rename a helper. The profile rows are absent from context and the resolver exits 1 because no profile resolves.",
+      "expected_output": "The plan does not stop. On exit 1 it asks for the facts (Verify commands and the rest) before the interview. Exit 1 is not a row of `—`.",
+      "assertions": [
+        "The run asks for the Verify commands and the other profile facts instead of stopping",
+        "No Gates row of `—` is written for the exit"
+      ]
+    },
+    {
+      "name": "gates-pipe-uses-pipefail",
+      "prompt": "/write-plan tweak the lint. The profile is acme with Verify commands: `yarn lint | tee lint.log, yarn test`. The resolver runs with --verify-commands.",
+      "expected_output": "The `|` sends the row to a script. The piped command runs as `bash -o pipefail -ec '<cmd>' || rc=1` so the pipeline fails on its first stage. The two commands come from --verify-commands.",
+      "assertions": [
+        "The piped command runs under `bash -o pipefail -ec`",
+        "Gates Done when is one backticked `bash` command with no `|`",
+        "The script exits non-zero when the piped command fails, via `|| rc=1`, and a `<dir>:` prefix would run it as `(cd <abs>/<dir> && bash -o pipefail -ec '<cmd>') || rc=1`"
+      ]
+    },
+    {
+      "name": "gates-missing-resolver-stops",
+      "prompt": "/write-plan rename a helper. The profile resolver script is missing and exits 127.",
+      "expected_output": "The plan stops with the reason at step 1, before the interview. It does not treat the missing resolver as a profile with no checks.",
+      "assertions": [
+        "The run stops and states the resolver is missing",
+        "No `—` Gates row is written for it"
       ]
     }
   ]

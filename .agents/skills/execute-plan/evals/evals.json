@@ -1,0 +1,66 @@
+{
+  "skill_name": "execute-plan",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Execute the plan at ~/.agents/skills/execute-plan/evals/fixtures/quiet-flag.md. The session runs on claude-haiku-5-5 at low effort, but the plan's Run row names a different model for running a plan.",
+      "expected_output": "The session reads its own model and effort, compares them with the tiers.md row for running a plan and the provider file, and on the mismatch stops and reports both values without running any row. No Steps row changes state.",
+      "assertions": [
+        "The start check compares the session's model and effort with the running-a-plan row of tiers.md and the provider file",
+        "On a mismatch the session stops and reports both the session's value and the expected value",
+        "No row is dispatched and no State cell changes after a mismatch"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Execute the plan at ~/.agents/skills/execute-plan/evals/fixtures/quiet-flag.md. Its session matches the running-a-plan tier. Row S1 has just passed its Done-when check.",
+      "expected_output": "The session sets S1's State cell to ✅ by running bash on set-state.sh with the plan path, S1 and the glyph ✅. It does not edit the Steps table by hand, and no other byte of the plan changes.",
+      "assertions": [
+        "The State cell is changed only by running set-state.sh with the plan path, the row id and the glyph",
+        "The glyph passed is one of ➖, ▶️ or ✅, here ✅",
+        "The session does not edit the Steps table by hand"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Resume the plan at ~/.agents/skills/execute-plan/evals/fixtures/quiet-flag.md. Row S2 is marked ▶️ from an interrupted run, and its brief is S2.md in the briefs folder.",
+      "expected_output": "The resumed session reruns only the Done-when command of S2, the row marked ▶️, and does not redispatch any row marked ✅ or ➖. Resume follows rule 5 of the run rules, with no text change to that rule.",
+      "assertions": [
+        "Only the Done-when command of the ▶️ row is rerun",
+        "Rows marked ✅ are not redispatched",
+        "Resume follows rule 5 of execute-plan's references/run-rules.md as written"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Execute the plan at ~/.claude/plans/csv-export.md. Five rows ran as subagents and one fix worker ran after a failed check.",
+      "expected_output": "The last reply of the run ends with one line of the form `workers: <n> dispatched, <m> fix`, here `workers: 5 dispatched, 1 fix`, with no cap on the count.",
+      "assertions": [
+        "The last line of the final reply is `workers: <n> dispatched, <m> fix`",
+        "The counts match the subagents dispatched and the fix workers run",
+        "The run applies no cap on the number of subagents"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Execute the plan at ~/.claude/plans/csv-export.md. Ten implementation rows are eligible for the provider balance and carry no Provider line. Row S4 is blocked by its sandbox when run on codex.",
+      "expected_output": "Taken in row order, eight of the ten eligible rows go to the other provider (codex in Claude Code) and two stay on the session's provider. S4, blocked by its sandbox, reruns once on the session's own provider, and that rerun is not counted as a fix. Pinned rows and ineligible rows are not counted.",
+      "assertions": [
+        "Of the ten eligible unpinned rows, four of every five in row order go to the other provider, so eight go to codex and two stay",
+        "A Provider line pins its row and that row is not counted in the balance",
+        "A row blocked by its sandbox reruns once on the session's own provider and the rerun is not counted as a fix"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Execute the plan at <plan>. Its Briefs section points at a briefs folder that holds S1.md to S3.md. Row S4 (Review) is at the session's own tier and has no S4.md.",
+      "expected_output": "The session runs S4 from its Task cell, does not stop for the missing brief, and dispatches no worker for S4.",
+      "assertions": [
+        "The session does not stop or report a missing brief for S4",
+        "The session runs S4 from the Task cell of its Steps row",
+        "The session dispatches no worker for S4",
+        "The session still stops and reports when the brief of a dispatched row is missing"
+      ]
+    }
+  ]
+}
