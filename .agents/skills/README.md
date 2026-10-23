@@ -11,14 +11,15 @@ don't want.
 
 A composable family that reads one shared contract, the workflow profile (`workflow-profile`
 writes it): the ticket system, the commit policy, the CI watcher, the verify commands. The usual
-order is ticket-kickoff → write-plan → verify → review-changes → changes-to-pr → pr-followup →
-pr-merge, and each skill still works on its own when typed as `/name`. The map with a diagram
+order is ticket-kickoff → write-plan → execute-plan → verify → review-changes → changes-to-pr →
+pr-followup → pr-merge, and each skill still works on its own when typed as `/name`. The map with a diagram
 lives in [workflow-profile/references/workflow-map.md](workflow-profile/references/workflow-map.md).
 
 | Skill | What it does |
 | --- | --- |
 | [`workflow-profile`](workflow-profile/) | Create or refresh the workflow profile of the current repo (the org template plus the per-repo override). Typed only. |
 | [`write-plan`](write-plan/) | Write the plan file for a piece of work: explore, interview, pick the model, run the plan review, then leave plan mode. |
+| [`execute-plan`](execute-plan/) | Run an approved plan file row by row: check the session's model, dispatch rows to workers, set the State cells and end with a worker count. |
 | [`ticket-kickoff`](ticket-kickoff/) | Kick off a ticket: read it and any linked spec, then hand the work to planning. |
 | [`verify`](verify/) | Run every check the repo's workflow profile lists, in parallel, and report one verdict each with every failure quoted. |
 | [`changes-to-pr`](changes-to-pr/) | Turn working-tree changes into atomic commits and, where the repo's policy calls for one, a branch and a PR with a drafted description. |
