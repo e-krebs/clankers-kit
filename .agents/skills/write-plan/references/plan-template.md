@@ -76,7 +76,7 @@ form instead: one fold per row, with its `### S<n> <title>` heading inside the f
 
 Briefs: <absolute path of this plan without `.md`>.briefs/, one file S<n>.md per delegated row.
 
-- [S<n> <row title>](<absolute path of its brief file>)
+- [S<n> <row title>](<plan stem>.briefs/S<n>.md)
 ````
 
 ## The header
@@ -165,7 +165,7 @@ The agent's decisions, the Steps table and the Run fence stay in view.
   launch forms in the template above.
 - The plan does not copy the run rules. The Run section's last line names the run rules file by
   its absolute path, and the gate denies a Run section without it.
-- The Briefs section lists each brief file as a markdown link, one bullet per delegated row after the pointer line, so the user can open it. A bullet holds the link and nothing after it: no summary, because the brief file holds the content.
+- The Briefs section lists each brief file as a markdown link relative to the plan file, one bullet per delegated row after the pointer line, so the user can open it. A bullet holds the link and nothing after it: no summary, because the brief file holds the content.
 - Every delegated row has a brief file, S0 and Gates included. A brief file is at most 25 lines and has no
   heading. A row at the running session's tier needs none.
 - A spec that two or more briefs share, such as the same steps, rules or test list, goes in one
@@ -188,6 +188,6 @@ The agent's decisions, the Steps table and the Run fence stay in view.
   session that writes the plan. The template itself names none.
 - The tables in a plan keep a source line when their numbers come from somewhere, such as a
   command, a query or a transcript.
-- Every link in a plan and in its attachments uses an absolute path.
+- Every link in a plan and in its attachments uses an absolute path. The one exception is a brief link in Briefs, which is relative to the plan file: `[S1 title](<plan stem>.briefs/S1.md)`.
 - HTML exists only as an attachment, in the cases that
   [html-rendering.md](html-rendering.md) lists. The markdown stays the plan.

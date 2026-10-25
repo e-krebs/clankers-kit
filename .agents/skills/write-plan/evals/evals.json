@@ -90,7 +90,7 @@
         "Each brief names its paths, one backticked Done-when command and the four-line report format",
         "No brief relies on context only the conversation held",
         "A spec that two or more briefs share sits in a linked md attachment, not repeated in each brief",
-        "The Briefs section lists each brief file as a markdown link with an absolute path, one bullet per delegated row, after the pointer line"
+        "The Briefs section lists each brief file as a markdown link with a path relative to the plan file, such as <plan stem>.briefs/S1.md, one bullet per delegated row, after the pointer line"
       ]
     },
     {
