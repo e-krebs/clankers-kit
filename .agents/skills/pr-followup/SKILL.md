@@ -32,9 +32,6 @@ table. Only when they are absent, run
 - CI watcher `none` means there is nothing to watch. Confirm in one line that the push landed
   (branch, commits, and the PR link when one exists) and stop. No offer, no watch, no tracker move.
 - Ticket system `none` means no ticket question and no tracker move in this run.
-- Stack review decides which stack members advance on green: `bottom-up` or `all at once`.
-  Unset reads as `all at once`. [references/gh-stack-followup.md](references/gh-stack-followup.md)
-  applies it.
 - PR shape carrying the clause `gh stack for a multi-PR change`, or the `gh-stack` spelling, means
   the push may have moved a whole stack, so Step 0 enumerates the members before resolving one PR.
   Without the clause, there is one PR and this file applies as written. The clause never overrides

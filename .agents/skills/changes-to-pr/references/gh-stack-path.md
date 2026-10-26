@@ -283,9 +283,9 @@ named, only then any `gh pr ready` has run, and the hold is removed.
 - Report the P3b result per branch: passed, or skipped, or the stop's branch, failing lines and
   next step.
 - Report the stack bottom to top: each branch, its PR number, its draft state, its base. Say that
-  the PRs are a stack on GitHub and that the review runs bottom-up.
+  the PRs are a stack on GitHub.
 - Then hand off. The hold kept the push hook quiet, so with a CI watcher in the profile run the CI
-  watch yourself now, which watches every member of the stack and advances the bottom open one;
+  watch yourself now, which watches every member of the stack and advances all of them once green;
   with `none`, say plainly that no CI watch follows and the stack is the user's to advance.
 
 Done when every branch in the mutation set is verified against its remote, the P3b report is made,
