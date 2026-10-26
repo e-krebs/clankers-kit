@@ -1,0 +1,10 @@
+{
+  "skillOverrides": {
+    "claude-api": "on",
+    "run": "on",
+    "code-review": "on",
+    "update-config": "on",
+    "workflow-authoring": "on",
+    "plugin-authoring": "on"
+  }
+}
