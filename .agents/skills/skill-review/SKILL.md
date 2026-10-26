@@ -26,8 +26,8 @@ With no argument or `gather`, and two or more targets or one target over ~150 li
 steps 1-3 into one subagent per target.
 
 1. Load the conventions. Read `~/.agents/skills/writing-for-agents/SKILL.md` plus its
-   `SKILL-MECHANICS.md`. This is a user-granted named dependency. Read it by path, because it
-   is hidden from model invocation. If the file is absent, the checklist below is the gate. Then look up the prose rules:
+   `SKILL-MECHANICS.md`. This is a user-granted named dependency.
+   If the file is absent, the checklist below is the gate. Then look up the prose rules:
    the installed skill whose description leads with cutting AI writing tells. Look in the
    session's skill list first. A skill hidden from model invocation can be missing from that
    list, so on no match, search the frontmatter descriptions of `~/.agents/skills/*/SKILL.md`
