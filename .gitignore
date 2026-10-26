@@ -8,6 +8,7 @@
 !.agents/AGENTS.template.md
 !.agents/lint-manifest.sh
 !.agents/test-lint-manifest.sh
+!.agents/check-local-overrides.sh
 !.agents/hooks/
 !.agents/hooks/**
 !.agents/workflow-profiles/
@@ -32,6 +33,7 @@
 # --- .claude (Claude-only: ignore all, allow config + memories) ---
 .claude/*
 !.claude/settings.json
+!.claude/settings.local.json
 !.claude/settings/
 !.claude/settings/**
 !.claude/agents/
