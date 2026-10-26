@@ -107,7 +107,7 @@
         "Applies the Gate 2 title and body per PR with gh pr edit, because submit --auto invents both and has no --title or --body",
         "Runs no git push -u of its own, since submit pushes the branches",
         "Verifies every branch in the mutation set against its remote after the submit, the created ones and the existing members, because the push is not atomic",
-        "Closes on the hand-off to the CI watch, saying it watches every member and advances the bottom open one"
+        "Closes on the hand-off to the CI watch, saying it watches every member and advances all of them once green"
       ]
     },
     {

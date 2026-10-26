@@ -25,8 +25,8 @@ lags and sets nothing aside; the PR's own state below does. Then read each membe
   and nothing here may act on it. Name the ones you set aside.
 - If no member has a live PR, exit silently, exactly as Step 0's no-PR rule.
 - **The bottom open member** is the lowest live member: the one whose base is the trunk (the
-  profile's Default branch row), or whose base is a member that has already merged. Under `bottom-up`
-  it is the only member F4 advances. Every report orders the stack from it upwards.
+  profile's Default branch row), or whose base is a member that has already merged. Every report
+  orders the stack from it upwards.
 
 Done when the member list is in hand bottom to top, each with its PR JSON, the bottom open member is
 identified, and the merged and cross-repo members are set aside and named, or the silent exit fired.
@@ -38,14 +38,8 @@ PR's:
 
 - The stack bottom to top: each live member's PR number, its draft state, and its CI status now.
 - The watch: every live member's checks, not only the current branch's.
-- The green action. Under the profile's Stack review row `bottom-up`, it is the **bottom
-  open member's alone**: Step 0's rules applied to that one PR. Say that the members above it stay
-  as they are, because a stack is reviewed bottom-up and their bases still move when the one below
-  lands. Under `all at once`, or unset, it is Step 0's rules applied to **every live member**, bottom to top.
-- Tracker moves. Under `bottom-up`, **one** move, the bottom open member's ticket, as Step 1's
-  second and independently declinable question. Name the other members' tickets too, and say each
-  moves when its own PR reaches review. Moving every ticket would move tickets whose PR nobody can
-  review yet. Under `all at once`, one move per live member that has a ticket, in the same question.
+- The green action: Step 0's rules applied to **every live member**, bottom to top.
+- Tracker moves: one per live member that has a ticket, in the same question.
 
 Done when the user picks Proceed, or declines.
 
@@ -63,21 +57,13 @@ Done when a fresh `--checks` read shows every live member's checks in a terminal
 
 ## F4: Advance the stack
 
-Green means **every** live member's checks reached a terminal success, under both Stack review values. If any member is red, go to
+Green means **every** live member's checks reached a terminal success. If any member is red, go to
 Step 4, naming which member failed and on what. Nothing is advanced anywhere and no tracker move happens,
 because a green member above a blocked one is still blocked by it.
 
-On green, read the Stack review row.
+On green, run Step 3 as written for every live member, bottom to top, then each tracker
+move. Report each member's outcome by number. Close by naming the next step: the merge
+capability lands the whole stack.
 
-- `bottom-up`. Run Step 3 as written for the bottom open member only, then its single
-  tracker move. Report the members above by number with their state, not advanced. Say that the
-  stack is reviewed from the bottom, that each one's turn comes when the PR below it merges, that
-  the merge capability restacks them then, and that this skill's next run advances whichever has
-  become the bottom. Close by naming the next step: the merge capability lands the bottom PR once
-  its review lands, and the stack follows from there.
-- `all at once`, or unset. Run Step 3 as written for every live member, bottom to top, then each tracker
-  move. Report each member's outcome by number. Close by naming the next step: the merge
-  capability lands the whole stack.
-
-Done when the green action and, where they apply, the tracker moves have been attempted for the
-members the row selects, any member left as is is reported by number, and the next step is named.
+Done when the green action and, where they apply, the tracker moves have been attempted for every
+live member, each outcome is reported by number, and the next step is named.
