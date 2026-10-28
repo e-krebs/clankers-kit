@@ -287,6 +287,15 @@
       "hooks": ".agents/hooks/commit-subject-gate.json"
     },
     {
+      "id": "local-overrides-gate",
+      "group": "hooks",
+      "kind": "hooks",
+      "label": "local overrides gate",
+      "description": "Blocks a git commit while settings.local.json holds a skill override other than \"on\" or base.json does not hide the skill it turns on. Silent in every other repo.",
+      "agents": ["claude"],
+      "hooks": ".agents/hooks/local-overrides-gate.json"
+    },
+    {
       "id": "session-cleanup",
       "group": "hooks",
       "kind": "hooks",

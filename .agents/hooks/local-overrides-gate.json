@@ -1,0 +1,8 @@
+{
+  "description": "Local overrides gate: blocks a git commit while .claude/settings.local.json holds anything but \"on\" skill overrides, or while .claude/settings/base.json does not hide each skill it turns on. Silent in every other repo.",
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/local-overrides-gate.sh", "timeout": 5 } ] }
+    ]
+  }
+}
