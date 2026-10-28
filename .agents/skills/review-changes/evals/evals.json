@@ -51,7 +51,7 @@
     {
       "name": "codex-stdin-and-tier-mapping",
       "prompt": "Profile: acme. Review this branch against main with codex at a mid-scale worker tier.",
-      "expected_output": "Runs the branch range against main, maps that worker tier to its codex gpt-6-luna model at high effort, and invokes codex read-only with stdin redirected from /dev/null so the call cannot hang.",
+      "expected_output": "Runs the branch range against main, maps that worker tier to its codex gpt-6.1-terra model at low effort, and invokes codex read-only with stdin redirected from /dev/null so the call cannot hang.",
       "assertions": [
         "Branch range computed from `git merge-base` against the profile's Default branch",
         "Tier and reviewer taken from the caller's words, no plan consulted",
