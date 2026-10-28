@@ -83,10 +83,10 @@
     {
       "name": "every-delegated-row-has-a-brief",
       "prompt": "/write-plan add retry logic to the three API clients and update their tests. The profile is acme with Reviewers: claude.",
-      "expected_output": "The plan's Briefs section holds the Briefs: pointer line. Every row whose Tier is not the tier tiers.md marks as the one that runs the plan has a brief file S<n>.md in the briefs folder beside the plan. Each brief file stands alone: paths, the rules that apply, one Done-when command and the four-line report, with no lean on chat-only context. The file is at most 25 lines and holds no ### S<n> heading and no fold.",
+      "expected_output": "The plan's Briefs section holds the Briefs: pointer line. Every row whose Tier is not the tier tiers.md marks as the one that runs the plan has a brief file S<n>.md in the briefs folder beside the plan. Each brief file stands alone: paths, the rules that apply, one Done-when command and the four-line report, with no lean on chat-only context. The file is at most 25 non-blank lines and holds no ### S<n> heading and no fold.",
       "assertions": [
         "Every row not at the tier of the running session has a file S<n>.md in the briefs folder, and the Briefs section holds the Briefs: pointer line with no <details> fold",
-        "Each brief file is at most 25 lines, and its first line gives the reason for the row's tier",
+        "Each brief file is at most 25 non-blank lines, and its first line gives the reason for the row's tier",
         "Each brief names its paths, one backticked Done-when command and the four-line report format",
         "No brief relies on context only the conversation held",
         "A spec that two or more briefs share sits in a linked md attachment, not repeated in each brief",

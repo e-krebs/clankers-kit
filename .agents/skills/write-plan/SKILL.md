@@ -46,8 +46,11 @@ context runs it. The planning session ends on approval.
 4. Explore with delegated read-only workers in parallel, one per code area. Pass paths and the
    questions, and ask each to return at most ~15 lines: answers with file:line evidence, then
    what stays open. Read only the files that are the subject of the design yourself, by line
-   range when you can. Ask the user only what the repo cannot settle. Done when every file
-   the plan touches is named, and no open question is one the repo could have settled.
+   range when you can. Ask the user only what the repo cannot settle. Probe each mechanism a row
+   would rely on that neither the docs nor the repo state, with a one-command test, or ask the user
+   for the one reading only they can take. Done when every file the plan touches is named, no open
+   question is one the repo could have settled, and every mechanism a row relies on is documented or
+   probed.
 5. Interview what is left. Ask in batched rounds, through the harness's question tool when it has
    one (context and links in a message first, the question one short phrase), else as numbered
    questions, each carrying your recommended answer. Make routine choices with one clear best option

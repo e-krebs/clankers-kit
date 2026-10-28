@@ -18,7 +18,7 @@
 # First failure: "deny<TAB><rule><TAB><message>" and exit 1 when a workflow profile resolves for
 # --cwd, else "advise<TAB>unresolved-profile:<rule><TAB><message>" and exit 0. A pass prints one
 # "advise<TAB>link<TAB>..." line per absolute link to a missing file and one
-# "advise<TAB>brief<TAB>..." line per brief file above 25 lines, then exits 0.
+# "advise<TAB>brief<TAB>..." line per brief file above 25 non-blank lines, then exits 0.
 # An unreadable or empty plan
 # prints nothing and exits 2. No stdin, no stall counter, no JSON: the adapters own those.
 
@@ -427,8 +427,8 @@ if [ -z "$fail" ]; then
   if [ -n "$plan_file" ] && [ "$pointer" -eq 1 ]; then
     for id in $(_delegated_ids); do
       brief_file="${plan_file%.md}.briefs/$id.md"
-      brief_lines=$(awk 'END { print NR }' "$brief_file")
-      [ "$brief_lines" -le 25 ] || _emit advise brief "plan-gate: brief file $brief_file has $brief_lines lines; keep a brief to 25 lines or fewer."
+      brief_lines=$(awk 'NF { n++ } END { print n + 0 }' "$brief_file")
+      [ "$brief_lines" -le 25 ] || _emit advise brief "plan-gate: brief file $brief_file has $brief_lines non-blank lines; keep a brief to 25 non-blank lines or fewer."
     done
   fi
   exit 0

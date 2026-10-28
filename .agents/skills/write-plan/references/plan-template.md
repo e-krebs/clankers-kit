@@ -71,7 +71,7 @@ Name an agent, because the gate checks for one. A re-review after an edit adds a
 
 <For the workers, and for the running session on its own rows. One brief file per row whose Tier is not
 `<tier of the running session>`, in the briefs folder beside this plan, named `S<n>.md`. A row at that tier may have one too.
-Each file holds at most 25 lines and no heading. On Codex Plan mode, which forbids writes, this section holds the inline
+Each file holds at most 25 non-blank lines and no heading. On Codex Plan mode, which forbids writes, this section holds the inline
 form instead: one fold per row, with its `### S<n> <title>` heading inside the fold.>
 
 Briefs: <absolute path of this plan without `.md`>.briefs/, one file S<n>.md per delegated row.
@@ -166,8 +166,9 @@ The agent's decisions, the Steps table and the Run fence stay in view.
 - The plan does not copy the run rules. The Run section's last line names the run rules file by
   its absolute path, and the gate denies a Run section without it.
 - The Briefs section lists each brief file as a markdown link relative to the plan file, one bullet per delegated row after the pointer line, so the user can open it. A bullet holds the link and nothing after it: no summary, because the brief file holds the content.
-- Every delegated row has a brief file, S0 and Gates included. A brief file is at most 25 lines and has no
-  heading. A row at the running session's tier needs none.
+- Every delegated row has a brief file, S0 and Gates included. A brief file is at most 25 non-blank lines and has no
+  heading. Write it as short paragraphs separated by blank lines, one per topic: tier and goal,
+  repo and scope, steps, constraints, report. A row at the running session's tier needs none.
 - A spec that two or more briefs share, such as the same steps, rules or test list, goes in one
   markdown attachment named in the `Attachments:` line. Each brief links it by absolute path and
   holds only what differs, such as paths and the Done-when check. A build row writes the attachment
