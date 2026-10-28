@@ -1,0 +1,5 @@
+interface:
+  display_name: "Execute Plan"
+  short_description: "Run an approved plan file row by row: check the session's model, dispatch rows to workers, set the State cells and end with a worker count."
+policy:
+  allow_implicit_invocation: false

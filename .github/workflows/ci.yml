@@ -19,6 +19,8 @@ jobs:
         run: bash .agents/lint-manifest.sh
       - name: Check the local overrides
         run: bash .agents/check-local-overrides.sh "$GITHUB_WORKSPACE"
+      - name: Check the hide parity
+        run: bash .agents/skills/skill-review/scripts/check-hide-parity.sh
       - name: Run the hook fixtures
         run: bash .agents/hooks/run-fixtures.sh
       - name: Test the manifest lint

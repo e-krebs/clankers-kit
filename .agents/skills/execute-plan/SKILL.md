@@ -4,6 +4,7 @@ description: >-
   Run an approved plan file row by row: check the session's model, dispatch rows to workers, set
   the State cells and end with a worker count. Use when the user asks to execute, run or resume a
   plan, or types /execute-plan with a plan path. Not for writing a plan, or for reviewing code.
+disable-model-invocation: true
 ---
 
 # execute-plan

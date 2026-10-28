@@ -1,0 +1,5 @@
+interface:
+  display_name: "Hooks Review"
+  short_description: "Audit, prune or extend the hooks layer."
+policy:
+  allow_implicit_invocation: false
