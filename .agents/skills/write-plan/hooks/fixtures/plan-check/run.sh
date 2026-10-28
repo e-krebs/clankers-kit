@@ -171,7 +171,7 @@ seq 26 > "$pf_dir/widget-import.briefs/S3.md"
 run_check "$(cat "$pf_dir/widget-import.md")" "$resolved_profiles" "$pf_dir/widget-import.md"
 err=""
 [ "$RC" -eq 0 ] || err="exit $RC"
-printf '%s\n' "$OUT" | grep -qF "advise${T}brief${T}plan-gate: brief file $pf_dir/widget-import.briefs/S3.md has 26 lines; keep a brief to 25 lines or fewer." \
+printf '%s\n' "$OUT" | grep -qF "advise${T}brief${T}plan-gate: brief file $pf_dir/widget-import.briefs/S3.md has 26 non-blank lines; keep a brief to 25 non-blank lines or fewer." \
   || err="${err:+$err; }no brief advise line: $OUT"
 if [ -z "$err" ]; then pass "brief-over-25-warns"; else fail_case "brief-over-25-warns" "$err"; fi
 

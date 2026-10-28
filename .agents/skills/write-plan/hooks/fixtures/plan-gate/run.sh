@@ -299,7 +299,7 @@ check_plan "pointer-brief-empty-denies" "$(cat "$pf_dir/widget-import.md")" deny
 pf_dir=$(pointer_dir)
 seq 26 > "$pf_dir/widget-import.briefs/S3.md"
 check_plan "pointer-brief-over-25-advises" "$(cat "$pf_dir/widget-import.md")" allow \
-  "plan-gate: brief file $pf_dir/widget-import.briefs/S3.md has 26 lines" brief "$pf_dir/widget-import.md"
+  "plan-gate: brief file $pf_dir/widget-import.briefs/S3.md has 26 non-blank lines" brief "$pf_dir/widget-import.md"
 check_plan "pointer-without-planfile-allows" "$(cat "$pf_dir/widget-import.md")" allow "" ""
 check_plan "done-when-text-denies" "$(edit_plan "s/| \`yarn test\` |/| yarn test |/")" deny \
   "Steps row S1 has a Done when that is not one backticked command." done-when
