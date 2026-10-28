@@ -4,6 +4,7 @@ description: >-
   Audit, prune or extend the hooks layer. Use when the user asks to review, prune or audit their
   hooks, or asks what should become a hook. Not for editing one hook, the memory store, or code
   review.
+disable-model-invocation: true
 ---
 
 # hooks-review

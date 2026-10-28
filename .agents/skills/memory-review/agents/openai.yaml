@@ -1,0 +1,5 @@
+interface:
+  display_name: "Memory Review"
+  short_description: "Audit the personal agent-memory store project by project: flag stale, duplicate and rule-covered memories, decide each with the user, apply and commit."
+policy:
+  allow_implicit_invocation: false

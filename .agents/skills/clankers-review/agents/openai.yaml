@@ -1,0 +1,5 @@
+interface:
+  display_name: "Clankers Review"
+  short_description: "Run the full config audit behind two gates: pick sub-topics (memories, hooks, skills, AGENTS.md), gather, approve each change, apply, review."
+policy:
+  allow_implicit_invocation: false

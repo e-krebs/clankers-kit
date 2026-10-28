@@ -5,6 +5,7 @@ description: >-
   rule-covered memories, decide each with the user, apply and commit. Use when the user asks to
   review, prune or clean up their memories. Not for a single memory edit, code review, or the
   standing rules (hooks, CLAUDE.md, skills).
+disable-model-invocation: true
 ---
 
 # memory-review

@@ -5,6 +5,7 @@ description: >-
   AGENTS.md), gather, approve each change, apply, review. Use when the user asks to review
   memories and standing rules together, or for the periodic clankers audit.
   Not for one sub-topic alone, or code review.
+disable-model-invocation: true
 ---
 
 # clankers-review

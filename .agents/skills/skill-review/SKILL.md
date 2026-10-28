@@ -72,7 +72,7 @@ This checklist is the gate, and writing-for-agents defines its terms.
   Otherwise hide it in every harness that loads it, and give it a human-facing one-liner.
   Claude Code reads `disable-model-invocation: true` in the frontmatter. Codex ignores that key
   and reads `policy.allow_implicit_invocation: false` in `agents/openai.yaml`. A skill that only
-  one harness hides is a finding.
+  one harness hides is a finding. `scripts/check-hide-parity.sh` reports those.
 - Steps end on a checkable completion criterion.
 - Progressive disclosure holds. Grade it with the rubric below, one verdict per section of the
   target skill.
